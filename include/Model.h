@@ -36,17 +36,23 @@ protected:
     std::valarray<long> previous_monomers;
     long end_conformation = 0;
     long start_conformation = 0;
-    std::valarray<short> directions; // n-1 edges of SAW on the lattice;
+    std::valarray<short> directions; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
 };
 
+//Class for XY long-interacting Model on SAWs
 class XY_SAW_LongInteraction : public  SAW_model {
 public:
     XY_SAW_LongInteraction() {};
     XY_SAW_LongInteraction(long length);
+
     void FlipMove ();
     void ClusterStep ();
+
+    void SequenceOnLatticeInitialization();
+    void StartConfiguration();
 protected:
     void Energy ();
+    std::valarray<double> sequence_on_lattice;
 };
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H

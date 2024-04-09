@@ -3,7 +3,7 @@ project(Interaction_SAW_Models)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_definitions(-DREGIME_2D -DCHEKMAP2D)
+add_definitions(-DREGIME_2D -DCHEKMAP2D -DSTARTDEFAULT)
 
 add_executable(Interaction_SAW_Models
         include/Lattice.h
