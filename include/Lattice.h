@@ -17,15 +17,14 @@ public:
     inline long int lattice_size() {return lattice_side;};
     inline long int NumberOfNodes () {return number_of_nodes;};
 
-
+    std::valarray<coord_t> map_of_contacts_int;
+    std::valarray<int> inverse_steps;
 protected:
     virtual void create_lattice() = 0;
 
     long lattice_side = 0;
     int number_of_nodes = 0;
-    std::valarray<int> inverse_steps;
-    std::vector <std::vector<int>> steps;
-    std::valarray<coord_t> map_of_contacts_int;
+    std::vector<std::vector<int> > steps;
 };
 
 

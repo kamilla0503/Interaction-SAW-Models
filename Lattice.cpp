@@ -43,6 +43,8 @@ void Lattice_2D::create_lattice() {
             }
         }
     }
+    inverse_steps.resize(ndim2());
+    inverse_steps = {1,0,3,2};
 #ifdef CHEKMAP2D
     std::fstream myStream;
     myStream.open("For_Debug_MapOfContacts.out",std::fstream::out);
@@ -97,6 +99,8 @@ void Lattice_3D::create_lattice() {
             }
         }
     }
+    inverse_steps.resize(ndim2());
+    inverse_steps = { 1, 0, 3, 2, 5, 4 };
 #ifdef CHEKMAP3D
     std::fstream myStream;
     myStream.open("For_Debug_MapOfContacts_3D.out",std::fstream::out);

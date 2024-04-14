@@ -6,6 +6,11 @@
 #define INTERACTION_SAW_MODELS_MONTECARLO_H
 
 #include "Model.h"
+#include <random>
+#include <chrono>
+
+#define seed_urd 121
+//std::chrono::system_clock::now().time_since_epoch().count()
 
 class Monte_Carlo {
 public:
@@ -19,14 +24,15 @@ public:
     MC_Interacting_SAW_XY() {};
     MC_Interacting_SAW_XY(  long length,
                             double Probability_Local_Update = 0.5,
-                            double Probability_Reconnect = 0.4 );
-protected:
+                            double Probability_Reconnect = 0.5 );
     void run_simulation();
+protected:
 
     double p_for_local_update;
     double p_for_reconnect;
 
     XY_SAW_LongInteraction *model = nullptr;
+
 };
 
 #endif //INTERACTION_SAW_MODELS_MONTECARLO_H
