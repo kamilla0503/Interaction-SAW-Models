@@ -120,12 +120,38 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 }
 
 double XY_SAW_LongInteraction::Energy() {
-    return 0;
+    double H = 0;
+
+    coord_t current_out = start_conformation;
+    double spin_out = sequence_on_lattice[current_out];
+    coord_t current_inner;
+    double spin_inner;
+    double r;
+    while (spin_out!= NO_XY_SPIN) {
+        current_inner = start_conformation;
+        spin_inner = sequence_on_lattice[current_inner];
+        while(spin_inner!=NO_XY_SPIN) {
+            if (current_inner!=current_out) {
+                r = lattice->radius(current_inner, current_out);
+                r = sqrt(r);
+                H = H + (cos(spin_inner-spin_out))/ (r*r*r);
+            }
+
+            current_inner = next_monomers[current_inner];
+            if (current_inner == NO_SAW_NODE) break;
+            spin_inner = sequence_on_lattice[current_inner];
+        }
+
+        current_out = next_monomers[current_out];
+        if (current_out == NO_SAW_NODE) break;
+        spin_out = sequence_on_lattice[current_out];
+    }
+    
+    return -J*H/2.0;
 }
 
 static std::uniform_real_distribution<double> distribution_urd(0.0,1.0);
 static std::mt19937 generator(URD_SEED);
-//generator.seed(URD_SEED);
 
 void XY_SAW_LongInteraction::FlipMove_AddEnd(short direction, double spinValue) {
 
@@ -162,21 +188,21 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(short direction, double spinValue) 
         directions[save_start_conformation] = NO_SAW_NODE;
         directions[previous_monomers[end_conformation]] = direction;
     }
-        else {
-            //reject new state
-            //delete end
-            coord_t del = end_conformation;
-            end_conformation = previous_monomers[end_conformation];
-            next_monomers[end_conformation] = NO_SAW_NODE;
-            previous_monomers[del] = NO_SAW_NODE;
-            sequence_on_lattice[del] = NO_XY_SPIN;
+    else {
+        //reject new state
+        //delete end
+        coord_t del = end_conformation;
+        end_conformation = previous_monomers[end_conformation];
+        next_monomers[end_conformation] = NO_SAW_NODE;
+        previous_monomers[del] = NO_SAW_NODE;
+        sequence_on_lattice[del] = NO_XY_SPIN;
 
-            //add the previous beginning
-            previous_monomers[start_conformation] = save_start_conformation;
-            next_monomers[save_start_conformation] = start_conformation;
-            start_conformation = save_start_conformation;
-            sequence_on_lattice[start_conformation] = oldspin;
-        }
+        //add the previous beginning
+        previous_monomers[start_conformation] = save_start_conformation;
+        next_monomers[save_start_conformation] = start_conformation;
+        start_conformation = save_start_conformation;
+        sequence_on_lattice[start_conformation] = oldspin;
+    }
 }
 
 void XY_SAW_LongInteraction::FlipMove_AddStart(short direction, double spinValue) {
@@ -210,7 +236,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(short direction, double spinValue
 
     if (q_ifaccept < p_metropolis) {
         E = new_E;
-        directions[end_conformation] = -1;
+        directions[end_conformation] = NO_SAW_NODE;
         directions[start_conformation] = lattice->inverse_steps[direction];
     }
     else {//reject the new state

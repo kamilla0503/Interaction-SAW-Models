@@ -10,11 +10,11 @@
 #define MC_STEPS 15
 #endif
 
-#ifndef URD_SEED 121
-#define URD_SEED
+#ifndef URD_SEED
+#define URD_SEED 121
 #endif
-#ifndef UID_SEED 123
-#define UID_SEED
+#ifndef UID_SEED
+#define UID_SEED 123
 #endif
 
 MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length,

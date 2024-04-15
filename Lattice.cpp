@@ -113,3 +113,30 @@ void Lattice_3D::create_lattice() {
     }
 #endif
 }
+
+double Lattice_2D::radius(const coord_t& start, const coord_t& end) {
+    long start_x = start % lattice_side;
+    long start_y = start / lattice_side;
+    long end_x = end % lattice_side;
+    long end_y = end / lattice_side;
+
+    //torus distance;
+
+    //расстояние на торе
+    long xdiff = abs(end_x - start_x);
+    if (xdiff > (lattice_side/2))
+        xdiff = lattice_side - xdiff;
+
+    long ydiff = abs(end_y - start_y);
+    if (ydiff > (lattice_side / 2))
+        ydiff = lattice_side - ydiff;
+
+    double r = xdiff *xdiff  + ydiff*ydiff ;
+
+    return r;
+}
+
+double Lattice_3D::radius(const coord_t& start, const coord_t& end) {
+
+    return 0;
+}
