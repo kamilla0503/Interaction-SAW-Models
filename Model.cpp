@@ -146,7 +146,7 @@ double XY_SAW_LongInteraction::Energy() {
         if (current_out == NO_SAW_NODE) break;
         spin_out = sequence_on_lattice[current_out];
     }
-    
+
     return -J*H/2.0;
 }
 
