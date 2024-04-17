@@ -10,12 +10,9 @@
 #define MC_STEPS 15
 #endif
 
-#ifndef URD_SEED
+
 #define URD_SEED 121
-#endif
-#ifndef UID_SEED
 #define UID_SEED 123
-#endif
 
 MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length,
                                              double Probability_Local_Update,
@@ -35,15 +32,22 @@ void MC_Interacting_SAW_XY::run_simulation() {
 
     static std::uniform_real_distribution<double> distribution_urd(0.0,1.0);
     static std::mt19937 generator_urd;
-    generator_urd.seed(URD_SEED);
 
     std::uniform_int_distribution<short> distribution_uid_steps(0, model->ndim2() - 1);
     std::mt19937 generators_steps;
-    generators_steps.seed(UID_SEED);
 
     std::uniform_real_distribution<double> distribution_theta(0, 2.0*PI);
     std::mt19937 generators_theta;
+
+#ifdef SEED
     generators_theta.seed(URD_SEED);
+    generators_steps.seed(UID_SEED);
+    generator_urd.seed(URD_SEED);
+#else
+    generator_urd.seed(std::chrono::steady_clock::now().time_since_epoch().count());
+    generators_steps.seed(std::chrono::steady_clock::now().time_since_epoch().count());
+    generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
+#endif
 
     for (int i = 0; i < MC_STEPS + 20; ++i) {
         /*std::fstream myStream;

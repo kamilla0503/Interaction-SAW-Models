@@ -5,6 +5,8 @@
 #include<iostream>
 #include <random>
 #include <fstream>
+#include <chrono>
+
 //used to increase length of SAWs for lattice side
 #ifndef OUT_Length
 #define OUT_Length 2
@@ -18,9 +20,9 @@
 #define NO_XY_SPIN -5
 #endif
 
-#ifndef URD_SEED
+
 #define URD_SEED 121
-#endif
+
 
 template<class SpinType>
 SAW_model<SpinType>::SAW_model(long length) {
@@ -150,8 +152,12 @@ double XY_SAW_LongInteraction::Energy() {
     return -J*H/2.0;
 }
 
-static std::uniform_real_distribution<double> distribution_urd(0.0,1.0);
-static std::mt19937 generator(URD_SEED);
+std::uniform_real_distribution<double> distribution_urd(0.0,1.0);
+#ifdef SEED
+std::mt19937 generator(URD_SEED+1);
+#else
+std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count());
+#endif
 
 void XY_SAW_LongInteraction::FlipMove_AddEnd(short direction, double spinValue) {
 

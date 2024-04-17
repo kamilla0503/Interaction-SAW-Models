@@ -50,7 +50,6 @@ double Hamiltonian(const vector<tuple<int, int>>&  conformation,
     double r;
     double H = 0.;
     int i = 0;
-    int L = conformation.size();
     //int check_number = 0;
     for (auto out : conformation) {
         int j = 0;
@@ -60,18 +59,16 @@ double Hamiltonian(const vector<tuple<int, int>>&  conformation,
                 r = radius2(out, inner);
                 r = std::sqrt(r);
                 //if (r < 1.001) {
-                    //std::cout << "Check R " << r << std::endl;
+#ifdef XYSHORT
+                if (r < 1.001)
+#endif
                     H = H + (cos(spin_sequence[i] - spin_sequence[j])) / (r * r * r);
-                    //check_number += 1;
                 //}
             }
-
             j+=1;
         }
-
         i+=1;
     }
-    //if (check_number!=(L*(L-1))) std::cout << "Check " << check_number << std::endl;
     return -1.*H/2.;
 }
 
@@ -98,7 +95,7 @@ void MeanValues(int L) {
     std::cout << "L J E r2" << std::endl;
 
     for (int Attempt = 0 ; Attempt < 10; Attempt++) {
-        for (double J = 0.0; J <= 1.5; J += 0.25) {
+        for (double J = 0.0; J <= 1.5; J += 0.3) {
             Z = 0;
             R = 0;
             E = 0;
