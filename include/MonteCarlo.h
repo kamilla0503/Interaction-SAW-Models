@@ -9,8 +9,6 @@
 #include <random>
 #include <chrono>
 
-#define seed_urd 121
-//std::chrono::system_clock::now().time_since_epoch().count()
 
 class Monte_Carlo {
 public:
