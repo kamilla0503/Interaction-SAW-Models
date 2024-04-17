@@ -4,11 +4,11 @@
 #include <valarray>
 #include <vector>
 
-typedef unsigned long coord_t;
+typedef long coord_t;
 
 class Lattice {
 public:
-    //Lattice();
+    Lattice() {};
     Lattice(long max_seq_size = 10) { lattice_side = max_seq_size; };
 
     inline const virtual short int ndim() = 0 ;
@@ -17,15 +17,16 @@ public:
     inline long int lattice_size() {return lattice_side;};
     inline long int NumberOfNodes () {return number_of_nodes;};
 
+    virtual double radius(const coord_t& start, const coord_t& end) = 0;
 
+    std::valarray<coord_t> map_of_contacts_int;
+    std::valarray<int> inverse_steps;
 protected:
     virtual void create_lattice() = 0;
 
     long lattice_side = 0;
     int number_of_nodes = 0;
-    std::valarray<int> inverse_steps;
-    std::vector <std::vector<int>> steps;
-    std::valarray<coord_t> map_of_contacts_int;
+    std::vector<std::vector<int> > steps;
 };
 
 
@@ -34,6 +35,8 @@ public:
     Lattice_2D(long max_seq_size = 10);
     inline const short int ndim() { return 2; }
     inline const short int ndim2() {return 4;}
+
+    double radius(const coord_t& start, const coord_t& end);
 
 private:
     void create_lattice();
@@ -45,6 +48,8 @@ public:
     Lattice_3D(long max_seq_size = 10);
     inline const short int ndim() { return 3; }
     inline const short int ndim2() {return 6;}
+
+    double radius(const coord_t& start, const coord_t& end);
 
 private:
     void create_lattice();
