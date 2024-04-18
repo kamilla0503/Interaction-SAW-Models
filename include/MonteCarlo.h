@@ -14,16 +14,16 @@ class Monte_Carlo {
 public:
     //Monte_Carlo () {};
 protected:
-    virtual void run_simulation() = 0;
+    virtual void run_simulation(double J) = 0;
 };
 
 class MC_Interacting_SAW_XY : public Monte_Carlo{
 public:
     MC_Interacting_SAW_XY() {};
     MC_Interacting_SAW_XY(  long length,
-                            double Probability_Local_Update = 0.5,
-                            double Probability_Reconnect = 0.5 );
-    void run_simulation();
+                            double Probability_Local_Update = 0.9,
+                            double Probability_Reconnect = 0.1 );
+    void run_simulation(double J);
 protected:
 
     double p_for_local_update;

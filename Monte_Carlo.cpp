@@ -7,7 +7,7 @@
 #include <fstream>
 
 #ifndef  MC_STEPS
-#define MC_STEPS 15
+#define MC_STEPS 20000
 #endif
 
 
@@ -23,7 +23,15 @@ MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length,
 }
 
 
-void MC_Interacting_SAW_XY::run_simulation() {
+void MC_Interacting_SAW_XY::run_simulation(double J) {
+
+    model->set_J(J);
+
+    std::fstream MCDataStream;
+    std::string filename = "Results_" + std::to_string(model->number_of_spins())+ ".out";
+    MCDataStream.open(filename,std::fstream::out);
+
+    MCDataStream << "L J MC_steps R2 R2_std E E_std E2 E2_std E4 E4_std" << std::endl;
 
     double mc_step_type = 0;
     short step = 0;
@@ -49,7 +57,7 @@ void MC_Interacting_SAW_XY::run_simulation() {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-    for (int i = 0; i < MC_STEPS + 20; ++i) {
+    for (long long i = 0; i < MC_STEPS + 20; ++i) {
         /*std::fstream myStream;
         std::string filename = "For_Debug_MapOfContacts_" + std::to_string(i)+ ".out";
         myStream.open(filename,std::fstream::out);
@@ -83,6 +91,13 @@ void MC_Interacting_SAW_XY::run_simulation() {
         else {
             model->ClusterStep();
         }
-        //if (i%10000!=0) { continue;}
+
+        if (i > 2000)
+        model->updateData();
+        if (i%100==0) {
+            model->out_MC_data(MCDataStream, i);
+        }
     }
+
+    MCDataStream.close();
 }

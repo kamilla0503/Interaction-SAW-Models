@@ -6,6 +6,7 @@
 #define INTERACTION_SAW_MODELS_MODEL_H
 
 #include "Lattice.h"
+#include "observable.h"
 
 const double PI = std::atan(1.0)*4;
 
@@ -20,6 +21,7 @@ public:
         return dim2;
     }
     Lattice *lattice = nullptr;
+    void set_J (double J_) {J = J_;}
 protected:
     //Model-specific Energy function; returns double as J is expected to be double also
     virtual double Energy () = 0;
@@ -43,6 +45,11 @@ public:
     virtual void ClusterStep () = 0; //depends on spin variables
 
     void LatticeInitialization();
+
+    //virtual void (std::fstream& out) = 0 ;
+    virtual void out_MC_data(std::fstream& out, long long n_steps) = 0 ;
+    virtual void updateData() = 0;
+
 protected:
     std::valarray<SpinType> sequence_on_lattice;
     std::valarray<long> next_monomers;
@@ -50,6 +57,8 @@ protected:
     long end_conformation = 0;
     long start_conformation = 0;
     std::valarray<short> directions; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
+
+    mc_stats::ScalarObservable<double> e2e_distance_2;
 };
 
 //Class for XY long-interacting Model on SAWs
@@ -64,8 +73,22 @@ public:
 
     void SequenceOnLatticeInitialization();
     void StartConfiguration();
+
+
+    void out_MC_data(std::fstream& out, long long n_steps);
+    void  updateData();
+
 protected:
     double Energy ();
+
+    mc_stats::ScalarObservable<double> energy;
+    mc_stats::ScalarObservable<double> energy_2;
+    mc_stats::ScalarObservable<double> energy_4;
+
+    mc_stats::ScalarObservable<double> mags_sin;
+    mc_stats::ScalarObservable<double> mags_cos;
+    mc_stats::ScalarObservable<double> magnetization_2;
+    mc_stats::ScalarObservable<double> magnetization_4;
 };
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H

@@ -149,7 +149,7 @@ double XY_SAW_LongInteraction::Energy() {
         spin_out = sequence_on_lattice[current_out];
     }
 
-    return -J*H/2.0;
+    return -H/2.0;
 }
 
 std::uniform_real_distribution<double> distribution_urd(0.0,1.0);
@@ -236,7 +236,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(short direction, double spinValue
 
     double new_E = Energy();
 
-    double p1 = exp( -( -(new_E - E) * J ));
+    double p1 = exp( -( J * (new_E - E) ));
     double p_metropolis = std::min(1.0, p1);
     double q_ifaccept = distribution_urd(generator);
 
@@ -304,4 +304,24 @@ void SAW_model<double>::Reconnect(short direction) {
     next_monomers[new_end]=-1;
     directions[new_end]=-1;
 
+}
+
+void XY_SAW_LongInteraction::updateData() {
+    e2e_distance_2 << lattice->radius(start_conformation, end_conformation);
+    energy << E;
+    energy_2 << E*E;
+    energy_4 << E*E*E*E;
+}
+
+
+void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
+    out << number_of_spins() << " ";
+    out << J << " ";
+    out << n_steps << " ";
+    out << e2e_distance_2.mean() << " " << e2e_distance_2.errorbar() << " ";
+    out << energy.mean() << " " << energy.errorbar() << " ";
+    out << energy_2.mean() << " " << energy_2.errorbar() << " ";
+    out << energy_4.mean() << " " << energy_4.errorbar() << " ";
+
+    out << std::endl;
 }
