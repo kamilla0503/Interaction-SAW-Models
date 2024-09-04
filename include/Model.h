@@ -28,7 +28,7 @@ protected:
 
     long L; //Length of the model chain
     double E; //current value for energy; double as J
-    double J = 0; //Interaction Energy
+    double J; //Interaction Energy
 };
 
 // Abstract Class for geometry related work
@@ -40,9 +40,9 @@ public:
 
     void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
-    virtual void FlipMove_AddEnd (short direction, SpinType spinvalue) = 0; //depends on spin variables
-    virtual void FlipMove_AddStart (short direction, SpinType spinvalue) = 0; //depends on spin variables
-    virtual void ClusterStep () = 0; //depends on spin variables
+    virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
+    virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
+    virtual void ClusterStep (double flipdirection) = 0; //depends on spin variables
 
     void LatticeInitialization();
 
@@ -67,9 +67,9 @@ public:
     XY_SAW_LongInteraction() {};
     XY_SAW_LongInteraction(long length);
 
-    void FlipMove_AddEnd (short direction, double spinValue);
-    void FlipMove_AddStart(short direction, double spinValue);
-    void ClusterStep ();
+    void FlipMove_AddEnd (long direction, double spinValue);
+    void FlipMove_AddStart(long direction, double spinValue);
+    void ClusterStep (double flipdirection);
 
     void SequenceOnLatticeInitialization();
     void StartConfiguration();
@@ -79,6 +79,8 @@ public:
     void  updateData();
 
 protected:
+    std::valarray<bool> used_coords;
+
     double Energy ();
 
     mc_stats::ScalarObservable<double> energy;

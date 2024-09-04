@@ -8,7 +8,7 @@
 #include "Model.h"
 #include <random>
 #include <chrono>
-
+#include <string>
 
 class Monte_Carlo {
 public:
@@ -20,11 +20,13 @@ protected:
 class MC_Interacting_SAW_XY : public Monte_Carlo{
 public:
     MC_Interacting_SAW_XY() {};
-    MC_Interacting_SAW_XY(  long length,
+    MC_Interacting_SAW_XY(  long length, std::string LogFile = "",
                             double Probability_Local_Update = 0.9,
-                            double Probability_Reconnect = 0.1 );
+                            double Probability_Reconnect = 0.1);
     void run_simulation(double J);
 protected:
+
+    std::string LogFile;
 
     double p_for_local_update;
     double p_for_reconnect;

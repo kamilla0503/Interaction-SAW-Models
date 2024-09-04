@@ -6,10 +6,11 @@
 #include <random>
 #include <fstream>
 #include <chrono>
+#include<queue>
 
 //used to increase length of SAWs for lattice side
 #ifndef OUT_Length
-#define OUT_Length 2
+#define OUT_Length 4
 #endif
 //used to define lattice nodes without spins (SAW does not go over this node)
 #ifndef NO_SAW_NODE
@@ -39,9 +40,9 @@ void SAW_model<SpinType>::LatticeInitialization() {
 
 XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(length) {
 #ifdef REGIME_2D
-    lattice = new Lattice_2D(L+OUT_Length);
+    lattice = new Lattice_2D(2*L+OUT_Length);
 #else
-    lattice = new Lattice_3D(L+OUT_Length);
+    lattice = new Lattice_3D(2*L+OUT_Length);
 #endif
     if (lattice!= nullptr) {
         LatticeInitialization();
@@ -52,6 +53,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(
 
 void XY_SAW_LongInteraction::SequenceOnLatticeInitialization(){
     sequence_on_lattice.resize(lattice->NumberOfNodes(),NO_XY_SPIN);
+    used_coords.resize(lattice->NumberOfNodes(), false  );
 }
 
 void XY_SAW_LongInteraction::StartConfiguration() {
@@ -135,7 +137,10 @@ double XY_SAW_LongInteraction::Energy() {
         while(spin_inner!=NO_XY_SPIN) {
             if (current_inner!=current_out) {
                 r = lattice->radius(current_inner, current_out);
-                r = sqrt(r);
+                r = std::sqrt(r);
+#ifdef XYSHORT
+                if (r < 1.001)
+#endif
                 H = H + (cos(spin_inner-spin_out))/ (r*r*r);
             }
 
@@ -159,7 +164,7 @@ std::mt19937 generator(URD_SEED+1);
 std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-void XY_SAW_LongInteraction::FlipMove_AddEnd(short direction, double spinValue) {
+void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     coord_t new_point = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
     double oldspin = sequence_on_lattice[start_conformation];
@@ -190,7 +195,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(short direction, double spinValue) 
     double q_ifaccept = distribution_urd(generator);
     if (q_ifaccept < p_metropolis) { // accept the new state
         E = new_E;
-
+        sequence_on_lattice[save_start_conformation] = NO_XY_SPIN;
         directions[save_start_conformation] = NO_SAW_NODE;
         directions[previous_monomers[end_conformation]] = direction;
     }
@@ -211,7 +216,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(short direction, double spinValue) 
     }
 }
 
-void XY_SAW_LongInteraction::FlipMove_AddStart(short direction, double spinValue) {
+void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
 
     coord_t new_point = lattice->map_of_contacts_int[lattice->ndim2() * start_conformation + direction];
     double oldspin = sequence_on_lattice[end_conformation];
@@ -242,10 +247,12 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(short direction, double spinValue
 
     if (q_ifaccept < p_metropolis) {
         E = new_E;
+        sequence_on_lattice[save_end_conformation] = NO_XY_SPIN;
         directions[end_conformation] = NO_SAW_NODE;
         directions[start_conformation] = lattice->inverse_steps[direction];
     }
-    else {//reject the new state
+    else {
+        //reject the new state
         //delete starte
         coord_t del = start_conformation;
         start_conformation = next_monomers[start_conformation];
@@ -261,8 +268,14 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(short direction, double spinValue
     }
 }
 
-void XY_SAW_LongInteraction::ClusterStep() {
-
+void XY_SAW_LongInteraction::ClusterStep(double flipdirection) {
+    std::uniform_int_distribution<long int> distribution_spin(0, L-1);
+#ifdef SEED
+    std::mt19937 generator_spin(URD_SEED+10);
+#else
+    std::mt19937 generator_spin(std::chrono::steady_clock::now().time_since_epoch().count());
+#endif
+    //long choose_spin = distribution_spin(generator_spin);
 }
 
 template<>
@@ -301,16 +314,37 @@ void SAW_model<double>::Reconnect(short direction) {
     }
     end_conformation=new_end;
     previous_monomers[new_end]=temp_prev_next;
-    next_monomers[new_end]=-1;
-    directions[new_end]=-1;
+    next_monomers[new_end]=NO_SAW_NODE;
+    directions[new_end]=NO_SAW_NODE;
 
 }
 
 void XY_SAW_LongInteraction::updateData() {
-    e2e_distance_2 << lattice->radius(start_conformation, end_conformation);
+    double r2 = lattice->radius(start_conformation, end_conformation);
+    e2e_distance_2 << r2;
     energy << E;
     energy_2 << E*E;
     energy_4 << E*E*E*E;
+
+    double sum_sin_1 = 0.0;
+    double sum_cos_1 = 0.0;
+    long int current = start_conformation;
+    for (int e = 0; e < L ; e++)
+    {
+        sum_sin_1  += sin(sequence_on_lattice[current]);
+        sum_cos_1  += cos(sequence_on_lattice[current]);
+        current = next_monomers[current];
+    }
+
+    sum_sin_1/=L;
+    sum_cos_1/=L;
+
+    mags_sin << sum_sin_1;
+    mags_cos << sum_cos_1;
+
+    magnetization_2 <<sum_sin_1*sum_sin_1 + sum_cos_1*sum_cos_1;
+    magnetization_4 << (sum_sin_1*sum_sin_1 + sum_cos_1*sum_cos_1)*(sum_sin_1*sum_sin_1 + sum_cos_1*sum_cos_1);
+
 }
 
 
@@ -322,6 +356,12 @@ void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
     out << energy.mean() << " " << energy.errorbar() << " ";
     out << energy_2.mean() << " " << energy_2.errorbar() << " ";
     out << energy_4.mean() << " " << energy_4.errorbar() << " ";
+
+    out << mags_sin.mean() << " " << mags_sin.errorbar() << " ";
+    out << mags_cos.mean() << " " << mags_cos.errorbar() << " ";
+
+    out << magnetization_2.mean() << " " << magnetization_2.errorbar() << " ";
+    out << magnetization_4.mean() << " " << magnetization_4.errorbar() << " ";
 
     out << std::endl;
 }

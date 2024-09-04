@@ -8,6 +8,7 @@
 
 using namespace std;
 
+#ifdef REGIME_2D
 vector<vector<tuple<int, int>>> get_all_conformations(int length){
     static vector<tuple<int,int>> steps = {make_tuple(1, 0), make_tuple(-1, 0), make_tuple(0, 1),  make_tuple(0, -1)};
     vector<vector<tuple<int, int>>> result;
@@ -22,7 +23,6 @@ vector<vector<tuple<int, int>>> get_all_conformations(int length){
         vector<vector<tuple<int, int>>>  new_conformations;
         for (int i=0; i<result.size(); i++){
             for (tuple<int, int> step : steps){
-                //new_point = make_tuple(get<0>(result[i][-1])+get<0>(step), get<1>(result[i][-1])+get<1>(step) );
                 new_point = make_tuple(get<0>(result[i].back())+get<0>(step), get<1>(result[i].back())+get<1>(step) );
                 if(find(result[i].begin(), result[i].end(), new_point)!=result[i].end() ){
                     continue;
@@ -36,17 +36,76 @@ vector<vector<tuple<int, int>>> get_all_conformations(int length){
         return new_conformations;
     }
 }
+#else
+vector<vector<tuple<int, int, int>>> get_all_conformations(int length){
+    static vector<tuple<int,int,int>> steps = {make_tuple(1, 0, 0),
+                                           make_tuple(0, 1, 0),
+                                           make_tuple(0, 0, 1),
+                                           make_tuple(-1, 0, 0),
+                                           make_tuple(0, -1, 0),
+                                           make_tuple(0, 0, -1)
+                                            };
+    vector<vector<tuple<int, int, int>>> result;
+    vector<tuple<int, int, int>> temp;
+    tuple<int, int, int> new_point;
+
+    if(length==1){
+        result.push_back({make_tuple(0, 0, 0)});
+        return result;
+    }
+    else {
+        result=get_all_conformations(length-1);
+        vector<vector<tuple<int, int, int>>>  new_conformations;
+        for (int i=0; i<result.size(); i++){
+            for (tuple<int, int, int> step : steps){
+                new_point = make_tuple(get<0>(result[i].back())+get<0>(step),
+                                        get<1>(result[i].back())+get<1>(step),
+                                        get<2>(result[i].back())+get<2>(step));
+                if(find(result[i].begin(), result[i].end(), new_point)!=result[i].end() ){
+                    continue;
+                }
+                temp = result[i];
+                temp.push_back(new_point);
+                new_conformations.push_back(temp);
+                temp.clear();
+            }
+        }
+        return new_conformations;
+    }
+}
+#endif
 
 
+#ifdef REGIME_2D
 double radius2(const tuple<int, int>& start, const tuple<int, int>& end) {
     int xdiff = get<0>(end) - get<0>(start);
     int ydiff = get<1>(end) - get<1>(start);
     return xdiff*xdiff + ydiff*ydiff;
 }
+#else
+double radius2(const tuple<int, int, int>& start, const tuple<int, int, int>& end) {
+    int xdiff = get<0>(end) - get<0>(start);
+    int ydiff = get<1>(end) - get<1>(start);
+    int zdiff = get<2>(end) - get<2>(start);
+    return xdiff*xdiff + ydiff*ydiff + zdiff*zdiff;
+}
+#endif
 
+
+
+
+
+
+#ifdef REGIME_2D
 double Hamiltonian(const vector<tuple<int, int>>&  conformation,
                    const vector<double>& spin_sequence,
-                   double J) {
+                   double J)
+#else
+double Hamiltonian(const vector<tuple<int, int, int>>&  conformation,
+                   const vector<double>& spin_sequence,
+                   double J)
+#endif
+{
     double r;
     double H = 0.;
     int i = 0;
@@ -79,7 +138,11 @@ void MeanValues(int L) {
     long double R = 0;
     long double r2;
 
+#ifdef REGIME_2D
     vector<vector<tuple<int, int>>> conformations = get_all_conformations(L);
+#else
+    vector<vector<tuple<int, int, int>>> conformations = get_all_conformations(L);
+#endif
     vector<double> spin_sequence;
     std::uniform_real_distribution<double> distribution_theta(0, 2.0 * PI);
     std::mt19937 generators_theta;
@@ -99,7 +162,7 @@ void MeanValues(int L) {
             Z = 0;
             R = 0;
             E = 0;
-            for (vector<tuple<int, int>> conformation: conformations) {
+            for ( auto conformation: conformations) {
                 r2 = radius2(conformation.front(),
                              conformation.back());
                 for (int n_conf = 0; n_conf < 10000; n_conf++) {

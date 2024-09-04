@@ -121,13 +121,11 @@ double Lattice_2D::radius(const coord_t& start, const coord_t& end) {
     long end_y = end / lattice_side;
 
     //torus distance;
-
-    //расстояние на торе
-    long xdiff = abs(end_x - start_x);
+    double xdiff = abs(end_x - start_x);
     if (xdiff > (lattice_side/2))
         xdiff = lattice_side - xdiff;
 
-    long ydiff = abs(end_y - start_y);
+    double ydiff = abs(end_y - start_y);
     if (ydiff > (lattice_side / 2))
         ydiff = lattice_side - ydiff;
 
@@ -137,6 +135,27 @@ double Lattice_2D::radius(const coord_t& start, const coord_t& end) {
 }
 
 double Lattice_3D::radius(const coord_t& start, const coord_t& end) {
+    long start_x = start % lattice_side;
+    long start_y = (start % (lattice_side * lattice_side)) /lattice_side;
+    long start_z = start / (lattice_side * lattice_side);
+    long end_x = end % lattice_side;
+    long end_y = (end % (lattice_side * lattice_side)) /lattice_side;
+    long end_z = end / (lattice_side * lattice_side);
 
-    return 0;
+    //torus distance;
+    double xdiff = abs(end_x - start_x);
+    if (xdiff > (lattice_side/2))
+        xdiff = lattice_side - xdiff;
+
+    double ydiff = abs(end_y - start_y);
+    if (ydiff > (lattice_side / 2))
+        ydiff = lattice_side - ydiff;
+
+    double zdiff = abs(end_z - start_z);
+    if (zdiff > (lattice_side / 2))
+        zdiff = lattice_side - zdiff;
+
+    double r = xdiff *xdiff  + ydiff*ydiff + zdiff*zdiff;
+
+    return r;
 }
