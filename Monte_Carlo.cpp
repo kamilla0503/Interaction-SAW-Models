@@ -7,7 +7,7 @@
 #include <fstream>
 
 #ifndef  MC_STEPS
-#define MC_STEPS 100000000
+#define MC_STEPS 10000000000
 #endif
 
 #define URD_SEED 121
