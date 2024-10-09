@@ -24,6 +24,9 @@
 
 #define URD_SEED 121
 
+#ifndef R_POWER
+#define R_POWER 3
+#endif
 
 template<class SpinType>
 SAW_model<SpinType>::SAW_model(long length) {
@@ -36,6 +39,7 @@ void SAW_model<SpinType>::LatticeInitialization() {
     next_monomers.resize(lattice->NumberOfNodes(),NO_SAW_NODE );
     previous_monomers.resize(lattice->NumberOfNodes(), NO_SAW_NODE );
     directions.resize(lattice->NumberOfNodes(),NO_SAW_NODE ); //directions enumerated from o to dim2()
+    lattice_nodes_positions.resize(number_of_spins(),NO_SAW_NODE);
 }
 
 XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(length) {
@@ -60,11 +64,14 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 #ifdef STARTDEFAULT
     start_conformation=0;
     end_conformation=L-1;
+    lattice_nodes_positions[0] = start_conformation;
+    lattice_nodes_positions[number_of_spins()-1] = end_conformation;
     for (int i = 1; i < L-1; i++)
     {
         previous_monomers[i]=i-1;
         sequence_on_lattice[i]=PI;
         next_monomers[i]=i+1;
+        lattice_nodes_positions[i] = i;
     }
     sequence_on_lattice[0] = PI;
     sequence_on_lattice[end_conformation] = PI; //начальная последовательность
@@ -78,25 +85,34 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 #elif STARTHALF
     coord_t middle = number_of_spins()/2 - 1;
     start_conformation=0;
+    lattice_nodes_positions[0] = start_conformation;
     //First part
+    int i_pos = 0;
     for (int i = 1; i < middle; i++)
     {
         previous_monomers[i]=lattice->map_of_contacts_int[lattice->ndim2()*i +1];
         sequence_on_lattice[i]=PI;
         next_monomers[i]=lattice->map_of_contacts_int[lattice->ndim2()*i +0];
         directions[i]=0;
+        lattice_nodes_positions[i] = i;
     }
     //middle
+    i_pos = middle;
     previous_monomers[middle]=lattice->map_of_contacts_int[lattice->ndim2()*middle + 1];
     sequence_on_lattice[middle]=PI;
     next_monomers[middle]=lattice->map_of_contacts_int[lattice->ndim2()*middle + 2];
     directions[middle] = 2; //Go Up
+    lattice_nodes_positions[i_pos] = middle;
+    i_pos += 1;
     middle = next_monomers[middle];
     previous_monomers[middle]=lattice->map_of_contacts_int[lattice->ndim2()*(middle)+ 3];
     sequence_on_lattice[middle]=PI;
     next_monomers[middle]=lattice->map_of_contacts_int[lattice->ndim2()*(middle) + 1];
     directions[middle] = 1;
+    lattice_nodes_positions[i_pos] = middle;
+    i_pos += 1;
     middle = next_monomers[middle];
+    lattice_nodes_positions[i_pos] = middle;
     for (int i = number_of_spins()/2 + 2; i < number_of_spins() ; i++)
     {
         previous_monomers[middle ]=lattice->map_of_contacts_int[lattice->ndim2()*middle  +0];
@@ -104,17 +120,23 @@ void XY_SAW_LongInteraction::StartConfiguration() {
         next_monomers[middle ]=lattice->map_of_contacts_int[lattice->ndim2()*middle  +1];
         directions[middle] = 1;
         middle = next_monomers[middle];
+        lattice_nodes_positions[i] = middle;
     }
     end_conformation=middle;
     sequence_on_lattice[0] = PI;
     sequence_on_lattice[end_conformation] = PI; //начальная последовательность
     next_monomers[0] = lattice->map_of_contacts_int[lattice->ndim2()*0 +0];;
     previous_monomers[end_conformation] = lattice->map_of_contacts_int[lattice->ndim2()*end_conformation +0]; ;
+    lattice_nodes_positions[number_of_spins() - 1] = end_conformation;
     std::fstream myStream;
     std::string filename = "For_Debug_AStart.out";
     myStream.open(filename,std::fstream::out);
+    for (long j =0; j < number_of_spins() ; j++){
+       myStream << lattice_nodes_positions[j] << " ";
+    }
+    myStream << std::endl;
     for (long j =0; j< lattice->NumberOfNodes() ; j++){
-        myStream << j << " " << next_monomers[j] << " " <<  sequence_on_lattice[j];
+        myStream << j << " " << next_monomers[j] << " " << previous_monomers[j] << " " <<  sequence_on_lattice[j];
         myStream << std::endl;
     }
     myStream << std::endl;
@@ -125,36 +147,29 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 double XY_SAW_LongInteraction::Energy() {
     double H = 0;
-
-    coord_t current_out = start_conformation;
-    double spin_out = sequence_on_lattice[current_out];
-    coord_t current_inner;
-    double spin_inner;
     double r;
-    while (spin_out!= NO_XY_SPIN) {
-        current_inner = start_conformation;
-        spin_inner = sequence_on_lattice[current_inner];
-        while(spin_inner!=NO_XY_SPIN) {
-            if (current_inner!=current_out) {
-                r = lattice->radius(current_inner, current_out);
-                r = std::sqrt(r);
-#ifdef XYSHORT
-                if (r < 1.001)
-#endif
-                H = H + (cos(spin_inner-spin_out))/ (r*r*r);
-            }
-
-            current_inner = next_monomers[current_inner];
-            if (current_inner == NO_SAW_NODE) break;
-            spin_inner = sequence_on_lattice[current_inner];
-        }
-
-        current_out = next_monomers[current_out];
-        if (current_out == NO_SAW_NODE) break;
-        spin_out = sequence_on_lattice[current_out];
+  /*  std::cout << "Start!" << std::endl;
+    for ( long i = 0; i < number_of_spins(); i++) {
+        std::cout << lattice_nodes_positions[i] << " ";
     }
-
-    return -H/2.0;
+    std::cout << std::endl;
+   // std::cout << "Start!" << std::endl;
+    for ( long i = 0; i < number_of_spins(); i++) {
+        std::cout << sequence_on_lattice[lattice_nodes_positions[i]] << " ";
+    }
+    std::cout << std::endl; */
+    for ( long i = 0; i < number_of_spins(); i++) {
+        for ( long j = i + 1; j < number_of_spins(); j++) {
+            r = lattice->radius(lattice_nodes_positions[i], lattice_nodes_positions[j]);
+            //r = std::sqrt(r);
+           // std::cout << lattice_nodes_positions[i] << " "
+           // << lattice_nodes_positions[j] << " " << r << " " << std::pow(r, R_POWER/2.0) << " " << H << std::endl;
+            r = std::pow(r, R_POWER/2.0);
+            H = H + (std::cos(sequence_on_lattice[lattice_nodes_positions[i]]-sequence_on_lattice[lattice_nodes_positions[j]]))/ r;
+        }
+       // std::cout << H << std::endl;
+    }
+    return -H;
 }
 
 std::uniform_real_distribution<double> distribution_urd(0.0,1.0);
@@ -187,12 +202,17 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     previous_monomers[new_point] = end_conformation;
     end_conformation = new_point;
 
+    for (int i = 1; i < number_of_spins(); i++) {
+        lattice_nodes_positions[i-1] = lattice_nodes_positions[i];
+    }
+    lattice_nodes_positions[number_of_spins()-1] = end_conformation;
     double new_E = Energy();
 
     double p1 = exp( -( J * (new_E - E) ));
     double p_metropolis = std::min(1.0, p1);
 
-    double q_ifaccept = distribution_urd(generator);
+    double q_ifaccept = distribution_urd(generator) ;
+
     if (q_ifaccept < p_metropolis) { // accept the new state
         E = new_E;
         sequence_on_lattice[save_start_conformation] = NO_XY_SPIN;
@@ -213,6 +233,11 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         next_monomers[save_start_conformation] = start_conformation;
         start_conformation = save_start_conformation;
         sequence_on_lattice[start_conformation] = oldspin;
+
+        for (int i = number_of_spins() - 1 ; i > 0; i--) {
+            lattice_nodes_positions[i] = lattice_nodes_positions[i-1];
+        }
+        lattice_nodes_positions[0] = start_conformation;
     }
 }
 
@@ -239,11 +264,15 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     next_monomers[new_point] = start_conformation;
     start_conformation = new_point;
 
+    for (int i = number_of_spins() - 1 ; i > 0; i--) {
+        lattice_nodes_positions[i] = lattice_nodes_positions[i-1];
+    }
+    lattice_nodes_positions[0] = start_conformation;
     double new_E = Energy();
 
     double p1 = exp( -( J * (new_E - E) ));
     double p_metropolis = std::min(1.0, p1);
-    double q_ifaccept = distribution_urd(generator);
+    double q_ifaccept = distribution_urd(generator) ;
 
     if (q_ifaccept < p_metropolis) {
         E = new_E;
@@ -265,6 +294,11 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         previous_monomers[save_end_conformation] = end_conformation;
         end_conformation = save_end_conformation;
         sequence_on_lattice[end_conformation] = oldspin;
+
+        for (int i = 1; i < number_of_spins(); i++) {
+            lattice_nodes_positions[i-1] = lattice_nodes_positions[i];
+        }
+        lattice_nodes_positions[number_of_spins()-1] = end_conformation;
     }
 }
 
@@ -317,6 +351,27 @@ void SAW_model<double>::Reconnect(short direction) {
     next_monomers[new_end]=NO_SAW_NODE;
     directions[new_end]=NO_SAW_NODE;
 
+    lattice_nodes_positions[0] = start_conformation;
+    c = next_monomers[start_conformation];
+    for (int i = 1; i < number_of_spins(); i++) {
+        lattice_nodes_positions[i] = c;
+        c = next_monomers[c];
+    }
+
+  //  std::cout << "Reconnect" << std::endl;
+   /* for (int i = 0; i < number_of_spins(); i++) {
+        //std::cout << lattice_nodes_positions[i] << " ";
+    }
+   // std::cout << std::endl;
+    for (int i = 0; i < number_of_spins() -1 ; i++) {
+        if (lattice->radius(lattice_nodes_positions[i],
+                                     lattice_nodes_positions[i+1])!=1) {
+            std::cout << "Reconnect problems" << std::endl;
+        }
+       // std::cout << lattice->radius(lattice_nodes_positions[i],
+        //                             lattice_nodes_positions[i+1]) << " ";
+    } */
+  //  std::cout << std::endl;
 }
 
 void XY_SAW_LongInteraction::updateData() {

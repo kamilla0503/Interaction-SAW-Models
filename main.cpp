@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     double J = std::stod(argv[2]);
     MC_Interacting_SAW_XY mcxysaw(L, outFile);
     mcxysaw.run_simulation(J);
-    mcxysaw.~MC_Interacting_SAW_XY();
+    //mcxysaw.~MC_Interacting_SAW_XY();
 
     auto stop = high_resolution_clock::now();
 

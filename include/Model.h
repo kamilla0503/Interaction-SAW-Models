@@ -59,6 +59,8 @@ protected:
     std::valarray<short> directions; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
 
     mc_stats::ScalarObservable<double> e2e_distance_2;
+
+    std::valarray<long> lattice_nodes_positions;
 };
 
 //Class for XY long-interacting Model on SAWs

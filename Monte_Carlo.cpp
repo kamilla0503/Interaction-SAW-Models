@@ -7,7 +7,7 @@
 #include <fstream>
 
 #ifndef  MC_STEPS
-#define MC_STEPS 10000000000
+#define MC_STEPS 99000000 //10000000000
 #endif
 
 #define URD_SEED 121
@@ -65,6 +65,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     long long n_steps_to_update = 10*model->number_of_spins()*model->number_of_spins();
 
     for (long long i = 0; i < MC_STEPS + 20; ++i) {
+        //if (i>20) return;
         mc_step_type = distribution_urd(generator_urd) ;
         if (mc_step_type < p_for_local_update) {
             flipMoveType = distribution_urd(generator_urd) ;
