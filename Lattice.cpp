@@ -20,7 +20,8 @@ Lattice_3D::Lattice_3D(long max_seq_size) : Lattice(max_seq_size) {
 void Lattice_2D::create_lattice() {
     long int x, y;
     ldiv_t n;
-    map_of_contacts_int.resize(lattice_side*lattice_side*ndim2());
+    //map_of_contacts_int.resize(lattice_side*lattice_side*ndim2());
+    map_of_contacts_int = new long [lattice_side*lattice_side*ndim2()];
     for (long i =0; i<number_of_nodes ; i++){
         map_of_contacts_int[ndim2()*i] = i+1;
         map_of_contacts_int[ndim2()*i+1] = i-1;

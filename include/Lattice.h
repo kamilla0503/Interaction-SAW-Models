@@ -19,7 +19,8 @@ public:
 
     virtual double radius(const coord_t& start, const coord_t& end) = 0;
 
-    std::valarray<coord_t> map_of_contacts_int;
+    //std::valarray<coord_t> map_of_contacts_int;
+    long* map_of_contacts_int;
     std::valarray<int> inverse_steps;
 
     long *d_map_of_contacts;
