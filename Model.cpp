@@ -148,26 +148,13 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 double XY_SAW_LongInteraction::Energy() {
     double H = 0;
     double r;
-  /*  std::cout << "Start!" << std::endl;
-    for ( long i = 0; i < number_of_spins(); i++) {
-        std::cout << lattice_nodes_positions[i] << " ";
-    }
-    std::cout << std::endl;
-   // std::cout << "Start!" << std::endl;
-    for ( long i = 0; i < number_of_spins(); i++) {
-        std::cout << sequence_on_lattice[lattice_nodes_positions[i]] << " ";
-    }
-    std::cout << std::endl; */
+
     for ( long i = 0; i < number_of_spins(); i++) {
         for ( long j = i + 1; j < number_of_spins(); j++) {
             r = lattice->radius(lattice_nodes_positions[i], lattice_nodes_positions[j]);
-            //r = std::sqrt(r);
-           // std::cout << lattice_nodes_positions[i] << " "
-           // << lattice_nodes_positions[j] << " " << r << " " << std::pow(r, R_POWER/2.0) << " " << H << std::endl;
             r = std::pow(r, R_POWER/2.0);
             H = H + (std::cos(sequence_on_lattice[lattice_nodes_positions[i]]-sequence_on_lattice[lattice_nodes_positions[j]]))/ r;
         }
-       // std::cout << H << std::endl;
     }
     return -H;
 }
@@ -358,20 +345,6 @@ void SAW_model<double>::Reconnect(short direction) {
         c = next_monomers[c];
     }
 
-  //  std::cout << "Reconnect" << std::endl;
-   /* for (int i = 0; i < number_of_spins(); i++) {
-        //std::cout << lattice_nodes_positions[i] << " ";
-    }
-   // std::cout << std::endl;
-    for (int i = 0; i < number_of_spins() -1 ; i++) {
-        if (lattice->radius(lattice_nodes_positions[i],
-                                     lattice_nodes_positions[i+1])!=1) {
-            std::cout << "Reconnect problems" << std::endl;
-        }
-       // std::cout << lattice->radius(lattice_nodes_positions[i],
-        //                             lattice_nodes_positions[i+1]) << " ";
-    } */
-  //  std::cout << std::endl;
 }
 
 void XY_SAW_LongInteraction::updateData() {

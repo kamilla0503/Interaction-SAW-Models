@@ -1,7 +1,8 @@
 //
 // Created by Kamilla Faizullina on 01.04.2024.
 //
-
+#include <cuda_runtime_api.h>
+#include <cuda.h>
 #include<stdlib.h>
 #include<fstream>
 #include "Lattice.h"
