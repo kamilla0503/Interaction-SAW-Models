@@ -63,7 +63,8 @@ void Lattice_2D::create_lattice() {
 void Lattice_3D::create_lattice() {
     coord_t x, y,z;
     ldiv_t n;
-    map_of_contacts_int.resize(lattice_side*lattice_side*lattice_side*ndim2());
+    //map_of_contacts_int.resize(lattice_side*lattice_side*lattice_side*ndim2());
+    map_of_contacts_int = new long [lattice_side*lattice_side*ndim2()];
     coord_t l;
     for (long i =0; i<number_of_nodes ; i++){
         map_of_contacts_int[ndim2() * i] = i + 1;
