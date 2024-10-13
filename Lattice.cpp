@@ -112,6 +112,10 @@ void Lattice_3D::create_lattice() {
         myStream << std::endl;
     }
 #endif
+    cudaMalloc(&d_map_of_contacts, lattice_side*lattice_side*ndim2()* sizeof(long));
+    cudaMemcpy(d_map_of_contacts, map_of_contacts_int,
+               lattice_side*lattice_side*ndim2()* sizeof(long), cudaMemcpyHostToDevice);
+
 }
 
 double Lattice_2D::radius(const coord_t& start, const coord_t& end) {

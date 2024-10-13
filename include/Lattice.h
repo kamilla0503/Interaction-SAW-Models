@@ -21,6 +21,9 @@ public:
 
     std::valarray<coord_t> map_of_contacts_int;
     std::valarray<int> inverse_steps;
+
+    long *d_map_of_contacts;
+
 protected:
     virtual void create_lattice() = 0;
 
