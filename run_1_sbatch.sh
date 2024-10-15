@@ -1,5 +1,5 @@
-resultFolder=data/XY_MC/Run_Start/3D/
-g++ *.cpp -O3 -I include -o testMC -std=c++17 -DREGIME_3D -DSTARTHALF -DSEED
+resultFolder=data/XY_MC/Run_Start/3D_2/
+g++ *.cpp -O3 -march=native -ffast-math -I include -o testMC -std=c++17 -DREGIME_3D -DSTARTHALF -DSEED
 
 for L in 100 200 300 #4 5 6 7 #5 6 7 8 9 10 11
 do
