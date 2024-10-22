@@ -5,6 +5,7 @@
 #include "MonteCarlo.h"
 #include <iostream>
 #include <fstream>
+#include <Kokkos_Core.hpp>
 
 #ifndef  MC_STEPS
 #define MC_STEPS 99000000 //10000000000
@@ -64,9 +65,15 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     long long n_steps_to_equlibrium = 100*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 10*model->number_of_spins()*model->number_of_spins();
 
+    //Kokkos::Tools::InitArguments args;
+    //args.num_threads = 4;
+//    Kokkos::initialize(Kokkos::InitializationSettings()
+//                               .set_disable_warnings(false)
+//                               .set_num_threads(4));
     for (long long i = 0; i < MC_STEPS + 20; ++i) {
         //if (i>20) return;
         mc_step_type = distribution_urd(generator_urd) ;
+       // std::cout << i << " " << mc_step_type << std::endl;
         if (mc_step_type < p_for_local_update) {
             flipMoveType = distribution_urd(generator_urd) ;
             step = distribution_uid_steps(generators_steps);
@@ -88,7 +95,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
         }
 
         if (i < n_steps_to_equlibrium) continue;
-
+        //std::cout << "EQ achieved" << std::endl;
         if (i%(n_steps_to_update)==0)
         model->updateData();
 
@@ -96,6 +103,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             model->out_MC_data(MCDataStream, i);
         }
     }
+    //Kokkos::finalize();
 
     MCDataStream.close();
 }

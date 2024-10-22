@@ -3,6 +3,7 @@
 
 #include <valarray>
 #include <vector>
+#include<Kokkos_Core.hpp>
 
 typedef long coord_t;
 
@@ -19,8 +20,14 @@ public:
 
     virtual double radius(const coord_t& start, const coord_t& end) = 0;
 
-    std::valarray<coord_t> map_of_contacts_int;
-    std::valarray<int> inverse_steps;
+    std::valarray<coord_t> map_of_contacts_int_h;
+    std::valarray<int> inverse_steps_h;
+
+    Kokkos::View<long*> map_of_contacts_int;
+    Kokkos::View<long*>::HostMirror h_map_of_contacts_int_h;
+    Kokkos::View<int*> inverse_steps;
+    Kokkos::View<int*>::HostMirror h_inverse_steps_h;
+
 protected:
     virtual void create_lattice() = 0;
 
@@ -29,6 +36,17 @@ protected:
     std::vector<std::vector<int> > steps;
 };
 
+class Lattice_3D : public Lattice {
+public:
+    Lattice_3D(long max_seq_size = 10);
+    inline const short int ndim() { return 3; }
+    inline const short int ndim2() {return 6;}
+
+    KOKKOS_INLINE_FUNCTION double radius(const coord_t& start, const coord_t& end);
+
+private:
+    void create_lattice();
+};
 
 class Lattice_2D : public Lattice {
 public:
@@ -41,20 +59,6 @@ public:
 private:
     void create_lattice();
 };
-
-
-class Lattice_3D : public Lattice {
-public:
-    Lattice_3D(long max_seq_size = 10);
-    inline const short int ndim() { return 3; }
-    inline const short int ndim2() {return 6;}
-
-    double radius(const coord_t& start, const coord_t& end);
-
-private:
-    void create_lattice();
-};
-
 
 
 #endif //INTERACTION_SAW_MODELS_LATTICE_H

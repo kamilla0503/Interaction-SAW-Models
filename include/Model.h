@@ -7,6 +7,7 @@
 
 #include "Lattice.h"
 #include "observable.h"
+#include<Kokkos_Core.hpp>
 
 const double PI = std::atan(1.0)*4;
 
@@ -51,16 +52,26 @@ public:
     virtual void updateData() = 0;
 
 protected:
-    std::valarray<SpinType> sequence_on_lattice;
-    std::valarray<long> next_monomers;
-    std::valarray<long> previous_monomers;
+    std::valarray<SpinType> sequence_on_lattice_h;
+    Kokkos::View<SpinType*>::HostMirror h_sequence_on_lattice_h;
+    std::valarray<long> next_monomers_h;
+    Kokkos::View<long*> next_monomers;
+    Kokkos::View<long*>  previous_monomers;
+    std::valarray<long> previous_monomers_h;
     long end_conformation = 0;
     long start_conformation = 0;
     std::valarray<short> directions; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
 
     mc_stats::ScalarObservable<double> e2e_distance_2;
 
-    std::valarray<long> lattice_nodes_positions;
+    long* lattice_nodes_positions_h;
+    Kokkos::View<long*>::HostMirror h_lattice_nodes_positions_h;
+
+    Kokkos::View<long*>::HostMirror h_next_monomers_h;
+    Kokkos::View<long*>::HostMirror h_previous_monomers_h;
+
+    Kokkos::View<long*> lattice_nodes_positions;
+    Kokkos::View<SpinType*> sequence_on_lattice;
 };
 
 //Class for XY long-interacting Model on SAWs
