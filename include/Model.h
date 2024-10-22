@@ -23,7 +23,7 @@ public:
     }
     Lattice *lattice = nullptr;
     void set_J (double J_) {J = J_;}
-protected:
+//protected:
     //Model-specific Energy function; returns double as J is expected to be double also
     virtual double Energy () = 0;
 
@@ -51,9 +51,9 @@ public:
     virtual void out_MC_data(std::fstream& out, long long n_steps) = 0 ;
     virtual void updateData() = 0;
 
-protected:
+//protected:
     std::valarray<SpinType> sequence_on_lattice_h;
-    Kokkos::View<SpinType*>::HostMirror h_sequence_on_lattice_h;
+    typename Kokkos::View<SpinType*>::HostMirror h_sequence_on_lattice_h;
     std::valarray<long> next_monomers_h;
     Kokkos::View<long*> next_monomers;
     Kokkos::View<long*>  previous_monomers;
@@ -91,7 +91,7 @@ public:
     void out_MC_data(std::fstream& out, long long n_steps);
     void  updateData();
 
-protected:
+//protected:
     std::valarray<bool> used_coords;
 
     double Energy ();

@@ -18,7 +18,7 @@ public:
     inline long int lattice_size() {return lattice_side;};
     inline long int NumberOfNodes () {return number_of_nodes;};
 
-    virtual double radius(const coord_t& start, const coord_t& end) = 0;
+    KOKKOS_INLINE_FUNCTION virtual double radius(const coord_t& start, const coord_t& end) = 0;
 
     std::valarray<coord_t> map_of_contacts_int_h;
     std::valarray<int> inverse_steps_h;
@@ -54,7 +54,7 @@ public:
     inline const short int ndim() { return 2; }
     inline const short int ndim2() {return 4;}
 
-    double radius(const coord_t& start, const coord_t& end);
+    KOKKOS_INLINE_FUNCTION double radius(const coord_t& start, const coord_t& end);
 
 private:
     void create_lattice();
