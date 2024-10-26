@@ -424,11 +424,11 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     //Kokkos::fence();
 }
 
-KOKKOS_INLINE_FUNCTION
+//KOKKOS_INLINE_FUNCTION
 template<>
-void SAW_model<double>::Reconnect(short direction) {
+__host__ __device__ void SAW_model<double>::Reconnect(short direction) {
     //Kokkos::fence();
-    Kokkos::parallel_for("SingleUpdate", 1, KOKKOS_LAMBDA(const int)
+    Kokkos::parallel_for("SingleUpdate", Kokkos::RangePolicy<>(0, 1), KOKKOS_LAMBDA(const int)
     {
     long c = 0; //
     coord_t step_coord = lattice->map_of_contacts_int[lattice->ndim2()*end_conformation + direction];
