@@ -41,10 +41,10 @@ public:
     SAW_model() {};
     SAW_model(long length);
 
-    void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
+    KOKKOS_INLINE_FUNCTIONvoid Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
-    virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
-    virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
+    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
+    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
    // virtual void ClusterStep (double flipdirection) = 0; //depends on spin variables
 
     void LatticeInitialization();
