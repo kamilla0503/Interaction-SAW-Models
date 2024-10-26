@@ -8,6 +8,8 @@
 #include "Lattice.h"
 #include "observable.h"
 #include<Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
+
 
 const double PI = std::atan(1.0)*4;
 
@@ -25,7 +27,7 @@ public:
     void set_J (double J_) {J = J_;}
 //protected:
     //Model-specific Energy function; returns double as J is expected to be double also
-    virtual double Energy () = 0;
+    KOKKOS_INLINE_FUNCTION virtual double Energy () = 0;
 
     long L; //Length of the model chain
     double E; //current value for energy; double as J
@@ -43,7 +45,7 @@ public:
 
     virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
     virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
-    virtual void ClusterStep (double flipdirection) = 0; //depends on spin variables
+   // virtual void ClusterStep (double flipdirection) = 0; //depends on spin variables
 
     void LatticeInitialization();
 
@@ -60,7 +62,8 @@ public:
     std::valarray<long> previous_monomers_h;
     long end_conformation = 0;
     long start_conformation = 0;
-    std::valarray<short> directions; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
+    std::valarray<short> directions_h; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
+    Kokkos::View<short*>  directions;
 
     mc_stats::ScalarObservable<double> e2e_distance_2;
 
@@ -69,6 +72,7 @@ public:
 
     Kokkos::View<long*>::HostMirror h_next_monomers_h;
     Kokkos::View<long*>::HostMirror h_previous_monomers_h;
+    Kokkos::View<short*>::HostMirror h_directions_h;
 
     Kokkos::View<long*> lattice_nodes_positions;
     Kokkos::View<SpinType*> sequence_on_lattice;
@@ -80,9 +84,9 @@ public:
     XY_SAW_LongInteraction() {};
     XY_SAW_LongInteraction(long length);
 
-    void FlipMove_AddEnd (long direction, double spinValue);
-    void FlipMove_AddStart(long direction, double spinValue);
-    void ClusterStep (double flipdirection);
+    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue);
+    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue);
+   // KOKKOS_INLINE_FUNCTION void ClusterStep (double flipdirection);
 
     void SequenceOnLatticeInitialization();
     void StartConfiguration();
@@ -94,7 +98,7 @@ public:
 //protected:
     std::valarray<bool> used_coords;
 
-    double Energy ();
+    KOKKOS_INLINE_FUNCTION double Energy ();
 
     mc_stats::ScalarObservable<double> energy;
     mc_stats::ScalarObservable<double> energy_2;
@@ -104,6 +108,9 @@ public:
     mc_stats::ScalarObservable<double> mags_cos;
     mc_stats::ScalarObservable<double> magnetization_2;
     mc_stats::ScalarObservable<double> magnetization_4;
+
+
+    Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace> rand_pool;
 };
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H

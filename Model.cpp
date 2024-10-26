@@ -7,7 +7,7 @@
 #include <fstream>
 #include <chrono>
 #include<queue>
-
+#include <Kokkos_Random.hpp>
 
 //used to increase length of SAWs for lattice side
 #ifndef OUT_Length
@@ -39,7 +39,7 @@ template<class SpinType>
 void SAW_model<SpinType>::LatticeInitialization() {
     next_monomers_h.resize(lattice->NumberOfNodes(),NO_SAW_NODE );
     previous_monomers_h.resize(lattice->NumberOfNodes(), NO_SAW_NODE );
-    directions.resize(lattice->NumberOfNodes(),NO_SAW_NODE ); //directions enumerated from o to dim2()
+    directions_h.resize(lattice->NumberOfNodes(),NO_SAW_NODE ); //directions enumerated from o to dim2()
     lattice_nodes_positions_h = new long [number_of_spins()]{NO_SAW_NODE};
     //lattice_nodes_positions_h.resize(number_of_spins(),NO_SAW_NODE);
 }
@@ -55,6 +55,8 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(
         SequenceOnLatticeInitialization();
         StartConfiguration();
     }
+    rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
+    //rand_pool.init(12345,256);
 }
 
 void XY_SAW_LongInteraction::SequenceOnLatticeInitialization(){
@@ -76,6 +78,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     previous_monomers = Kokkos::View<long*>("previous_monomers", lattice->NumberOfNodes());
     h_next_monomers_h = Kokkos::create_mirror_view(next_monomers);
     h_previous_monomers_h  = Kokkos::create_mirror_view(previous_monomers);
+
+    directions = Kokkos::View<short*>("directions", lattice->NumberOfNodes());
+    h_directions_h = Kokkos::create_mirror_view(directions);
+
 #ifdef STARTDEFAULT
     start_conformation=0;
     end_conformation=L-1;
@@ -95,7 +101,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //E =  -(L-1); //Hamiltonian out of (n-1) pairs of spins
     for (int i = 0; i < L-1; i++)
     {
-        directions[i]=0; //all directions are the right moves
+        directions_h[i]=0; //all directions_h are the right moves
     }
 #elif STARTHALF
     coord_t middle = number_of_spins()/2 - 1;
@@ -108,7 +114,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
         previous_monomers_h[i]=lattice->map_of_contacts_int[lattice->ndim2()*i +1];
         sequence_on_lattice_h[i]=PI;
         next_monomers_h[i]=lattice->map_of_contacts_int[lattice->ndim2()*i +0];
-        directions[i]=0;
+        directions_h[i]=0;
         lattice_nodes_positions_h[i] = i;
     }
     //middle
@@ -116,14 +122,14 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     previous_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*middle + 1];
     sequence_on_lattice_h[middle]=PI;
     next_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*middle + 2];
-    directions[middle] = 2; //Go Up
+    directions_h[middle] = 2; //Go Up
     lattice_nodes_positions_h[i_pos] = middle;
     i_pos += 1;
     middle = next_monomers_h[middle];
     previous_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*(middle)+ 3];
     sequence_on_lattice_h[middle]=PI;
     next_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*(middle) + 1];
-    directions[middle] = 1;
+    directions_h[middle] = 1;
     lattice_nodes_positions_h[i_pos] = middle;
     i_pos += 1;
     middle = next_monomers_h[middle];
@@ -133,7 +139,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
         previous_monomers_h[middle ]=lattice->map_of_contacts_int[lattice->ndim2()*middle  +0];
         sequence_on_lattice_h[middle ]=PI;
         next_monomers_h[middle ]=lattice->map_of_contacts_int[lattice->ndim2()*middle  +1];
-        directions[middle] = 1;
+        directions_h[middle] = 1;
         middle = next_monomers_h[middle];
         lattice_nodes_positions_h[i] = middle;
     }
@@ -171,10 +177,14 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     for (long i = 0; i < lattice->NumberOfNodes(); ++i) {
         h_previous_monomers_h(i) = previous_monomers_h[i];  // Assuming 'raw_host_data' is a long* array
     }
+    for (long i = 0; i < lattice->NumberOfNodes(); ++i) {
+        h_directions_h(i) = directions_h[i];  // Assuming 'raw_host_data' is a long* array
+    }
     Kokkos::deep_copy(lattice_nodes_positions, h_lattice_nodes_positions_h);
     Kokkos::deep_copy(sequence_on_lattice, h_sequence_on_lattice_h);
     Kokkos::deep_copy(previous_monomers, h_previous_monomers_h);
     Kokkos::deep_copy(next_monomers, h_next_monomers_h);
+    Kokkos::deep_copy(directions, h_directions_h);
 
     std::cout << "Model creation before energy" << std::endl;
     //std::cout << "Before Energy in Initialization" << std::endl;
@@ -209,13 +219,13 @@ double XY_SAW_LongInteraction::Energy() {
         double energy_i = 0.0;  // Local energy contribution for this i
         //std::cout << " Energy in Initialization " <<number_of_spins() << " "  << i << std::endl;
         // Inner loop remains sequential for each i
-        for (long j = i + 1; j < number_of_spins(); j++) {
+        for (long j = i + 1; j < this->number_of_spins(); j++) {
             //std::cout << " Energy in Initialization " << i << " " << j << std::endl;
          //   std::cout << " check data " << lattice_nodes_positions[i] << " " << lattice_nodes_positions[j] << std::endl;
 
-            r = this->lattice->radius(lattice_nodes_positions[i], lattice_nodes_positions[j]);
-            r = std::pow(r, R_POWER / 2.0);
-            energy_i += std::cos(sequence_on_lattice[lattice_nodes_positions[i]] - sequence_on_lattice[lattice_nodes_positions[j]]) / r;
+            r = this->lattice->radius(lattice_nodes_positions(i), lattice_nodes_positions(j));
+            r = Kokkos::pow(r, R_POWER / 2.0);
+            energy_i += Kokkos::cos(sequence_on_lattice(lattice_nodes_positions(i)) - sequence_on_lattice(lattice_nodes_positions(j))) / r;
 
         }
        //std::cout << "  " <<  energy_i << " "  << local_H << std::endl;
@@ -232,10 +242,24 @@ std::mt19937 generator(URD_SEED+1);
 std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
+//Kokkos::Random_XorShift64_Pool<> rand_pool;
+// Initialize the random number pool with an appropriate number of states
+//Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace> rand_pool;
+//Kokkos::Random_XorShift64_Pool<> rand_pool(/*seed=*/12345);
+//int num_states = 256;  // Ensure this is greater than or equal to the number of threads you use
+//rand_pool = Kokkos::Random_XorShift64_Pool<>(Kokkos::DefaultExecutionSpace(), num_states);
+// Initialize the random pool with a seed
+//int num_states = 256;  // Set this to match or exceed the number of threads you're using
+//unsigned int seed = std::chrono::steady_clock::now().time_since_epoch().count();
+//rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(URD_SEED, num_states);
+
+
+KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     //std::cout << "FlipMove_AddEnd " << direction << " " << spinValue << std::endl;
     //Kokkos::TeamPolicy<> policy(1, 1);
-    Kokkos::fence();
+    //Kokkos::fence();
+    //Kokkos::Random_XorShift64_Pool<> rand_pool(/*seed=*/12345);
     //Kokkos::parallel_for("SingleUpdate", 1, KOKKOS_LAMBDA(const int)
    // {
         //std::cout << "in parallel " << direction << " " << spinValue << std::endl;
@@ -275,118 +299,135 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         //std::cout << "energy after  " << start_conformation << " " << spinValue << std::endl;
 
         double p1 = exp(-(J * (new_E - E)));
-        double p_metropolis = std::min(1.0, p1);
+        double p_metropolis = Kokkos::min(1.0, p1);
 
-        double q_ifaccept = distribution_urd(generator);
-        //std::cout << "q " << q_ifaccept << std::endl;
+        //double q_ifaccept = distribution_urd(generator);
+        //auto generator = rand_pool.get_state();
+        //double q_ifaccept = generator.drand(0., 1.);
+                //Kokkos::rand<Kokkos::Random_XorShift64<>, double>::draw(rand_gen, 0.0, 1.0);
+    //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(URD_SEED, num_states);
+
+        //unsigned int seed = std::chrono::steady_clock::now().time_since_epoch().count();
+        //int num_states = 256;  // Number of states (threads or more)
+        //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(seed);
+        auto rand_gen = rand_pool.get_state();
+        // Generate a random number between 0.0 and 1.0
+        //double q_ifaccept = Kokkos::rand<Kokkos::Random_XorShift64<>, double>::draw(rand_gen, 0.0, 1.0);
+        double q_ifaccept = rand_gen.drand(0., 1.);
+    //rand_gen.drand();  //Kokkos::rand<Kokkos::Random_XorShift64<>, double>::draw(rand_gen, 0.0, 1.0);
+
+
+    //std::cout << "q " << q_ifaccept << std::endl;
         if (q_ifaccept < p_metropolis) { // accept the new state
             E = new_E;
-            sequence_on_lattice[save_start_conformation] = NO_XY_SPIN;
-            directions[save_start_conformation] = NO_SAW_NODE;
-            directions[previous_monomers[end_conformation]] = direction;
+            sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
+            directions(save_start_conformation) = NO_SAW_NODE;
+            directions(previous_monomers(end_conformation)) = direction;
         } else {
             //reject new state
             //delete end
             coord_t del = end_conformation;
-            end_conformation = previous_monomers[end_conformation];
-            next_monomers[end_conformation] = NO_SAW_NODE;
-            previous_monomers[del] = NO_SAW_NODE;
-            sequence_on_lattice[del] = NO_XY_SPIN;
+            end_conformation = previous_monomers(end_conformation);
+            next_monomers(end_conformation) = NO_SAW_NODE;
+            previous_monomers(del) = NO_SAW_NODE;
+            sequence_on_lattice(del) = NO_XY_SPIN;
 
             //add the previous beginning
-            previous_monomers[start_conformation] = save_start_conformation;
-            next_monomers[save_start_conformation] = start_conformation;
+            previous_monomers(start_conformation) = save_start_conformation;
+            next_monomers(save_start_conformation) = start_conformation;
             start_conformation = save_start_conformation;
-            sequence_on_lattice[start_conformation] = oldspin;
+            sequence_on_lattice(start_conformation) = oldspin;
 
-            for (int i = number_of_spins() - 1; i > 0; i--) {
-                lattice_nodes_positions[i] = lattice_nodes_positions[i - 1];
+            for (int i = this->number_of_spins() - 1; i > 0; i--) {
+                lattice_nodes_positions(i) = lattice_nodes_positions(i - 1);
             }
-            lattice_nodes_positions[0] = start_conformation;
+            lattice_nodes_positions(0) = start_conformation;
         }
+
+    rand_pool.free_state(rand_gen);
    // });
-   Kokkos::fence();
+   //Kokkos::fence();
 }
 
+KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
-   // std::cout << "FlipMove_AddStart" << std::endl;
-    Kokkos::fence();
+    //std::cout << "FlipMove_AddStart" << std::endl;
+
+    //Kokkos::fence();
    // Kokkos::parallel_for("SingleUpdate", 1, KOKKOS_LAMBDA(const int)
     //{
-    coord_t new_point = lattice->map_of_contacts_int[lattice->ndim2() * start_conformation + direction];
-    double oldspin = sequence_on_lattice[end_conformation];
+    coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
+    double oldspin = sequence_on_lattice(end_conformation);
 
     //self-avoidance condition:
-    if (sequence_on_lattice[new_point] != NO_XY_SPIN) return;
+    if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
 
     coord_t save_end_conformation;
 
     //delete end
     save_end_conformation = end_conformation;
-    end_conformation = previous_monomers[end_conformation];
-    previous_monomers[save_end_conformation] = NO_SAW_NODE;
-    next_monomers[end_conformation] = NO_SAW_NODE;
-    sequence_on_lattice[save_end_conformation] = NO_XY_SPIN;
+    end_conformation = previous_monomers(end_conformation);
+    previous_monomers(save_end_conformation) = NO_SAW_NODE;
+    next_monomers(end_conformation) = NO_SAW_NODE;
+    sequence_on_lattice(save_end_conformation) = NO_XY_SPIN;
 
     //add the new beginning
-    previous_monomers[start_conformation] = new_point;
-    sequence_on_lattice[new_point] = spinValue; //выбор спина
-    next_monomers[new_point] = start_conformation;
+    previous_monomers(start_conformation) = new_point;
+    sequence_on_lattice(new_point) = spinValue; //выбор спина
+    next_monomers(new_point) = start_conformation;
     start_conformation = new_point;
 
-    for (int i = number_of_spins() - 1 ; i > 0; i--) {
-        lattice_nodes_positions[i] = lattice_nodes_positions[i-1];
+    for (int i = this->number_of_spins() - 1 ; i > 0; i--) {
+        lattice_nodes_positions(i) = lattice_nodes_positions(i-1);
     }
-    lattice_nodes_positions[0] = start_conformation;
+    lattice_nodes_positions(0) = start_conformation;
     double new_E = Energy();
 
     double p1 = exp( -( J * (new_E - E) ));
-    double p_metropolis = std::min(1.0, p1);
-    double q_ifaccept = distribution_urd(generator) ;
+    double p_metropolis = Kokkos::min(1.0, p1);
+
+    auto rand_gen = rand_pool.get_state();
+    // Generate a random number between 0.0 and 1.0
+    //double q_ifaccept = Kokkos::rand<Kokkos::Random_XorShift64<>, double>::draw(rand_gen, 0.0, 1.0);
+    double q_ifaccept = rand_gen.drand(0., 1.);
 
     if (q_ifaccept < p_metropolis) {
         E = new_E;
-        sequence_on_lattice[save_end_conformation] = NO_XY_SPIN;
-        directions[end_conformation] = NO_SAW_NODE;
-        directions[start_conformation] = lattice->inverse_steps[direction];
+        sequence_on_lattice(save_end_conformation) = NO_XY_SPIN;
+        directions(end_conformation) = NO_SAW_NODE;
+        directions(start_conformation) = lattice->inverse_steps(direction);
     }
     else {
         //reject the new state
         //delete starte
         coord_t del = start_conformation;
-        start_conformation = next_monomers[start_conformation];
-        previous_monomers[start_conformation] = NO_SAW_NODE;
-        next_monomers[del] = NO_SAW_NODE;
-        sequence_on_lattice[del] = NO_XY_SPIN;
+        start_conformation = next_monomers(start_conformation);
+        previous_monomers(start_conformation) = NO_SAW_NODE;
+        next_monomers(del) = NO_SAW_NODE;
+        sequence_on_lattice(del) = NO_XY_SPIN;
 
         //readd the end of the saw
-        next_monomers[end_conformation] = save_end_conformation;
-        previous_monomers[save_end_conformation] = end_conformation;
+        next_monomers(end_conformation) = save_end_conformation;
+        previous_monomers(save_end_conformation) = end_conformation;
         end_conformation = save_end_conformation;
-        sequence_on_lattice[end_conformation] = oldspin;
+        sequence_on_lattice(end_conformation) = oldspin;
 
-        for (int i = 1; i < number_of_spins(); i++) {
-            lattice_nodes_positions[i-1] = lattice_nodes_positions[i];
+        for (int i = 1; i < this->number_of_spins(); i++) {
+            lattice_nodes_positions(i-1) = lattice_nodes_positions(i);
         }
-        lattice_nodes_positions[number_of_spins()-1] = end_conformation;
+        lattice_nodes_positions(this->number_of_spins()-1) = end_conformation;
     }
+
+
+    rand_pool.free_state(rand_gen);
    // });
-    Kokkos::fence();
+    //Kokkos::fence();
 }
 
-void XY_SAW_LongInteraction::ClusterStep(double flipdirection) {
-    std::uniform_int_distribution<long int> distribution_spin(0, L-1);
-#ifdef SEED
-    std::mt19937 generator_spin(URD_SEED+10);
-#else
-    std::mt19937 generator_spin(std::chrono::steady_clock::now().time_since_epoch().count());
-#endif
-    //long choose_spin = distribution_spin(generator_spin);
-}
-
+KOKKOS_INLINE_FUNCTION
 template<>
 void SAW_model<double>::Reconnect(short direction) {
-    Kokkos::fence();
+    //Kokkos::fence();
     Kokkos::parallel_for("SingleUpdate", 1, KOKKOS_LAMBDA(const int)
     {
     long c = 0; //
@@ -432,23 +473,8 @@ void SAW_model<double>::Reconnect(short direction) {
         lattice_nodes_positions[i] = c;
         c = next_monomers[c];
     }
-
-  //  std::cout << "Reconnect" << std::endl;
-   /* for (int i = 0; i < number_of_spins(); i++) {
-        //std::cout << lattice_nodes_positions[i] << " ";
-    }
-   // std::cout << std::endl;
-    for (int i = 0; i < number_of_spins() -1 ; i++) {
-        if (lattice->radius(lattice_nodes_positions[i],
-                                     lattice_nodes_positions[i+1])!=1) {
-            std::cout << "Reconnect problems" << std::endl;
-        }
-       // std::cout << lattice->radius(lattice_nodes_positions[i],
-        //                             lattice_nodes_positions[i+1]) << " ";
-    } */
-  //  std::cout << std::endl;
     });
-    Kokkos::fence();
+    //Kokkos::fence();
 }
 
 void XY_SAW_LongInteraction::updateData() {

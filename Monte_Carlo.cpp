@@ -71,6 +71,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 //                               .set_disable_warnings(false)
 //                               .set_num_threads(4));
     for (long long i = 0; i < MC_STEPS + 20; ++i) {
+    //for (long long i = 0; i < 1000000 + 20; ++i) {
         //if (i>20) return;
         mc_step_type = distribution_urd(generator_urd) ;
        // std::cout << i << " " << mc_step_type << std::endl;
@@ -91,7 +92,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
         }
         else {
             spinvalue =  distribution_theta(generators_theta);
-            model->ClusterStep(spinvalue);
+            //model->ClusterStep(spinvalue);
         }
 
         if (i < n_steps_to_equlibrium) continue;
