@@ -425,8 +425,9 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 }
 
 //KOKKOS_INLINE_FUNCTION
-template<>
-__host__ __device__ void SAW_model<double>::Reconnect(short direction) {
+//template<>
+KOKKOS_INLINE_FUNCTION
+void XY_SAW_LongInteraction::Reconnect(short direction) {
     //Kokkos::fence();
     Kokkos::parallel_for("SingleUpdate", Kokkos::RangePolicy<>(0, 1), KOKKOS_LAMBDA(const int)
     {

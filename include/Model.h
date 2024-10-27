@@ -41,7 +41,7 @@ public:
     SAW_model() {};
     SAW_model(long length);
 
-    __host__ __device__ void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
+    KOKKOS_INLINE_FUNCTION virtual void Reconnect(short direction) = 0; //Only Geometry changes --- the same for all SAW Models
 
     KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
     KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
@@ -83,6 +83,9 @@ class XY_SAW_LongInteraction : public  SAW_model<double> {
 public:
     XY_SAW_LongInteraction() {};
     XY_SAW_LongInteraction(long length);
+
+    KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
+
 
     KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue);
     KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue);
