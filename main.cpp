@@ -14,9 +14,19 @@ int main(int argc, char *argv[]) {
 
     int L = std::atoi(argv[1]);
 
+
+    //memory_events "memory-events"
+
+
+   // auto eventSet = KokkosTools::get_event_set("memory-events", "memory-events");
+
+    // Note: callbacks must be set before Kokkos::initialize()
+    //Kokkos::Tools::Experimental::set_callbacks(eventSet);
+
+
     Kokkos::initialize(Kokkos::InitializationSettings()
                                .set_disable_warnings(false)
-                               .set_num_threads(1)
+.set_num_threads(1)
                                );
 
   //  auto start = high_resolution_clock::now();

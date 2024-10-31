@@ -354,7 +354,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     //std::cout << "FlipMove_AddStart" << std::endl;
 
     //Kokkos::fence();
-   // Kokkos::parallel_for("SingleUpdate", 1, KOKKOS_LAMBDA(const int)
+   //Kokkos::parallel_for("SingleUpdate", 1, KOKKOS_LAMBDA(const int) {
     //{
     coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
     double oldspin = sequence_on_lattice(end_conformation);
@@ -420,7 +420,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
 
     rand_pool.free_state(rand_gen);
-   // });
+    //});
     //Kokkos::fence();
 }
 
@@ -429,8 +429,8 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::Reconnect(short direction) {
     //Kokkos::fence();
-    Kokkos::parallel_for("SingleUpdate", Kokkos::RangePolicy<>(0, 1), KOKKOS_LAMBDA(const int)
-    {
+    //Kokkos::parallel_for("SingleUpdate", Kokkos::RangePolicy<>(0, 1), KOKKOS_LAMBDA(const int)
+    //{
     long c = 0; //
     coord_t step_coord = lattice->map_of_contacts_int[lattice->ndim2()*end_conformation + direction];
 
@@ -474,7 +474,7 @@ void XY_SAW_LongInteraction::Reconnect(short direction) {
         lattice_nodes_positions[i] = c;
         c = next_monomers[c];
     }
-    });
+    //});
     //Kokkos::fence();
 }
 

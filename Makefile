@@ -19,7 +19,8 @@ EXE = ${EXE_NAME}.host
 KOKKOS_ARCH = "BDW"
 endif
 
-#Kokkos_ENABLE_LIBDL=ON
+Kokkos_ENABLE_LIBDL=OFF
+KOKKOS_ENABLE_PROFILING=OFF
 
 CXXFLAGS = -O3 -DREGIME_3D -DSTARTHALF -ffast-math -march=native -I include/
 LDFLAGS = -L/usr/local/lib -lomp

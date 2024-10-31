@@ -9,6 +9,7 @@
 #include <random>
 #include <chrono>
 #include <string>
+#include <Kokkos_Core.hpp>
 
 class Monte_Carlo {
 public:
