@@ -12,8 +12,8 @@ public:
     Lattice() {};
     Lattice(long max_seq_size = 10) { lattice_side = max_seq_size; };
 
-    KOKKOS_INLINE_FUNCTION inline virtual short int ndim() = 0 ;
-    KOKKOS_INLINE_FUNCTION inline virtual short int ndim2() = 0;
+    KOKKOS_INLINE_FUNCTION virtual short int ndim() = 0 ;
+    KOKKOS_INLINE_FUNCTION virtual short int ndim2() = 0;
 
     inline long int lattice_size() {return lattice_side;};
     inline long int NumberOfNodes () {return number_of_nodes;};
@@ -39,8 +39,8 @@ protected:
 class Lattice_3D : public Lattice {
 public:
     Lattice_3D(long max_seq_size = 10);
-    KOKKOS_INLINE_FUNCTION inline short int ndim() { return 3; }
-    KOKKOS_INLINE_FUNCTION inline short int ndim2() {return 6;}
+    KOKKOS_INLINE_FUNCTION short int ndim() { return 3; }
+    KOKKOS_INLINE_FUNCTION short int ndim2() {return 6;}
 
     KOKKOS_INLINE_FUNCTION double radius(const coord_t& start, const coord_t& end);
 
@@ -51,8 +51,8 @@ private:
 class Lattice_2D : public Lattice {
 public:
     Lattice_2D(long max_seq_size = 10);
-    KOKKOS_INLINE_FUNCTION inline short int ndim() { return 2; }
-    KOKKOS_INLINE_FUNCTION inline short int ndim2() {return 4;}
+    KOKKOS_INLINE_FUNCTION short int ndim() { return 2; }
+    KOKKOS_INLINE_FUNCTION short int ndim2() {return 4;}
 
     KOKKOS_INLINE_FUNCTION double radius(const coord_t& start, const coord_t& end);
 
