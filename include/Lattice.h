@@ -15,8 +15,8 @@ public:
     KOKKOS_INLINE_FUNCTION virtual short int ndim() = 0 ;
     KOKKOS_INLINE_FUNCTION virtual short int ndim2() = 0;
 
-    KOKKOS_INLINE_FUNCTION inline long int lattice_size() {return lattice_side;};
-    KOKKOS_INLINE_FUNCTION inline long int NumberOfNodes () {return number_of_nodes;};
+    KOKKOS_INLINE_FUNCTION long int lattice_size() {return lattice_side;};
+    KOKKOS_INLINE_FUNCTION long int NumberOfNodes () {return number_of_nodes;};
 
     KOKKOS_INLINE_FUNCTION virtual double radius(const coord_t& start, const coord_t& end) = 0;
 
