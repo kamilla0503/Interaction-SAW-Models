@@ -66,27 +66,28 @@ void XY_SAW_LongInteraction::SequenceOnLatticeInitialization() {
 }
 
 void XY_SAW_LongInteraction::StartConfiguration() {
-    //Kokkos::View<double*> sequence_on_lattice("sequence_on_lattice", lattice->NumberOfNodes());
+    //Kokkos::View<double*> sequence_on_lattice("sequence_on_lattice", this->lattice->NumberOfNodes());
     //Kokkos::View<long*> A("A", N);
-    lattice_nodes_positions = Kokkos::View<long *>("lattice_nodes_positions", number_of_spins());
-    sequence_on_lattice = Kokkos::View<double *>("sequence_on_lattice", lattice->NumberOfNodes());
+    
+    lattice_nodes_positions = Kokkos::View<long *>("lattice_nodes_positions", this->number_of_spins());
+    sequence_on_lattice = Kokkos::View<double *>("sequence_on_lattice", this->lattice->NumberOfNodes());
     //Kokkos::View<double*>::HostMirror
     h_sequence_on_lattice_h = Kokkos::create_mirror_view(sequence_on_lattice);
     h_lattice_nodes_positions_h = Kokkos::create_mirror_view(lattice_nodes_positions);
     //Kokkos::View<double *[4][4], LayoutType, MemSpace>::HostMirror h_A = Kokkos::create_mirror_view(A);
-    next_monomers = Kokkos::View<long *>("next_monomers", lattice->NumberOfNodes());
-    previous_monomers = Kokkos::View<long *>("previous_monomers", lattice->NumberOfNodes());
+    next_monomers = Kokkos::View<long *>("next_monomers", this->lattice->NumberOfNodes());
+    previous_monomers = Kokkos::View<long *>("previous_monomers", this->lattice->NumberOfNodes());
     h_next_monomers_h = Kokkos::create_mirror_view(next_monomers);
     h_previous_monomers_h = Kokkos::create_mirror_view(previous_monomers);
 
-    directions = Kokkos::View<short *>("directions", lattice->NumberOfNodes());
+    directions = Kokkos::View<short *>("directions", this->lattice->NumberOfNodes());
     h_directions_h = Kokkos::create_mirror_view(directions);
 
 #ifdef STARTDEFAULT
     start_conformation = 0;
     end_conformation = L - 1;
     lattice_nodes_positions_h[0] = start_conformation;
-    lattice_nodes_positions_h[number_of_spins() - 1] = end_conformation;
+    lattice_nodes_positions_h[this->number_of_spins() - 1] = end_conformation;
     for (int i = 1; i < L - 1; i++) {
         previous_monomers_h[i] = i - 1;
         sequence_on_lattice_h[i] = PI;
@@ -102,7 +103,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
         directions_h[i] = 0; //all directions_h are the right moves
     }
 #elif STARTHALF
-    coord_t middle = number_of_spins()/2 - 1;
+    coord_t middle = this->number_of_spins()/2 - 1;
     start_conformation=0;
     lattice_nodes_positions_h[0] = start_conformation;
     //First part
@@ -132,7 +133,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     i_pos += 1;
     middle = next_monomers_h[middle];
     lattice_nodes_positions_h[i_pos] = middle;
-    for (int i = number_of_spins()/2 + 2; i < number_of_spins() ; i++)
+    for (int i = this->number_of_spins()/2 + 2; i < this->number_of_spins() ; i++)
     {
         previous_monomers_h[middle ]=lattice->map_of_contacts_int[lattice->ndim2()*middle  +0];
         sequence_on_lattice_h[middle ]=PI;
@@ -146,34 +147,34 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     sequence_on_lattice_h[end_conformation] = PI; //начальная последовательность
     next_monomers_h[0] = lattice->map_of_contacts_int[lattice->ndim2()*0 +0];;
     previous_monomers_h[end_conformation] = lattice->map_of_contacts_int[lattice->ndim2()*end_conformation +0]; ;
-    lattice_nodes_positions_h[number_of_spins() - 1] = end_conformation;
+    lattice_nodes_positions_h[this->number_of_spins() - 1] = end_conformation;
     std::fstream myStream;
     std::string filename = "For_Debug_AStart.out";
     myStream.open(filename,std::fstream::out);
-    for (long j =0; j < number_of_spins() ; j++){
+    for (long j =0; j < this->number_of_spins() ; j++){
        myStream << lattice_nodes_positions_h[j] << " ";
     }
     myStream << std::endl;
-    for (long j =0; j< lattice->NumberOfNodes() ; j++){
+    for (long j =0; j< this->lattice->NumberOfNodes() ; j++){
         myStream << j << " " << next_monomers_h[j] << " " << previous_monomers_h[j] << " " <<  sequence_on_lattice_h[j];
         myStream << std::endl;
     }
     myStream << std::endl;
     myStream.close();
 #endif
-    for (long i = 0; i < number_of_spins(); ++i) {
+    for (long i = 0; i < this->number_of_spins(); ++i) {
         h_lattice_nodes_positions_h(i) = lattice_nodes_positions_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
         h_sequence_on_lattice_h(i) = sequence_on_lattice_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
         h_next_monomers_h(i) = next_monomers_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
         h_previous_monomers_h(i) = previous_monomers_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
         h_directions_h(i) = directions_h[i];  // Assuming 'raw_host_data' is a long* array
     }
     Kokkos::deep_copy(lattice_nodes_positions, h_lattice_nodes_positions_h);
