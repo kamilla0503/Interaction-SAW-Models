@@ -17,8 +17,8 @@ class Model {
 public:
     //Model() {};
     //Model (long length);
-    KOKKOS_INLINE_FUNCTION inline long number_of_spins() {return L;}
-    KOKKOS_INLINE_FUNCTION inline short ndim2() {
+    KOKKOS_INLINE_FUNCTION long number_of_spins() {return L;}
+    KOKKOS_INLINE_FUNCTION short ndim2() {
         //short dim2 = -1;
         //(lattice!= nullptr) ? dim2 = lattice->ndim2() : dim2 = -1;
         return lattice->ndim2();
