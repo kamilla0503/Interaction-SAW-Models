@@ -25,8 +25,8 @@ int main(int argc, char *argv[]) {
 
 
     Kokkos::initialize(Kokkos::InitializationSettings()
-                               .set_disable_warnings(false)
-.set_num_threads(1)
+                               .set_disable_warnings(false).set_debug_mode(true)
+//.set_num_threads(1)
                                );
 
   //  auto start = high_resolution_clock::now();
