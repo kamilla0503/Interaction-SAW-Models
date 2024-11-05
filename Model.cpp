@@ -56,6 +56,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(
         StartConfiguration();
     }
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
+    lattice_side = lattice->lattice_side;
     //rand_pool.init(12345,256);
 }
 
