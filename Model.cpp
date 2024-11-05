@@ -199,6 +199,7 @@ double XY_SAW_LongInteraction::Energy() {
     Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
+        lattice->radius(1, 10);
         double r;
         printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
