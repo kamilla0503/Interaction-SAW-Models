@@ -233,7 +233,7 @@ double XY_SAW_LongInteraction::Energy() {
        printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
-          printf(" ei = %ld \n", i);
+          printf(" ei = %ld %ld \n", i, lattice_side_local);
         // Inner loop remains sequential for each i
             for (long j = i + 1; j < local_L; j++) {
             //printf()
