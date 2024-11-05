@@ -202,17 +202,19 @@ double XY_SAW_LongInteraction::Energy() {
         double energy_i = 0.0;  // Local energy contribution for this i
         // Inner loop remains sequential for each i
         for (long j = i + 1; j < this->number_of_spins(); j++) {
-
-            r = this->lattice->radius(this->lattice_nodes_positions(i), this->lattice_nodes_positions(j));
-            r = Kokkos::pow(r, R_POWER / 2.0);
-            energy_i += Kokkos::cos(
-                    sequence_on_lattice(this->lattice_nodes_positions(i)) - sequence_on_lattice(this->lattice_nodes_positions(j))) /
-                        r;
-
+            //printf()
+            if (j < lattice_nodes_positions.extent(0)) {
+                r = this->lattice->radius(this->lattice_nodes_positions(i), this->lattice_nodes_positions(j));
+                r = Kokkos::pow(r, R_POWER / 2.0);
+                energy_i += Kokkos::cos(
+                        sequence_on_lattice(this->lattice_nodes_positions(i)) -
+                        sequence_on_lattice(this->lattice_nodes_positions(j))) /
+                            r;
+            }
         }
         local_H += energy_i;  // Add local energy contribution to the reduction variable
     }, H);  // H is the total energy accumulated across all threads
-    Kokkos::fence();
+    //Kokkos::fence();
     return -H;  // Return negative of the total energy
 }
 
