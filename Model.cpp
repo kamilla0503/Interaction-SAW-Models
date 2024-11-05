@@ -198,12 +198,13 @@ double XY_SAW_LongInteraction::Energy() {
     Kokkos::parallel_reduce("EnergyCalculation", this->number_of_spins(), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
+
         double r;
         double energy_i = 0.0;  // Local energy contribution for this i
+        if (i < lattice_nodes_positions.extent(0)) {
         // Inner loop remains sequential for each i
         for (long j = i + 1; j < this->number_of_spins(); j++) {
             //printf()
-            if (j < lattice_nodes_positions.extent(0)) {
                 r = this->lattice->radius(this->lattice_nodes_positions(i), this->lattice_nodes_positions(j));
                 r = Kokkos::pow(r, R_POWER / 2.0);
                 energy_i += Kokkos::cos(
