@@ -69,7 +69,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //Kokkos::View<double*> sequence_on_lattice("sequence_on_lattice", this->lattice->NumberOfNodes());
     //Kokkos::View<long*> A("A", N);
     
-    lattice_nodes_positions = Kokkos::View<long *, Kokkos::CudaSpace>("lattice_nodes_positions", this->number_of_spins());
+    lattice_nodes_positions = Kokkos::View<long *, Kokkos::CudaSpace>("lattice_nodes_positions", L);
     sequence_on_lattice = Kokkos::View<double *, Kokkos::CudaSpace>("sequence_on_lattice", this->lattice->NumberOfNodes());
     //Kokkos::View<double*>::HostMirror
     h_sequence_on_lattice_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),sequence_on_lattice);
@@ -110,24 +110,24 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     int i_pos = 0;
     for (int i = 1; i < middle; i++)
     {
-        previous_monomers_h[i]=lattice->map_of_contacts_int[lattice->ndim2()*i +1];
+        previous_monomers_h[i]=lattice->map_of_contacts_int_h[lattice->ndim2()*i +1];
         sequence_on_lattice_h[i]=PI;
-        next_monomers_h[i]=lattice->map_of_contacts_int[lattice->ndim2()*i +0];
+        next_monomers_h[i]=lattice->map_of_contacts_int_h[lattice->ndim2()*i +0];
         directions_h[i]=0;
         lattice_nodes_positions_h[i] = i;
     }
     //middle
     i_pos = middle;
-    previous_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*middle + 1];
+    previous_monomers_h[middle]=lattice->map_of_contacts_int_h[lattice->ndim2()*middle + 1];
     sequence_on_lattice_h[middle]=PI;
-    next_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*middle + 2];
+    next_monomers_h[middle]=lattice->map_of_contacts_int_h[lattice->ndim2()*middle + 2];
     directions_h[middle] = 2; //Go Up
     lattice_nodes_positions_h[i_pos] = middle;
     i_pos += 1;
     middle = next_monomers_h[middle];
-    previous_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*(middle)+ 3];
+    previous_monomers_h[middle]=lattice->map_of_contacts_int_h[lattice->ndim2()*(middle)+ 3];
     sequence_on_lattice_h[middle]=PI;
-    next_monomers_h[middle]=lattice->map_of_contacts_int[lattice->ndim2()*(middle) + 1];
+    next_monomers_h[middle]=lattice->map_of_contacts_int_h[lattice->ndim2()*(middle) + 1];
     directions_h[middle] = 1;
     lattice_nodes_positions_h[i_pos] = middle;
     i_pos += 1;
@@ -135,9 +135,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     lattice_nodes_positions_h[i_pos] = middle;
     for (int i = this->number_of_spins()/2 + 2; i < this->number_of_spins() ; i++)
     {
-        previous_monomers_h[middle ]=lattice->map_of_contacts_int[lattice->ndim2()*middle  +0];
+        previous_monomers_h[middle ]=lattice->map_of_contacts_int_h[lattice->ndim2()*middle  +0];
         sequence_on_lattice_h[middle ]=PI;
-        next_monomers_h[middle ]=lattice->map_of_contacts_int[lattice->ndim2()*middle  +1];
+        next_monomers_h[middle ]=lattice->map_of_contacts_int_h[lattice->ndim2()*middle  +1];
         directions_h[middle] = 1;
         middle = next_monomers_h[middle];
         lattice_nodes_positions_h[i] = middle;
@@ -145,8 +145,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     end_conformation=middle;
     sequence_on_lattice_h[0] = PI;
     sequence_on_lattice_h[end_conformation] = PI; //начальная последовательность
-    next_monomers_h[0] = lattice->map_of_contacts_int[lattice->ndim2()*0 +0];;
-    previous_monomers_h[end_conformation] = lattice->map_of_contacts_int[lattice->ndim2()*end_conformation +0]; ;
+    next_monomers_h[0] = lattice->map_of_contacts_int_h[lattice->ndim2()*0 +0];;
+    previous_monomers_h[end_conformation] = lattice->map_of_contacts_int_h[lattice->ndim2()*end_conformation +0]; ;
     lattice_nodes_positions_h[this->number_of_spins() - 1] = end_conformation;
     std::fstream myStream;
     std::string filename = "For_Debug_AStart.out";
@@ -228,7 +228,7 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
-    coord_t new_point = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
+    coord_t new_point = lattice->map_of_contacts_int_h[lattice->ndim2() * end_conformation + direction];
     //std::cout << "new_point " << new_point << std::endl;
     double oldspin = sequence_on_lattice(start_conformation);
     //std::cout << "oldspin " << oldspin << std::endl;
@@ -296,7 +296,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
 
-    coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
+    coord_t new_point = lattice->map_of_contacts_int_h(lattice->ndim2() * start_conformation + direction);
     double oldspin = sequence_on_lattice(end_conformation);
 
     if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
@@ -364,7 +364,7 @@ KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::Reconnect(short direction) {
 
     long c = 0; //
-    coord_t step_coord = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
+    coord_t step_coord = lattice->map_of_contacts_int_h[lattice->ndim2() * end_conformation + direction];
 
     // test self avoidance condition
     if (sequence_on_lattice[step_coord] == NO_XY_SPIN ||
