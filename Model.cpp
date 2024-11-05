@@ -199,10 +199,10 @@ double XY_SAW_LongInteraction::Energy() {
     const long i,
     double &local_H) {
         double r;
-        printf(" i = %l \n", i);
+        printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < lattice_nodes_positions.extent(0)) {
-            printf(" i = %l \n", i);
+            printf(" i = %ld \n", i);
         // Inner loop remains sequential for each i
             for (long j = i + 1; j < L; j++) {
             //printf()
