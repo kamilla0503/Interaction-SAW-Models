@@ -192,6 +192,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 }
 
 
+
 KOKKOS_INLINE_FUNCTION
 double radius(const coord_t& start, const coord_t& end) {
     long start_x = start % lattice_side;
@@ -218,21 +219,24 @@ double radius(const coord_t& start, const coord_t& end) {
 
     return r;
 }
+
 // Define the Energy function using Kokkos parallelization
 KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
     auto local_L = L;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
-        lattice->radius(1, 10);
+       // lattice->radius(1, 10);
         double r;
-        printf(" i = %ld \n", i);
+       // printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
-            printf(" ei = %ld \n", i);
+         //   printf(" ei = %ld \n", i);
         // Inner loop remains sequential for each i
             for (long j = i + 1; j < local_L; j++) {
+            //printf()
                 r = radius(lattice_nodes_positions(i), lattice_nodes_positions(j));
                 r = Kokkos::pow(r, R_POWER / 2.0);
                 energy_i += Kokkos::cos(
@@ -242,7 +246,7 @@ double XY_SAW_LongInteraction::Energy() {
             }
         }
         local_H += energy_i;  // Add local energy contribution to the reduction variable
-        printf(" energy i = %ld %f \n", i, energy_i);
+       // printf(" energy i = %ld %f \n", i, energy_i);
     }, H);  // H is the total energy accumulated across all threads
     //Kokkos::fence();
     return -H;  // Return negative of the total energy
