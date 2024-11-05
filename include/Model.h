@@ -27,7 +27,7 @@ public:
     void set_J (double J_) {J = J_;}
 //protected:
     //Model-specific Energy function; returns double as J is expected to be double also
-    KOKKOS_INLINE_FUNCTION virtual double Energy () = 0;
+    KOKKOS_FUNCTION virtual double Energy () = 0;
 
     long L; //Length of the model chain
     double E; //current value for energy; double as J
@@ -101,7 +101,7 @@ public:
 //protected:
     std::valarray<bool> used_coords;
 
-    KOKKOS_INLINE_FUNCTION double Energy ();
+    KOKKOS_FUNCTION double Energy ();
 
     mc_stats::ScalarObservable<double> energy;
     mc_stats::ScalarObservable<double> energy_2;

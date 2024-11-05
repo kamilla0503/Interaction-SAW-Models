@@ -28,7 +28,7 @@ public:
     Kokkos::View<int*, Kokkos::CudaSpace> inverse_steps;
     Kokkos::View<int*, Kokkos::CudaHostPinnedSpace>::HostMirror h_inverse_steps_h;
 
-protected:
+//protected:
     virtual void create_lattice() = 0;
 
     long lattice_side = 0;

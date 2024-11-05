@@ -70,17 +70,17 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //Kokkos::View<long*> A("A", N);
     
     lattice_nodes_positions = Kokkos::View<long *, Kokkos::CudaSpace>("lattice_nodes_positions", L);
-    sequence_on_lattice = Kokkos::View<double *, Kokkos::CudaSpace>("sequence_on_lattice", this->lattice->NumberOfNodes());
+    sequence_on_lattice = Kokkos::View<double *, Kokkos::CudaSpace>("sequence_on_lattice", lattice->number_of_nodes);
     //Kokkos::View<double*>::HostMirror
     h_sequence_on_lattice_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),sequence_on_lattice);
     h_lattice_nodes_positions_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),lattice_nodes_positions);
     //Kokkos::View<double *[4][4], LayoutType, MemSpace>::HostMirror h_A = Kokkos::create_mirror_view(A);
-    next_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("next_monomers", this->lattice->NumberOfNodes());
-    previous_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("previous_monomers", this->lattice->NumberOfNodes());
+    next_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("next_monomers", lattice->number_of_nodes);
+    previous_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("previous_monomers", lattice->number_of_nodes);
     h_next_monomers_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),next_monomers);
     h_previous_monomers_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),previous_monomers);
 
-    directions = Kokkos::View<short*, Kokkos::CudaSpace>("directions", this->lattice->NumberOfNodes());
+    directions = Kokkos::View<short*, Kokkos::CudaSpace>("directions", lattice->number_of_nodes);
     h_directions_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),directions);
 
 #ifdef STARTDEFAULT
@@ -195,7 +195,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<>(0, L), KOKKOS_LAMBDA(
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
         double r;
