@@ -72,16 +72,16 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     lattice_nodes_positions = Kokkos::View<long *, Kokkos::CudaSpace>("lattice_nodes_positions", this->number_of_spins());
     sequence_on_lattice = Kokkos::View<double *, Kokkos::CudaSpace>("sequence_on_lattice", this->lattice->NumberOfNodes());
     //Kokkos::View<double*>::HostMirror
-    h_sequence_on_lattice_h = Kokkos::create_mirror_view(sequence_on_lattice);
-    h_lattice_nodes_positions_h = Kokkos::create_mirror_view(lattice_nodes_positions);
+    h_sequence_on_lattice_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),sequence_on_lattice);
+    h_lattice_nodes_positions_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),lattice_nodes_positions);
     //Kokkos::View<double *[4][4], LayoutType, MemSpace>::HostMirror h_A = Kokkos::create_mirror_view(A);
     next_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("next_monomers", this->lattice->NumberOfNodes());
     previous_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("previous_monomers", this->lattice->NumberOfNodes());
-    h_next_monomers_h = Kokkos::create_mirror_view(next_monomers);
-    h_previous_monomers_h = Kokkos::create_mirror_view(previous_monomers);
+    h_next_monomers_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),next_monomers);
+    h_previous_monomers_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),previous_monomers);
 
     directions = Kokkos::View<short*, Kokkos::CudaSpace>("directions", this->lattice->NumberOfNodes());
-    h_directions_h = Kokkos::create_mirror_view(directions);
+    h_directions_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),directions);
 
 #ifdef STARTDEFAULT
     start_conformation = 0;
