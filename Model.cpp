@@ -197,7 +197,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 }
 
 KOKKOS_INLINE_FUNCTION
-double radius(const coord_t& start, const coord_t& end, long lattice_side) {
+double radius(const coord_t& start, const coord_t& end, Kokkos::View<long> lattice_side) {
     long start_x = start % lattice_side;
     long start_y = (start % (lattice_side * lattice_side)) /lattice_side;
     long start_z = start / (lattice_side * lattice_side);
