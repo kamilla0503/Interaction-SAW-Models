@@ -228,7 +228,7 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
-    coord_t new_point = lattice->map_of_contacts_int_h[lattice->ndim2() * end_conformation + direction];
+    coord_t new_point = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
     //std::cout << "new_point " << new_point << std::endl;
     double oldspin = sequence_on_lattice(start_conformation);
     //std::cout << "oldspin " << oldspin << std::endl;
@@ -296,7 +296,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
 
-    coord_t new_point = lattice->map_of_contacts_int_h(lattice->ndim2() * start_conformation + direction);
+    coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
     double oldspin = sequence_on_lattice(end_conformation);
 
     if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
@@ -364,7 +364,7 @@ KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::Reconnect(short direction) {
 
     long c = 0; //
-    coord_t step_coord = lattice->map_of_contacts_int_h[lattice->ndim2() * end_conformation + direction];
+    coord_t step_coord = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
 
     // test self avoidance condition
     if (sequence_on_lattice[step_coord] == NO_XY_SPIN ||
