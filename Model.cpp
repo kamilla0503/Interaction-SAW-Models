@@ -195,7 +195,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
-    Kokkos::parallel_reduce("EnergyCalculation", L, KOKKOS_LAMBDA(
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<>(0, number_of_spins()), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
         double r;
