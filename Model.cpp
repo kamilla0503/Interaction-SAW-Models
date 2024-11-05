@@ -230,10 +230,10 @@ double XY_SAW_LongInteraction::Energy() {
     double &local_H) {
        // lattice->radius(1, 10);
         double r;
-       // printf(" i = %ld \n", i);
+       printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
-         //   printf(" ei = %ld \n", i);
+          printf(" ei = %ld \n", i);
         // Inner loop remains sequential for each i
             for (long j = i + 1; j < local_L; j++) {
             //printf()
@@ -247,7 +247,7 @@ double XY_SAW_LongInteraction::Energy() {
             }
         }
         local_H += energy_i;  // Add local energy contribution to the reduction variable
-       // printf(" energy i = %ld %f \n", i, energy_i);
+       printf(" energy i = %ld %f \n", i, energy_i);
     }, H);  // H is the total energy accumulated across all threads
     //Kokkos::fence();
     return -H;  // Return negative of the total energy
