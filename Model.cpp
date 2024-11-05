@@ -187,7 +187,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     long lattice_side_host = lattice->lattice_side ; // Assign the actual value you need here
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //Kokkos::deep_copy(lattice_side, lattice_side_host);
-    lattice_side = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),lattice_side_host);
+    lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(),lattice_side_host);
     std::cout << "Model creation before energy" << std::endl;
 
     E = Energy();
