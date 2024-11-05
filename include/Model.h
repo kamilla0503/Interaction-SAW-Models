@@ -32,7 +32,7 @@ public:
     long L; //Length of the model chain
     double E; //current value for energy; double as J
     double J; //Interaction Energy
-    long lattice_side;
+    Kokkos::View<long> lattice_side;
 };
 
 // Abstract Class for geometry related work

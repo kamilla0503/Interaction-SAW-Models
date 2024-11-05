@@ -56,7 +56,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(
         StartConfiguration();
     }
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
-    lattice_side = lattice->lattice_side;
+    //lattice_side = lattice->lattice_side;
     //rand_pool.init(12345,256);
 }
 
@@ -184,6 +184,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(next_monomers, h_next_monomers_h);
     Kokkos::deep_copy(directions, h_directions_h);
 
+    long lattice_side_host = lattice->lattice_side ; // Assign the actual value you need here
+    lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
+    Kokkos::deep_copy(lattice_side, lattice_side_host);
+
     std::cout << "Model creation before energy" << std::endl;
 
     E = Energy();
@@ -224,21 +228,21 @@ KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
     auto local_L = L;
-    auto lattice_side_local = lattice_side;
+    //auto lattice_side_local = lattice_side;
     Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
        // lattice->radius(1, 10);
-        double r;
+       double r;
        printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
-          printf(" ei = %ld %ld \n", i, lattice_side_local);
+          printf(" ei = %ld %ld \n", i, lattice_side);
         // Inner loop remains sequential for each i
             for (long j = i + 1; j < local_L; j++) {
             //printf()
                 r = radius(lattice_nodes_positions(i), lattice_nodes_positions(j),
-                           lattice_side_local);
+                           lattice_side);
                 r = Kokkos::pow(r, R_POWER / 2.0);
                 energy_i += Kokkos::cos(
                         sequence_on_lattice(lattice_nodes_positions(i)) -
