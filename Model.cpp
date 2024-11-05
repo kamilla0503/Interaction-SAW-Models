@@ -195,16 +195,17 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, L), KOKKOS_LAMBDA(
+    auto local_L = L;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
         double r;
         printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
-        if (i < L ) {
+        if (i < local_L ) {
             printf(" ei = %ld \n", i);
         // Inner loop remains sequential for each i
-            for (long j = i + 1; j < L; j++) {
+            for (long j = i + 1; j < local_L; j++) {
             //printf()
                 r = lattice->radius(lattice_nodes_positions(i), lattice_nodes_positions(j));
                 r = Kokkos::pow(r, R_POWER / 2.0);
