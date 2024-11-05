@@ -115,9 +115,9 @@ void Lattice_3D::create_lattice() {
         myStream << std::endl;
     }
 #endif
-    map_of_contacts_int = Kokkos::View<long*>("map_of_contacts_int",
+    map_of_contacts_int = Kokkos::View<long*, Kokkos::CudaSpace>("map_of_contacts_int",
                                               lattice_side*lattice_side*lattice_side*ndim2());
-    inverse_steps = Kokkos::View<int*>("inverse_steps", 6 );
+    inverse_steps = Kokkos::View<int*, Kokkos::CudaSpace>("inverse_steps", 6 );
     h_map_of_contacts_int_h = Kokkos::create_mirror_view(map_of_contacts_int);
     h_inverse_steps_h = Kokkos::create_mirror_view(inverse_steps);
     for (long i = 0; i < lattice_side*lattice_side*lattice_side*ndim2(); ++i) {

@@ -57,13 +57,13 @@ public:
     std::valarray<SpinType> sequence_on_lattice_h;
     typename Kokkos::View<SpinType*>::HostMirror h_sequence_on_lattice_h;
     std::valarray<long> next_monomers_h;
-    Kokkos::View<long*> next_monomers;
-    Kokkos::View<long*>  previous_monomers;
+    Kokkos::View<long*, Kokkos::CudaSpace> next_monomers;
+    Kokkos::View<long*, Kokkos::CudaSpace>  previous_monomers;
     std::valarray<long> previous_monomers_h;
     long end_conformation = 0;
     long start_conformation = 0;
     std::valarray<short> directions_h; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
-    Kokkos::View<short*>  directions;
+    Kokkos::View<short*, Kokkos::CudaSpace>  directions;
 
     mc_stats::ScalarObservable<double> e2e_distance_2;
 
@@ -74,8 +74,8 @@ public:
     Kokkos::View<long*>::HostMirror h_previous_monomers_h;
     Kokkos::View<short*>::HostMirror h_directions_h;
 
-    Kokkos::View<long*> lattice_nodes_positions;
-    Kokkos::View<SpinType*> sequence_on_lattice;
+    Kokkos::View<long*, Kokkos::CudaSpace> lattice_nodes_positions;
+    Kokkos::View<SpinType*, Kokkos::CudaSpace> sequence_on_lattice;
 };
 
 //Class for XY long-interacting Model on SAWs
