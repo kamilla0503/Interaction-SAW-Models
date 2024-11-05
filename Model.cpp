@@ -162,19 +162,19 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     myStream << std::endl;
     myStream.close();
 #endif
-    for (long i = 0; i < this->number_of_spins(); ++i) {
+    for (long i = 0; i < L; ++i) {
         h_lattice_nodes_positions_h(i) = lattice_nodes_positions_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i < lattice->number_of_nodes; ++i) {
         h_sequence_on_lattice_h(i) = sequence_on_lattice_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i <  lattice->number_of_nodes; ++i) {
         h_next_monomers_h(i) = next_monomers_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i <  lattice->number_of_nodes; ++i) {
         h_previous_monomers_h(i) = previous_monomers_h[i];  // Assuming 'raw_host_data' is a long* array
     }
-    for (long i = 0; i < this->lattice->NumberOfNodes(); ++i) {
+    for (long i = 0; i <  lattice->number_of_nodes; ++i) {
         h_directions_h(i) = directions_h[i];  // Assuming 'raw_host_data' is a long* array
     }
     Kokkos::deep_copy(lattice_nodes_positions, h_lattice_nodes_positions_h);
@@ -201,6 +201,7 @@ double XY_SAW_LongInteraction::Energy() {
         double r;
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < lattice_nodes_positions.extent(0)) {
+            printf(" i = %l \n", i); 
         // Inner loop remains sequential for each i
         for (long j = i + 1; j < L; j++) {
             //printf()
