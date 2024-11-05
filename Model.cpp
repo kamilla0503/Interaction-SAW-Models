@@ -197,7 +197,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 }
 
 KOKKOS_INLINE_FUNCTION
-double radius(const coord_t& start, const coord_t& end, Kokkos::View<long> lattice_side) {
+double radius(const coord_t& start, const coord_t& end, long lattice_side) {
     long start_x = start % lattice_side;
     long start_y = (start % (lattice_side * lattice_side)) /lattice_side;
     long start_z = start / (lattice_side * lattice_side);
@@ -229,6 +229,7 @@ double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
     auto local_L = L;
     //auto lattice_side_local = lattice_side;
+    auto lattice_side_local = lattice_side();
     Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
@@ -237,12 +238,12 @@ double XY_SAW_LongInteraction::Energy() {
        printf(" i = %ld \n", i);
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
-          printf(" ei = %ld %ld \n", i, lattice_side);
+          printf(" ei = %ld %ld \n", i, lattice_side_local);
         // Inner loop remains sequential for each i
             for (long j = i + 1; j < local_L; j++) {
             //printf()
                 r = radius(lattice_nodes_positions(i), lattice_nodes_positions(j),
-                           lattice_side);
+                           lattice_side_local);
                 r = Kokkos::pow(r, R_POWER / 2.0);
                 energy_i += Kokkos::cos(
                         sequence_on_lattice(lattice_nodes_positions(i)) -
