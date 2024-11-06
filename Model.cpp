@@ -187,7 +187,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     long lattice_side_h = lattice->lattice_side ; // Assign the actual value you need here
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //auto lattice_side_host_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(), lattice_side);
+
     lattice_side_host = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),lattice_side);
+    lattice_side_host(0) = lattice_side_h;
+
     Kokkos::deep_copy(lattice_side, lattice_side_host);
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //Kokkos::deep_copy(lattice_side, lattice_side_host);
@@ -236,7 +239,7 @@ double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
     auto local_L = L;
     //auto lattice_side_local = lattice_side;
-    auto lattice_side_local = lattice_side_host();
+    auto lattice_side_local = lattice_side(0);
     Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
