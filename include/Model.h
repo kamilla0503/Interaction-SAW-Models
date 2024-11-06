@@ -61,6 +61,8 @@ public:
 
     FlipMoveData flip_data;
 
+    Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace> rand_pool;
+
 };
 
 // Abstract Class for geometry related work
@@ -142,7 +144,7 @@ public:
     mc_stats::ScalarObservable<double> magnetization_4;
 
 
-    Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace> rand_pool;
+
 };
 
 
