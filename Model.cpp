@@ -184,12 +184,15 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(next_monomers, h_next_monomers_h);
     Kokkos::deep_copy(directions, h_directions_h);
 
-    lattice_side_host = lattice->lattice_side ; // Assign the actual value you need here
+    long lattice_side_h = lattice->lattice_side ; // Assign the actual value you need here
+    lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
+    auto lattice_side_host_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(), lattice_side);
+
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //Kokkos::deep_copy(lattice_side, lattice_side_host);
     //lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(),lattice_side_host);
 
-    lattice_side_host = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(), lattice_side);
+    //lattice_side_host = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(), lattice_side);
 
     std::cout << "Model creation before energy" << std::endl;
 
