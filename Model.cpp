@@ -271,7 +271,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
     double oldspin = sequence_on_lattice(start_conformation);
     //std::cout << "oldspin " << oldspin << std::endl;
-    rintf("FlipMove_AddEnd new point = %f \n", oldspin);
+    printf("FlipMove_AddEnd new point = %f \n", oldspin);
     //self-avoidance condition:
     if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
@@ -279,9 +279,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     // delete the beginning of SAW
     save_start_conformation = start_conformation;
-    rintf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
+    printf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
     start_conformation = next_monomers(start_conformation);
-    rintf("FlipMove_AddEnd start = %ld \n", start_conformation);
+    printf("FlipMove_AddEnd start = %ld \n", start_conformation);
     next_monomers(save_start_conformation) = NO_SAW_NODE;
     previous_monomers(start_conformation) = NO_SAW_NODE;
     sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
