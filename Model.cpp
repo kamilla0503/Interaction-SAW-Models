@@ -200,7 +200,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     auto lattice_nodes_positions_check = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_nodes_positions);
     printf("Check device data: lattice_nodes_positions(0) = %ld\n", lattice_nodes_positions_check(0));
- 
+
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //Kokkos::deep_copy(lattice_side, lattice_side_host);
     //lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),lattice_side_host);
@@ -249,6 +249,11 @@ double XY_SAW_LongInteraction::Energy() {
     auto local_L = L;
     //auto lattice_side_local = lattice_side;
     auto lattice_side_local = lattice_side_host(0);
+
+    auto lattice_nodes_positions_local = lattice_nodes_positions;
+    auto sequence_on_lattice_local = sequence_on_lattice;
+
+
     Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
@@ -264,13 +269,13 @@ double XY_SAW_LongInteraction::Energy() {
                 r = radius( 1, 10,
                            lattice_side_local);
                 printf(" ej = %ld %ld %ld \n", i, j, lattice_side_local);
-                r = radius(lattice_nodes_positions(0), lattice_nodes_positions(0),
+                r = radius(lattice_nodes_positions_local(i), lattice_nodes_positions_local(j),
                            lattice_side_local);
                 printf(" ej after r = %ld j = %ld  r = %f \n", j, lattice_side_local, r);
                 r = Kokkos::pow(r, R_POWER / 2.0);
                 energy_i += Kokkos::cos(
-                        sequence_on_lattice(lattice_nodes_positions(i)) -
-                        sequence_on_lattice(lattice_nodes_positions(j))) /
+                        sequence_on_lattice_local(lattice_nodes_positions_local(i)) -
+                        sequence_on_lattice_local(lattice_nodes_positions_local(j))) /
                                 r;
             }
         }
