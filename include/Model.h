@@ -57,8 +57,6 @@ public:
     double J; //Interaction Energy
     Kokkos::View<long*, Kokkos::CudaSpace> lattice_side; //("lattice_side", 1);
     Kokkos::View<long*, Kokkos::HostSpace>::HostMirror lattice_side_host;
-    //Kokkos::View<long, Kokkos::HostSpace> lattice_side_host;
-
     FlipMoveData flip_data;
 
     Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace> rand_pool;

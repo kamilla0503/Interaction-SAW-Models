@@ -202,7 +202,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     printf("Energy after all = %f \n", E);
 
 // Copy Kokkos::View members from Lattice
-    flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
+ /*   flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
     flip_data.inverse_steps = lattice->inverse_steps;
     flip_data.ndim2 = lattice->ndim2();
     printf("Finish lattice fields = %f \n", E);
@@ -227,7 +227,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     printf("Finish E= %f \n", E);
 
 // Random pool
-   // flip_data.rand_pool = rand_pool;
+   // flip_data.rand_pool = rand_pool;*/
 
 }
 
