@@ -205,16 +205,23 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     printf("Finish lattice fields = %f \n", E);
 // Copy Kokkos::View members from XY_SAW_LongInteraction
     flip_data.sequence_on_lattice = sequence_on_lattice;
+    printf("Finish  seq = %f \n", E);
     flip_data.next_monomers = next_monomers;
+    printf("Finish next = %f \n", E);
     flip_data.previous_monomers = previous_monomers;
+    printf("Finish prevs = %f \n", E);
     flip_data.directions = directions;
+    printf("Finish directions = %f \n", E);
     flip_data.lattice_nodes_positions = lattice_nodes_positions;
+    printf("Finish nodes positions = %f \n", E);
 
 // Scalars
     //flip_data.NO_SAW_NODE = NO_SAW_NODE;
     //flip_data.NO_XY_SPIN = NO_XY_SPIN;
     flip_data.J = J;
+    printf("Finish J = %f \n", E);
     flip_data.E = E;
+    printf("Finish E= %f \n", E);
 
 // Random pool
    // flip_data.rand_pool = rand_pool;
