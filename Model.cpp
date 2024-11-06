@@ -193,7 +193,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     lattice_side_host(0) = lattice_side_h;
     Kokkos::deep_copy(lattice_side, lattice_side_host);
     Kokkos::fence();
-    auto lattice_nodes_positions_check = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_nodes_positions);
+      //auto lattice_nodes_positions_check = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_nodes_positions);
     std::cout << "Model creation before energy" << std::endl;
 
     E = Energy();
@@ -297,8 +297,8 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     printf("FlipMove_AddEnd \n");
-    //coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
-    coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
+    coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
+    //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
     double oldspin = sequence_on_lattice(start_conformation);
