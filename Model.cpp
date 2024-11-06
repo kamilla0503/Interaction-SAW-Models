@@ -185,7 +185,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(directions, h_directions_h);
 
     long lattice_side_h = lattice->lattice_side ; // Assign the actual value you need here
-    //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
+    lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side", 1);
     //auto lattice_side_host_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(), lattice_side);
 
     lattice_side_host = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),lattice_side);

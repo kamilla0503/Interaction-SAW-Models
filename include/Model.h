@@ -32,7 +32,7 @@ public:
     long L; //Length of the model chain
     double E; //current value for energy; double as J
     double J; //Interaction Energy
-    Kokkos::View<long*, Kokkos::CudaSpace> lattice_side("lattice_side", 1);
+    Kokkos::View<long*, Kokkos::CudaSpace> lattice_side; //("lattice_side", 1);
     Kokkos::View<long*, Kokkos::CudaHostPinnedSpace>::HostMirror lattice_side_host;
     //Kokkos::View<long, Kokkos::CudaHostPinnedSpace> lattice_side_host;
 };
