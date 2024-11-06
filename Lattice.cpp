@@ -118,8 +118,8 @@ void Lattice_3D::create_lattice() {
     map_of_contacts_int = Kokkos::View<long*, Kokkos::CudaSpace>("map_of_contacts_int",
                                               lattice_side*lattice_side*lattice_side*ndim2());
     inverse_steps = Kokkos::View<int*, Kokkos::CudaSpace>("inverse_steps", 6 );
-    h_map_of_contacts_int_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),map_of_contacts_int);
-    h_inverse_steps_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),inverse_steps);
+    h_map_of_contacts_int_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),map_of_contacts_int);
+    h_inverse_steps_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),inverse_steps);
     for (long i = 0; i < lattice_side*lattice_side*lattice_side*ndim2(); ++i) {
         h_map_of_contacts_int_h(i) = map_of_contacts_int_h[i];  // Assuming 'raw_host_data' is a long* array
     }

@@ -75,16 +75,16 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     lattice_nodes_positions = Kokkos::View<long *, Kokkos::CudaSpace>("lattice_nodes_positions", L);
     sequence_on_lattice = Kokkos::View<double *, Kokkos::CudaSpace>("sequence_on_lattice", Nnodes);
     //Kokkos::View<double*>::HostMirror
-    h_sequence_on_lattice_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),sequence_on_lattice);
-    h_lattice_nodes_positions_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),lattice_nodes_positions);
+    h_sequence_on_lattice_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),sequence_on_lattice);
+    h_lattice_nodes_positions_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),lattice_nodes_positions);
     //Kokkos::View<double *[4][4], LayoutType, MemSpace>::HostMirror h_A = Kokkos::create_mirror_view(A);
     next_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("next_monomers", Nnodes);
     previous_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("previous_monomers", Nnodes);
-    h_next_monomers_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),next_monomers);
-    h_previous_monomers_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),previous_monomers);
+    h_next_monomers_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),next_monomers);
+    h_previous_monomers_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),previous_monomers);
 
     directions = Kokkos::View<short*, Kokkos::CudaSpace>("directions", Nnodes);
-    h_directions_h = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),directions);
+    h_directions_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),directions);
 
 #ifdef STARTDEFAULT
     start_conformation = 0;
@@ -188,9 +188,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 
     lattice_side = Kokkos::View<long*, Kokkos::CudaSpace>("lattice_side", 1);
-    //auto lattice_side_host_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(), lattice_side);
+    //auto lattice_side_host_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_side);
 
-    lattice_side_host = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(),lattice_side);
+    lattice_side_host = Kokkos::create_mirror_view(Kokkos::HostSpace(),lattice_side);
     lattice_side_host(0) = lattice_side_h;
 
     Kokkos::deep_copy(lattice_side, lattice_side_host);
@@ -198,9 +198,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::fence();
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //Kokkos::deep_copy(lattice_side, lattice_side_host);
-    //lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(),lattice_side_host);
+    //lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),lattice_side_host);
 
-    //lattice_side_host = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(), lattice_side);
+    //lattice_side_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_side);
 
     std::cout << "Model creation before energy" << std::endl;
 
