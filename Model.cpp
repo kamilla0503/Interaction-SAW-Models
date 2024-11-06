@@ -185,33 +185,18 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(previous_monomers, h_previous_monomers_h);
     Kokkos::deep_copy(next_monomers, h_next_monomers_h);
     Kokkos::deep_copy(directions, h_directions_h);
-
-
     lattice_side = Kokkos::View<long*, Kokkos::CudaSpace>("lattice_side", 1);
-    //auto lattice_side_host_mirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_side);
-
     lattice_side_host = Kokkos::create_mirror_view(Kokkos::HostSpace(),lattice_side);
     lattice_side_host(0) = lattice_side_h;
-
     Kokkos::deep_copy(lattice_side, lattice_side_host);
-
     Kokkos::fence();
-
-
     auto lattice_nodes_positions_check = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_nodes_positions);
-    printf("Check device data: lattice_nodes_positions(0) = %ld\n", lattice_nodes_positions_check(0));
-
-    //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
-    //Kokkos::deep_copy(lattice_side, lattice_side_host);
-    //lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),lattice_side_host);
-
-    //lattice_side_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_side);
-
     std::cout << "Model creation before energy" << std::endl;
 
     E = Energy();
 
     std::cout << "Model creation after energy" << std::endl;
+    printf("Energy after all = %f \n", E);
 
 }
 
@@ -247,31 +232,18 @@ KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
     auto local_L = L;
-    //auto lattice_side_local = lattice_side;
     auto lattice_side_local = lattice_side_host(0);
-
     auto lattice_nodes_positions_local = lattice_nodes_positions;
     auto sequence_on_lattice_local = sequence_on_lattice;
-
-
     Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
-       // lattice->radius(1, 10);
-       double r;
-       printf(" i = %ld \n", i);
+        double r;
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
-          printf(" ei = %ld %ld \n", i, lattice_side_local);
-        // Inner loop remains sequential for each i
             for (long j = i + 1; j < local_L; j++) {
-            //printf()
-                r = radius( 1, 10,
-                           lattice_side_local);
-                printf(" ej = %ld %ld %ld \n", i, j, lattice_side_local);
                 r = radius(lattice_nodes_positions_local(i), lattice_nodes_positions_local(j),
                            lattice_side_local);
-                printf(" ej after r = %ld j = %ld  r = %f \n", j, lattice_side_local, r);
                 r = Kokkos::pow(r, R_POWER / 2.0);
                 energy_i += Kokkos::cos(
                         sequence_on_lattice_local(lattice_nodes_positions_local(i)) -
@@ -280,9 +252,7 @@ double XY_SAW_LongInteraction::Energy() {
             }
         }
         local_H += energy_i;  // Add local energy contribution to the reduction variable
-       printf(" energy i = %ld %f \n", i, energy_i);
     }, H);  // H is the total energy accumulated across all threads
-    //Kokkos::fence();
     return -H;  // Return negative of the total energy
 }
 
@@ -295,11 +265,13 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
-
+    printf("FlipMove_AddEnd \n");
     coord_t new_point = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
     //std::cout << "new_point " << new_point << std::endl;
+    printf("FlipMove_AddEnd new point = %ld \n", new_point);
     double oldspin = sequence_on_lattice(start_conformation);
     //std::cout << "oldspin " << oldspin << std::endl;
+    rintf("FlipMove_AddEnd new point = %f \n", oldspin);
     //self-avoidance condition:
     if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
@@ -307,8 +279,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     // delete the beginning of SAW
     save_start_conformation = start_conformation;
+    rintf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
     start_conformation = next_monomers(start_conformation);
-
+    rintf("FlipMove_AddEnd start = %ld \n", start_conformation);
     next_monomers(save_start_conformation) = NO_SAW_NODE;
     previous_monomers(start_conformation) = NO_SAW_NODE;
     sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
