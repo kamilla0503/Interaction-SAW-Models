@@ -257,7 +257,7 @@ double XY_SAW_LongInteraction::Energy() {
                 printf(" ej = %ld %ld %ld \n", i, j, lattice_side_local);
                 r = radius(lattice_nodes_positions(i), lattice_nodes_positions(j),
                            lattice_side_local);
-                printf(" ej = %ld j = %ld  r = %f \n", j, lattice_side_local, r);
+                printf(" ej after r = %ld j = %ld  r = %f \n", j, lattice_side_local, r);
                 r = Kokkos::pow(r, R_POWER / 2.0);
                 energy_i += Kokkos::cos(
                         sequence_on_lattice(lattice_nodes_positions(i)) -
