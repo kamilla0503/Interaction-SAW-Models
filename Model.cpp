@@ -202,7 +202,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
     flip_data.inverse_steps = lattice->inverse_steps;
     flip_data.ndim2 = lattice->ndim2();
-
+    printf("Finish lattice fields = %f \n", E);
 // Copy Kokkos::View members from XY_SAW_LongInteraction
     flip_data.sequence_on_lattice = sequence_on_lattice;
     flip_data.next_monomers = next_monomers;
