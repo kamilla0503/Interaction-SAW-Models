@@ -35,6 +35,9 @@ public:
     Kokkos::View<long*, Kokkos::CudaSpace> lattice_side; //("lattice_side", 1);
     Kokkos::View<long*, Kokkos::HostSpace>::HostMirror lattice_side_host;
     //Kokkos::View<long, Kokkos::HostSpace> lattice_side_host;
+
+    FlipMoveData flip_data;
+
 };
 
 // Abstract Class for geometry related work
@@ -117,6 +120,26 @@ public:
 
 
     Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace> rand_pool;
+};
+
+
+struct FlipMoveData {
+    // Device-accessible data from Lattice
+    Kokkos::View<long*, Kokkos::CudaSpace> map_of_contacts_int;
+    Kokkos::View<int*, Kokkos::CudaSpace> inverse_steps;
+    long ndim2;
+
+    // Other device-accessible data
+    // ...
+
+    // Scalars
+    long NO_SAW_NODE;
+    double NO_XY_SPIN;
+    double J;
+    double E;
+
+    // Random number generator pool
+    Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool;
 };
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H

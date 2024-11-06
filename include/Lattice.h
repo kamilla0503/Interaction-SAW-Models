@@ -22,7 +22,6 @@ public:
 
     std::valarray<coord_t> map_of_contacts_int_h;
     std::valarray<int> inverse_steps_h;
-
     Kokkos::View<long*, Kokkos::CudaSpace> map_of_contacts_int;
     Kokkos::View<long*, Kokkos::HostSpace>::HostMirror h_map_of_contacts_int_h;
     Kokkos::View<int*, Kokkos::CudaSpace> inverse_steps;

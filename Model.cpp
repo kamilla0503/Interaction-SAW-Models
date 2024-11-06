@@ -198,6 +198,28 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     std::cout << "Model creation after energy" << std::endl;
     printf("Energy after all = %f \n", E);
 
+
+// Copy Kokkos::View members from Lattice
+    flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
+    flip_data.inverse_steps = lattice->inverse_steps;
+    flip_data.ndim2 = lattice->ndim2();
+
+// Copy Kokkos::View members from XY_SAW_LongInteraction
+    flip_data.sequence_on_lattice = sequence_on_lattice;
+    flip_data.next_monomers = next_monomers;
+    flip_data.previous_monomers = previous_monomers;
+    flip_data.directions = directions;
+    flip_data.lattice_nodes_positions = lattice_nodes_positions;
+
+// Scalars
+    //flip_data.NO_SAW_NODE = NO_SAW_NODE;
+    //flip_data.NO_XY_SPIN = NO_XY_SPIN;
+    flip_data.J = J;
+    flip_data.E = E;
+
+// Random pool
+    flip_data.rand_pool = rand_pool;
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -266,7 +288,7 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     printf("FlipMove_AddEnd \n");
-    coord_t new_point = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
+    coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
     double oldspin = sequence_on_lattice(start_conformation);
@@ -337,7 +359,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
 
-    coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
+    coord_t new_point = lattice.map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
     double oldspin = sequence_on_lattice(end_conformation);
 
     if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
