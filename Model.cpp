@@ -198,7 +198,6 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     std::cout << "Model creation after energy" << std::endl;
     printf("Energy after all = %f \n", E);
 
-
 // Copy Kokkos::View members from Lattice
     flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
     flip_data.inverse_steps = lattice->inverse_steps;
@@ -218,7 +217,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.E = E;
 
 // Random pool
-    flip_data.rand_pool = rand_pool;
+   // flip_data.rand_pool = rand_pool;
 
 }
 
