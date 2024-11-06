@@ -196,6 +196,11 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(lattice_side, lattice_side_host);
 
     Kokkos::fence();
+
+
+    auto lattice_nodes_positions_check = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_nodes_positions);
+    printf("Check device data: lattice_nodes_positions(0) = %ld\n", lattice_nodes_positions_check(0));
+ 
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //Kokkos::deep_copy(lattice_side, lattice_side_host);
     //lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),lattice_side_host);
