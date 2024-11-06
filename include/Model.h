@@ -22,7 +22,7 @@ struct FlipMoveData {
     Kokkos::View<double *, Kokkos::CudaSpace> sequence_on_lattice;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> next_monomers;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> previous_monomers;
-    Kokkos::View<int *, Kokkos::CudaSpace> directions;
+    Kokkos::View<short *, Kokkos::CudaSpace> directions;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> lattice_nodes_positions;
 
     // Scalars

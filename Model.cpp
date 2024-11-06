@@ -360,7 +360,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
 
-    coord_t new_point = lattice.map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
+    coord_t new_point = lattice->map_of_contacts_int(lattice->ndim2() * start_conformation + direction);
     double oldspin = sequence_on_lattice(end_conformation);
 
     if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
