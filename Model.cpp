@@ -239,7 +239,7 @@ double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
     auto local_L = L;
     //auto lattice_side_local = lattice_side;
-    auto lattice_side_local = lattice_side(0);
+    auto lattice_side_local = lattice_side_host(0);
     Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
     const long i,
     double &local_H) {
