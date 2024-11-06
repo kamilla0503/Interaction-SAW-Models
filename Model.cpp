@@ -252,6 +252,7 @@ double XY_SAW_LongInteraction::Energy() {
         // Inner loop remains sequential for each i
             for (long j = i + 1; j < local_L; j++) {
             //printf()
+                printf(" ej = %ld %ld \n", j, lattice_side_local);
                 r = radius(lattice_nodes_positions(i), lattice_nodes_positions(j),
                            lattice_side_local);
                 r = Kokkos::pow(r, R_POWER / 2.0);
