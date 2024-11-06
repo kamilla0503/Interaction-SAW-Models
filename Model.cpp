@@ -193,7 +193,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     Kokkos::deep_copy(lattice_side, lattice_side_host);
 
-    Kokkos::fence(); 
+    Kokkos::fence();
     //lattice_side = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side");
     //Kokkos::deep_copy(lattice_side, lattice_side_host);
     //lattice_side = Kokkos::create_mirror_view_and_copy(Kokkos::CudaHostPinnedSpace(),lattice_side_host);
@@ -257,7 +257,7 @@ double XY_SAW_LongInteraction::Energy() {
                 r = radius( 1, 10,
                            lattice_side_local);
                 printf(" ej = %ld %ld %ld \n", i, j, lattice_side_local);
-                r = radius(lattice_nodes_positions(i), lattice_nodes_positions(j),
+                r = radius(lattice_nodes_positions(0), lattice_nodes_positions(0),
                            lattice_side_local);
                 printf(" ej after r = %ld j = %ld  r = %f \n", j, lattice_side_local, r);
                 r = Kokkos::pow(r, R_POWER / 2.0);
