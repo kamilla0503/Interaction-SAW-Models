@@ -13,6 +13,26 @@
 
 const double PI = std::atan(1.0)*4;
 
+struct FlipMoveData {
+    // Device-accessible data from Lattice
+    Kokkos::View<long*, Kokkos::CudaSpace> map_of_contacts_int;
+    Kokkos::View<int*, Kokkos::CudaSpace> inverse_steps;
+    long ndim2;
+
+    // Other device-accessible data
+    // ...
+
+    // Scalars
+    long NO_SAW_NODE;
+    double NO_XY_SPIN;
+    double J;
+    double E;
+
+    // Random number generator pool
+    Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool;
+};
+
+
 class Model {
 public:
     //Model() {};
@@ -123,23 +143,6 @@ public:
 };
 
 
-struct FlipMoveData {
-    // Device-accessible data from Lattice
-    Kokkos::View<long*, Kokkos::CudaSpace> map_of_contacts_int;
-    Kokkos::View<int*, Kokkos::CudaSpace> inverse_steps;
-    long ndim2;
 
-    // Other device-accessible data
-    // ...
-
-    // Scalars
-    long NO_SAW_NODE;
-    double NO_XY_SPIN;
-    double J;
-    double E;
-
-    // Random number generator pool
-    Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool;
-};
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H
