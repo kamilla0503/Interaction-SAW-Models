@@ -294,7 +294,7 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 #endif
 
 KOKKOS_INLINE_FUNCTION
-void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
+void XY_SAW_LongInteraction::FlipMove_AddEnd(FlipMoveData& data, long direction, double spinValue) {
     printf("FlipMove_AddEnd \n");
     coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);

@@ -71,6 +71,8 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 //    Kokkos::initialize(Kokkos::InitializationSettings()
 //                               .set_disable_warnings(false)
 //                               .set_num_threads(4));
+    auto flip_data_copy = model->flip_data; // Capture data by value
+
     for (long long i = 0; i < MC_STEPS + 20; ++i) {
     //for (long long i = 0; i < 1000000 + 20; ++i) {
         //if (i>20) return;
@@ -81,7 +83,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             step = distribution_uid_steps(generators_steps);
             spinvalue =  distribution_theta(generators_theta);
             if (flipMoveType<1.5) {
-                model->FlipMove_AddEnd(step, spinvalue);
+                model->FlipMove_AddEnd(flip_data_copy, step, spinvalue);
             }
             else {
                 model->FlipMove_AddStart(step, spinvalue);
