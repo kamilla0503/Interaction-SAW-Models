@@ -115,8 +115,8 @@ public:
     KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
 
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (FlipMoveData& data, long direction, double spinValue);
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue);
+    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (FlipMoveData& data, long direction, double spinValue) override;
+    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue) override;
    // KOKKOS_INLINE_FUNCTION void ClusterStep (double flipdirection);
 
     void SequenceOnLatticeInitialization();
