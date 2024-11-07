@@ -32,7 +32,7 @@ struct FlipMoveData {
     double E;
 
     // Random number generator pool
-    Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool_ptr;
+    Kokkos::Random_XorShift64_Pool <Kokkos::Cuda>* rand_pool_ptr;
 };
 
 
