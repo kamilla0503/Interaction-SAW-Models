@@ -227,6 +227,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     printf("Finish E= %f \n", E);
 
 // Random pool
+    //  rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(/* seed or execution space */);
    // flip_data.rand_pool = rand_pool;
 
 }
