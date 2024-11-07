@@ -219,16 +219,16 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     printf("Finish nodes positions = %f \n", E);
 
 // Scalars
-    //flip_data.NO_SAW_NODE = NO_SAW_NODE;
-    //flip_data.NO_XY_SPIN = NO_XY_SPIN;
+    flip_data.NO_SAW_NODE = NO_SAW_NODE;
+    flip_data.NO_XY_SPIN = NO_XY_SPIN;
     flip_data.J = J;
     printf("Finish J = %f \n", E);
     flip_data.E = E;
     printf("Finish E= %f \n", E);
 
 // Random pool
-    //  rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(/* seed or execution space */);
-   // flip_data.rand_pool = rand_pool;
+    Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(/* seed or execution space */);
+    flip_data.rand_pool_ptr = &rand_pool;
 
 }
 
