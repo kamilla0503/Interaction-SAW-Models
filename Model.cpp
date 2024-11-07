@@ -219,8 +219,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     printf("Finish nodes positions = %f \n", E);
 
 // Scalars
-    flip_data.NO_SAW_NODE = NO_SAW_NODE;
-    flip_data.NO_XY_SPIN = NO_XY_SPIN;
+    //flip_data.NO_SAW_NODE = NO_SAW_NODE;
+    //flip_data.NO_XY_SPIN = NO_XY_SPIN;
     flip_data.J = J;
     printf("Finish J = %f \n", E);
     flip_data.E = E;
