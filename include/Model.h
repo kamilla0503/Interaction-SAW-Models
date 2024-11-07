@@ -58,7 +58,7 @@ public:
 
     FlipMoveData flip_data;
 
-    Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace> rand_pool;
+    Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool;
 
 };
 
