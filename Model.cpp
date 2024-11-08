@@ -55,7 +55,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(
         SequenceOnLatticeInitialization();
         StartConfiguration();
     }
-    rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
+    //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
     Kokkos::fence();
     printf("Finish all configs \n");
 
@@ -228,8 +228,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.end_conformation = end_conformation;
     flip_data.L = L;
 // Random pool
-   // rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(/* seed or execution space */);
-   // flip_data.rand_pool_ptr = &rand_pool;
+    rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(123 /* seed or execution space */);
+    //rand_pool.init(12345,256);
+    flip_data.rand_pool = &rand_pool;
 
 }
 

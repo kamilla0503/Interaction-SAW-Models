@@ -45,7 +45,7 @@ struct FlipMoveData {
     long start_conformation;
     long L;
     // Random number generator pool
-   // Kokkos::Random_XorShift64_Pool <Kokkos::Cuda>* rand_pool_ptr;
+   Kokkos::Random_XorShift64_Pool <Kokkos::Cuda>* rand_pool;
 };
 
 
@@ -159,7 +159,7 @@ public:
 
 };
 
-/*
+
 KOKKOS_INLINE_FUNCTION
 void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue) {
     printf("FlipMove_AddEnd \n");
@@ -178,10 +178,10 @@ void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue
     // delete the beginning of SAW
     save_start_conformation = data.start_conformation;
     printf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
-    data.start_conformation = next_monomers(data.start_conformation);
+    data.start_conformation = data.next_monomers(data.start_conformation);
     printf("FlipMove_AddEnd start = %ld \n", data.start_conformation);
     data.next_monomers(save_start_conformation) = NO_SAW_NODE;
-    previous_monomers(data.start_conformation) = NO_SAW_NODE;
+    data.previous_monomers(data.start_conformation) = NO_SAW_NODE;
     data.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
 
     //add the new monomer at the end of SAW
@@ -191,46 +191,45 @@ void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue
     data.end_conformation = new_point;
     //std::cout << "Movement of positions  " << start_conformation << " " << spinValue << std::endl;
 
-    for (int i = 1; i < number_of_spins(); i++) {
-        lattice_nodes_positions(i - 1) = lattice_nodes_positions(i);
+    for (int i = 1; i < data.L; i++) {
+        data.lattice_nodes_positions(i - 1) = data.lattice_nodes_positions(i);
     }
-    lattice_nodes_positions(this->number_of_spins() - 1) = end_conformation;
+    data.lattice_nodes_positions(data.L - 1) = data.end_conformation;
 
-    double new_E = Energy();
+    double new_E = data.E;  // Energy();
 
-    double p1 = exp(-(J * (new_E - E)));
+    double p1 = exp(-(data.J * (new_E - data.E)));
     double p_metropolis = Kokkos::min(1.0, p1);
 
-    auto rand_gen = rand_pool.get_state();
+    auto rand_gen = data.rand_pool.get_state();
     // Generate a random number between 0.0 and 1.0
     double q_ifaccept = rand_gen.drand(0., 1.);
     if (q_ifaccept < p_metropolis) { // accept the new state
-        E = new_E;
-        sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
-        directions(save_start_conformation) = NO_SAW_NODE;
-        directions(previous_monomers(end_conformation)) = direction;
+        data.E = new_E;
+        data.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
+        data.directions(save_start_conformation) = NO_SAW_NODE;
+        directions(data.previous_monomers(data.end_conformation)) = direction;
     } else {
         //reject new state
         //delete end
-        coord_t del = end_conformation;
-        end_conformation = previous_monomers(end_conformation);
-        next_monomers(end_conformation) = NO_SAW_NODE;
-        previous_monomers(del) = NO_SAW_NODE;
-        sequence_on_lattice(del) = NO_XY_SPIN;
+        coord_t del = data.end_conformation;
+        data.end_conformation = data.previous_monomers(data.end_conformation);
+        data.next_monomers(data.end_conformation) = NO_SAW_NODE;
+        data.previous_monomers(del) = NO_SAW_NODE;
+        data.sequence_on_lattice(del) = NO_XY_SPIN;
 
         //add the previous beginning
-        previous_monomers(start_conformation) = save_start_conformation;
-        next_monomers(save_start_conformation) = start_conformation;
-        start_conformation = save_start_conformation;
-        sequence_on_lattice(start_conformation) = oldspin;
+        data.previous_monomers(data.start_conformation) = save_start_conformation;
+        data.next_monomers(save_start_conformation) = data.start_conformation;
+        data.start_conformation = save_start_conformation;
+        data.sequence_on_lattice(data.start_conformation) = oldspin;
 
-        for (int i = this->number_of_spins() - 1; i > 0; i--) {
-            lattice_nodes_positions(i) = lattice_nodes_positions(i - 1);
+        for (int i = data.L - 1; i > 0; i--) {
+            data.lattice_nodes_positions(i) = data.lattice_nodes_positions(i - 1);
         }
-        lattice_nodes_positions(0) = start_conformation;
+        data.lattice_nodes_positions(0) = data.start_conformation;
     }
-    rand_pool.free_state(rand_gen);
+    data.rand_pool.free_state(rand_gen);
 }
-*/
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H
