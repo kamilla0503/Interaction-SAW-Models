@@ -83,7 +83,8 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             step = distribution_uid_steps(generators_steps);
             spinvalue =  distribution_theta(generators_theta);
             if (flipMoveType<1.5) {
-                model->FlipMove_AddEnd(flip_data_copy, step, spinvalue);
+                //model->FlipMove_AddEnd(flip_data_copy, step, spinvalue);
+                FlipMove_AddEnd_Device(flip_data_copy, step, spinvalue);
             }
             else {
                 model->FlipMove_AddStart(step, spinvalue);
