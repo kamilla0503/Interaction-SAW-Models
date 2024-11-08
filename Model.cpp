@@ -303,7 +303,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
-    double oldspin = lattice.sequence_on_lattice(start_conformation);
+    double oldspin = sequence_on_lattice(start_conformation);
     //std::cout << "oldspin " << oldspin << std::endl;
     printf("FlipMove_AddEnd new point = %f \n", oldspin);
     //self-avoidance condition:
