@@ -299,15 +299,17 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
+
+    auto flip_data_local = flip_data;
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
               direction
         );
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd  end = %d ; direction =  %d  \n",
-                flip_data.end_conformation, direction
+                flip_data_local.end_conformation, direction
         );
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd ndim2 = %d; end = %d ; direction =  %d  \n",
-               flip_data.ndim2, flip_data.end_conformation, direction
+               flip_data_local.ndim2, flip_data_local.end_conformation, direction
                );
 
     coord_t new_point = flip_data.map_of_contacts_int(flip_data.ndim2* flip_data.end_conformation + direction);
