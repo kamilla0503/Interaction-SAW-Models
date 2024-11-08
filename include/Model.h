@@ -201,14 +201,14 @@ void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue
     double p1 = exp(-(data.J * (new_E - data.E)));
     double p_metropolis = Kokkos::min(1.0, p1);
 
-    auto rand_gen = data.rand_pool.get_state();
+    auto rand_gen = data.rand_pool->get_state();
     // Generate a random number between 0.0 and 1.0
     double q_ifaccept = rand_gen.drand(0., 1.);
     if (q_ifaccept < p_metropolis) { // accept the new state
         data.E = new_E;
         data.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
         data.directions(save_start_conformation) = NO_SAW_NODE;
-        directions(data.previous_monomers(data.end_conformation)) = direction;
+        data.directions(data.previous_monomers(data.end_conformation)) = direction;
     } else {
         //reject new state
         //delete end
@@ -229,7 +229,7 @@ void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue
         }
         data.lattice_nodes_positions(0) = data.start_conformation;
     }
-    data.rand_pool.free_state(rand_gen);
+    data.rand_pool->free_state(rand_gen);
 }
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H
