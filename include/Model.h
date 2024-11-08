@@ -10,8 +10,20 @@
 #include<Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 
+#ifndef OUT_Length
+#define OUT_Length 4
+#endif
+//used to define lattice nodes without spins (SAW does not go over this node)
+#ifndef NO_SAW_NODE
+#define NO_SAW_NODE -1
+#endif
+//used to define lattice nodes without XY spins
+#ifndef NO_XY_SPIN
+#define NO_XY_SPIN -5
+#endif
 
 const double PI = std::atan(1.0)*4;
+
 struct FlipMoveData {
     // Device-accessible data from Lattice
     Kokkos::View<long *, Kokkos::CudaSpace> map_of_contacts_int;
@@ -29,6 +41,9 @@ struct FlipMoveData {
     double J;
     double E;
 
+    long end_conformation;
+    long start_conformation;
+    long L;
     // Random number generator pool
    // Kokkos::Random_XorShift64_Pool <Kokkos::Cuda>* rand_pool_ptr;
 };
@@ -71,7 +86,7 @@ public:
 
     KOKKOS_INLINE_FUNCTION virtual void Reconnect(short direction) = 0; //Only Geometry changes --- the same for all SAW Models
 
-    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (FlipMoveData& data, long direction, SpinType spinvalue) = 0; //depends on spin variables
+    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
     KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
    // virtual void ClusterStep (double flipdirection) = 0; //depends on spin variables
 
@@ -115,7 +130,7 @@ public:
     KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
 
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (FlipMoveData& data, long direction, double spinValue) override;
+    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;
     KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue) override;
    // KOKKOS_INLINE_FUNCTION void ClusterStep (double flipdirection);
 
@@ -144,7 +159,78 @@ public:
 
 };
 
+/*
+KOKKOS_INLINE_FUNCTION
+void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue) {
+    printf("FlipMove_AddEnd \n");
+    coord_t new_point = data.map_of_contacts_int(data.ndim2 * data.end_conformation + direction);
+    //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
+    //std::cout << "new_point " << new_point << std::endl;
+    printf("FlipMove_AddEnd new point = %ld \n", new_point);
+    double oldspin = data.sequence_on_lattice(data.start_conformation);
+    //std::cout << "oldspin " << oldspin << std::endl;
+    printf("FlipMove_AddEnd new point = %f \n", oldspin);
+    //self-avoidance condition:
+    if (data.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
+    //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
+    coord_t save_start_conformation;
 
+    // delete the beginning of SAW
+    save_start_conformation = data.start_conformation;
+    printf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
+    data.start_conformation = next_monomers(data.start_conformation);
+    printf("FlipMove_AddEnd start = %ld \n", data.start_conformation);
+    data.next_monomers(save_start_conformation) = NO_SAW_NODE;
+    previous_monomers(data.start_conformation) = NO_SAW_NODE;
+    data.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
 
+    //add the new monomer at the end of SAW
+    data.next_monomers(data.end_conformation) = new_point;
+    data.sequence_on_lattice(new_point) = spinValue; //new spin value
+    data.previous_monomers(new_point) = data.end_conformation;
+    data.end_conformation = new_point;
+    //std::cout << "Movement of positions  " << start_conformation << " " << spinValue << std::endl;
+
+    for (int i = 1; i < number_of_spins(); i++) {
+        lattice_nodes_positions(i - 1) = lattice_nodes_positions(i);
+    }
+    lattice_nodes_positions(this->number_of_spins() - 1) = end_conformation;
+
+    double new_E = Energy();
+
+    double p1 = exp(-(J * (new_E - E)));
+    double p_metropolis = Kokkos::min(1.0, p1);
+
+    auto rand_gen = rand_pool.get_state();
+    // Generate a random number between 0.0 and 1.0
+    double q_ifaccept = rand_gen.drand(0., 1.);
+    if (q_ifaccept < p_metropolis) { // accept the new state
+        E = new_E;
+        sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
+        directions(save_start_conformation) = NO_SAW_NODE;
+        directions(previous_monomers(end_conformation)) = direction;
+    } else {
+        //reject new state
+        //delete end
+        coord_t del = end_conformation;
+        end_conformation = previous_monomers(end_conformation);
+        next_monomers(end_conformation) = NO_SAW_NODE;
+        previous_monomers(del) = NO_SAW_NODE;
+        sequence_on_lattice(del) = NO_XY_SPIN;
+
+        //add the previous beginning
+        previous_monomers(start_conformation) = save_start_conformation;
+        next_monomers(save_start_conformation) = start_conformation;
+        start_conformation = save_start_conformation;
+        sequence_on_lattice(start_conformation) = oldspin;
+
+        for (int i = this->number_of_spins() - 1; i > 0; i--) {
+            lattice_nodes_positions(i) = lattice_nodes_positions(i - 1);
+        }
+        lattice_nodes_positions(0) = start_conformation;
+    }
+    rand_pool.free_state(rand_gen);
+}
+*/
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H
