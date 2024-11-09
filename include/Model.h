@@ -41,8 +41,12 @@ struct FlipMoveData {
     double J;
     double E;
 
-    long end_conformation;
-    long start_conformation;
+
+    Kokkos::View<coord_t*, Kokkos::DeviceType> start_conformation;
+    Kokkos::View<coord_t*, Kokkos::DeviceType> end_conformation;
+
+    //long end_conformation;
+    //long start_conformation;
     long L;
     // Random number generator pool
    Kokkos::Random_XorShift64_Pool <Kokkos::Cuda>* rand_pool;

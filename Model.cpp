@@ -232,6 +232,22 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //rand_pool.init(12345,256);
     flip_data.rand_pool = &rand_pool;
 
+    // Allocate views with size 1
+    flip_data_local.start_conformation = Kokkos::View<coord_t*, Kokkos::DeviceType>("start_conformation", 1);
+    flip_data_local.end_conformation = Kokkos::View<coord_t*, Kokkos::DeviceType>("end_conformation", 1);
+
+// Create host mirrors
+    auto start_conformation_host = Kokkos::create_mirror_view(flip_data_local.start_conformation);
+    auto end_conformation_host = Kokkos::create_mirror_view(flip_data_local.end_conformation);
+
+// Initialize values on the host
+    start_conformation_host(0) = start_conformation; // Your initial value
+    end_conformation_host(0) = end_conformation;     // Your initial value
+
+// Copy values to device
+    Kokkos::deep_copy(flip_data_local.start_conformation, start_conformation_host);
+    Kokkos::deep_copy(flip_data_local.end_conformation, end_conformation_host);
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -306,13 +322,13 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
               direction
         );
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd  end = %d ; direction =  %d  \n",
-                flip_data_local.end_conformation, direction
+                flip_data_local.end_conformation(0), direction
         );
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd ndim2 = %d; end = %d ; direction =  %d  \n",
-               flip_data_local.ndim2, flip_data_local.end_conformation, direction
+               flip_data_local.ndim2, flip_data_local.end_conformation(0), direction
                );
 
-    coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation + direction);
+    coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
@@ -325,60 +341,60 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     coord_t save_start_conformation;
 
     // delete the beginning of SAW
-    save_start_conformation = flip_data_local.start_conformation;
+    save_start_conformation = flip_data_local.start_conformation(0);
     printf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
-    flip_data_local.start_conformation = flip_data_local.next_monomers(flip_data_local.start_conformation);
-    printf("FlipMove_AddEnd start = %ld \n", flip_data_local.start_conformation);
+    flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
+    printf("FlipMove_AddEnd start = %ld \n", flip_data_local.start_conformation(0));
     flip_data_local.next_monomers(save_start_conformation) = NO_SAW_NODE;
-    flip_data_local.previous_monomers(flip_data_local.start_conformation) = NO_SAW_NODE;
+    flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = NO_SAW_NODE;
     flip_data_local.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
 
     //add the new monomer at the end of SAW
-    flip_data_local.next_monomers(flip_data_local.end_conformation) = new_point;
+    flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
     flip_data_local.sequence_on_lattice(new_point) = spinValue; //new spin value
-    flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation;
-    flip_data_local.end_conformation = new_point;
+    flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
+    flip_data_local.end_conformation(0) = new_point;
     //std::cout << "Movement of positions  " << start_conformation << " " << spinValue << std::endl;
 
     for (int i = 1; i < flip_data_local.L ; i++) {
         flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
     }
-    flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation;
+    flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
 
     double new_E = Energy();
 
     double p1 = exp(-(J * (new_E - E)));
     double p_metropolis = Kokkos::min(1.0, p1);
 
-    auto rand_gen = flip_data_local.rand_pool.get_state();
+    auto rand_gen = flip_data_local.rand_pool->get_state();
     // Generate a random number between 0.0 and 1.0
     double q_ifaccept = rand_gen.drand(0., 1.);
    if (q_ifaccept < p_metropolis) { // accept the new state
        E = new_E;
        flip_data_local.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
        flip_data_local.directions(save_start_conformation) = NO_SAW_NODE;
-       flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation)) = direction;
+       flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = direction;
     } else {
         //reject new state
         //delete end
-        coord_t del = flip_data_local.end_conformation;
-        flip_data_local.end_conformation = flip_data_local.previous_monomers(flip_data_local.end_conformation);
+        coord_t del = flip_data_local.end_conformation(0);
+        flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(flip_data_local.end_conformation(0));
         flip_data_local.next_monomers(end_conformation) = NO_SAW_NODE;
         flip_data_local.previous_monomers(del) = NO_SAW_NODE;
         flip_data_local.sequence_on_lattice(del) = NO_XY_SPIN;
 
         //add the previous beginning
-        flip_data_local.previous_monomers(flip_data_local.start_conformation) = save_start_conformation;
-        flip_data_local.next_monomers(save_start_conformation) = flip_data_local.start_conformation;
-        flip_data_local.start_conformation = save_start_conformation;
-        flip_data_local.sequence_on_lattice(flip_data_local.start_conformation) = oldspin;
+        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = save_start_conformation;
+        flip_data_local.next_monomers(save_start_conformation) = flip_data_local.start_conformation(0);
+        flip_data_local.start_conformation(0) = save_start_conformation;
+        flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = oldspin;
 
-        for (int i = tflip_data_local.L - 1; i > 0; i--) {
+        for (int i = flip_data_local.L - 1; i > 0; i--) {
             flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
         }
-       flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation;
+       flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
     }
-   flip_data_local.rand_pool.free_state(rand_gen);
+   flip_data_local.rand_pool->free_state(rand_gen);
 
     });
 }
