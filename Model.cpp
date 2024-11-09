@@ -233,8 +233,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.rand_pool = &rand_pool;
 
     // Allocate views with size 1
-    flip_data_local.start_conformation = Kokkos::View<coord_t*, Kokkos::DeviceType>("start_conformation", 1);
-    flip_data_local.end_conformation = Kokkos::View<coord_t*, Kokkos::DeviceType>("end_conformation", 1);
+    flip_data_local.start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("start_conformation", 1);
+    flip_data_local.end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("end_conformation", 1);
 
 // Create host mirrors
     auto start_conformation_host = Kokkos::create_mirror_view(flip_data_local.start_conformation);

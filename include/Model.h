@@ -42,8 +42,8 @@ struct FlipMoveData {
     double E;
 
 
-    Kokkos::View<coord_t*, Kokkos::DeviceType> start_conformation;
-    Kokkos::View<coord_t*, Kokkos::DeviceType> end_conformation;
+    Kokkos::View<coord_t*, Kokkos::CudaSpace> start_conformation;
+    Kokkos::View<coord_t*, Kokkos::CudaSpace> end_conformation;
 
     //long end_conformation;
     //long start_conformation;
