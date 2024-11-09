@@ -233,20 +233,20 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.rand_pool = &rand_pool;
 
     // Allocate views with size 1
-    flip_data_local.start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("start_conformation", 1);
-    flip_data_local.end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("end_conformation", 1);
+    flip_data.start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("start_conformation", 1);
+    flip_data.end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("end_conformation", 1);
 
 // Create host mirrors
-    auto start_conformation_host = Kokkos::create_mirror_view(flip_data_local.start_conformation);
-    auto end_conformation_host = Kokkos::create_mirror_view(flip_data_local.end_conformation);
+    auto start_conformation_host = Kokkos::create_mirror_view(flip_data.start_conformation);
+    auto end_conformation_host = Kokkos::create_mirror_view(flip_data.end_conformation);
 
 // Initialize values on the host
     start_conformation_host(0) = start_conformation; // Your initial value
     end_conformation_host(0) = end_conformation;     // Your initial value
 
 // Copy values to device
-    Kokkos::deep_copy(flip_data_local.start_conformation, start_conformation_host);
-    Kokkos::deep_copy(flip_data_local.end_conformation, end_conformation_host);
+    Kokkos::deep_copy(flip_data.start_conformation, start_conformation_host);
+    Kokkos::deep_copy(flip_data.end_conformation, end_conformation_host);
 
 }
 
