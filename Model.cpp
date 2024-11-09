@@ -224,8 +224,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.E = E;
     printf("Finish E= %f \n", E);
 
-    flip_data.start_conformation = start_conformation;
-    flip_data.end_conformation = end_conformation;
+    //flip_data.start_conformation = start_conformation;
+    //flip_data.end_conformation = end_conformation;
     flip_data.L = L;
 // Random pool
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(123 /* seed or execution space */);
