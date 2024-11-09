@@ -312,73 +312,73 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
                flip_data_local.ndim2, flip_data_local.end_conformation, direction
                );
 
-    coord_t new_point = flip_data.map_of_contacts_int(flip_data.ndim2* flip_data.end_conformation + direction);
+    coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation + direction);
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
-    double oldspin = sequence_on_lattice(start_conformation);
+    double oldspin = flip_data_local.sequence_on_lattice(start_conformation);
     //std::cout << "oldspin " << oldspin << std::endl;
     printf("FlipMove_AddEnd new point = %f \n", oldspin);
     //self-avoidance condition:
-    if (sequence_on_lattice(new_point) != NO_XY_SPIN) return;
+    if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
     coord_t save_start_conformation;
 
     // delete the beginning of SAW
-    save_start_conformation = start_conformation;
+    save_start_conformation = flip_data_local.start_conformation;
     printf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
-    start_conformation = next_monomers(start_conformation);
-    printf("FlipMove_AddEnd start = %ld \n", start_conformation);
-    next_monomers(save_start_conformation) = NO_SAW_NODE;
-    previous_monomers(start_conformation) = NO_SAW_NODE;
-    sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
+    flip_data_local.start_conformation = flip_data_local.next_monomers(flip_data_local.start_conformation);
+    printf("FlipMove_AddEnd start = %ld \n", flip_data_local.start_conformation);
+    flip_data_local.next_monomers(save_start_conformation) = NO_SAW_NODE;
+    flip_data_local.previous_monomers(flip_data_local.start_conformation) = NO_SAW_NODE;
+    flip_data_local.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
 
     //add the new monomer at the end of SAW
-    next_monomers(end_conformation) = new_point;
-    sequence_on_lattice(new_point) = spinValue; //new spin value
-    previous_monomers(new_point) = end_conformation;
-    end_conformation = new_point;
+    flip_data_local.next_monomers(flip_data_local.end_conformation) = new_point;
+    flip_data_local.sequence_on_lattice(new_point) = spinValue; //new spin value
+    flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation;
+    flip_data_local.end_conformation = new_point;
     //std::cout << "Movement of positions  " << start_conformation << " " << spinValue << std::endl;
 
-    for (int i = 1; i < number_of_spins(); i++) {
-        lattice_nodes_positions(i - 1) = lattice_nodes_positions(i);
+    for (int i = 1; i < flip_data_local.L ; i++) {
+        flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
     }
-    lattice_nodes_positions(this->number_of_spins() - 1) = end_conformation;
+    flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation;
 
     double new_E = Energy();
 
     double p1 = exp(-(J * (new_E - E)));
     double p_metropolis = Kokkos::min(1.0, p1);
 
-    auto rand_gen = rand_pool.get_state();
+    auto rand_gen = flip_data_local.rand_pool.get_state();
     // Generate a random number between 0.0 and 1.0
     double q_ifaccept = rand_gen.drand(0., 1.);
    if (q_ifaccept < p_metropolis) { // accept the new state
-        E = new_E;
-        sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
-        directions(save_start_conformation) = NO_SAW_NODE;
-        directions(previous_monomers(end_conformation)) = direction;
+       E = new_E;
+       flip_data_local.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
+       flip_data_local.directions(save_start_conformation) = NO_SAW_NODE;
+       flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation)) = direction;
     } else {
         //reject new state
         //delete end
-        coord_t del = end_conformation;
-        end_conformation = previous_monomers(end_conformation);
-        next_monomers(end_conformation) = NO_SAW_NODE;
-        previous_monomers(del) = NO_SAW_NODE;
-        sequence_on_lattice(del) = NO_XY_SPIN;
+        coord_t del = flip_data_local.end_conformation;
+        flip_data_local.end_conformation = flip_data_local.previous_monomers(flip_data_local.end_conformation);
+        flip_data_local.next_monomers(end_conformation) = NO_SAW_NODE;
+        flip_data_local.previous_monomers(del) = NO_SAW_NODE;
+        flip_data_local.sequence_on_lattice(del) = NO_XY_SPIN;
 
         //add the previous beginning
-        previous_monomers(start_conformation) = save_start_conformation;
-        next_monomers(save_start_conformation) = start_conformation;
-        start_conformation = save_start_conformation;
-        sequence_on_lattice(start_conformation) = oldspin;
+        flip_data_local.previous_monomers(flip_data_local.start_conformation) = save_start_conformation;
+        flip_data_local.next_monomers(save_start_conformation) = flip_data_local.start_conformation;
+        flip_data_local.start_conformation = save_start_conformation;
+        flip_data_local.sequence_on_lattice(flip_data_local.start_conformation) = oldspin;
 
-        for (int i = this->number_of_spins() - 1; i > 0; i--) {
-            lattice_nodes_positions(i) = lattice_nodes_positions(i - 1);
+        for (int i = tflip_data_local.L - 1; i > 0; i--) {
+            flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
         }
-        lattice_nodes_positions(0) = start_conformation;
+       flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation;
     }
-    rand_pool.free_state(rand_gen);
+   flip_data_local.rand_pool.free_state(rand_gen);
 
     });
 }
