@@ -163,7 +163,7 @@ public:
 
 };
 
-
+/*
 KOKKOS_INLINE_FUNCTION
 void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue) {
     printf("FlipMove_AddEnd \n");
@@ -234,6 +234,6 @@ void FlipMove_AddEnd_Device(FlipMoveData& data, long direction, double spinValue
         data.lattice_nodes_positions(0) = data.start_conformation;
     }
     data.rand_pool->free_state(rand_gen);
-}
+}*/
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H
