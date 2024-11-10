@@ -553,30 +553,21 @@ void XY_SAW_LongInteraction::Reconnect(short direction) {
 }
 
 void XY_SAW_LongInteraction::updateData() {
-    // Create a host mirror of flip_data.E
+
     auto start_host = Kokkos::create_mirror_view(flip_data.start_conformation);
-// Copy data from device to host
     Kokkos::deep_copy(start_host, flip_data.start_conformation);
-// Access the value on the host
     start_conformation = start_host(0);
 
     auto end_host = Kokkos::create_mirror_view(flip_data.end_conformation);
-// Copy data from device to host
     Kokkos::deep_copy(end_host, flip_data.end_conformation);
-// Access the value on the host
     end_conformation = end_host(0);
 
 
     double r2 = lattice->radius(start_conformation, end_conformation);
     e2e_distance_2 << r2;
 
-
-
-// Create a host mirror of flip_data.E
     auto E_host = Kokkos::create_mirror_view(flip_data.E);
-// Copy data from device to host
     Kokkos::deep_copy(E_host, flip_data.E);
-// Access the value on the host
     E = E_host(0);
 
     energy << E;
