@@ -342,14 +342,14 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
-              direction
-        );
+             // direction
+        //);
         //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd  end = %d ; direction =  %d  \n",
-                flip_data_local.end_conformation(0), direction
-        );
+              //  flip_data_local.end_conformation(0), direction
+       // );
         //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd ndim2 = %d; end = %d ; direction =  %d  \n",
-               flip_data_local.ndim2, flip_data_local.end_conformation(0), direction
-               );
+           //    flip_data_local.ndim2, flip_data_local.end_conformation(0), direction
+            //   );
 
     coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
@@ -432,12 +432,12 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
 
     auto flip_data_local = flip_data;
-    //double flip_data_local.oldspin(0);
+    //double flip_data_local.flip_data_local.oldspin(0)(0);
     //coord_t flip_data_local.save_start_conformation(0);
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + direction);
-        double oldspin = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
+        double flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     
@@ -492,7 +492,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = flip_data_local.save_end_conformation(0);
             flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = flip_data_local.end_conformation(0);
             flip_data_local.end_conformation(0) = flip_data_local.save_end_conformation(0);
-            flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0)) = oldspin;
+            flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0)) = flip_data_local.oldspin(0);
     
             for (int i = 1; i < flip_data_local.L; i++) {
                 flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
