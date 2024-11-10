@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     std::string outFile = argv[3];
     double J = std::stod(argv[2]);
     std:: cout << L << " " << J << std::endl;
-    MC_Interacting_SAW_XY mcxysaw(L, outFile);
+    MC_Interacting_SAW_XY mcxysaw(L, J, outFile);
     mcxysaw.run_simulation(J);
     //mcxysaw.~MC_Interacting_SAW_XY();
     Kokkos::finalize();

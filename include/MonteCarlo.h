@@ -21,7 +21,7 @@ protected:
 class MC_Interacting_SAW_XY : public Monte_Carlo{
 public:
     MC_Interacting_SAW_XY() {};
-    MC_Interacting_SAW_XY(  long length, std::string LogFile = "",
+    MC_Interacting_SAW_XY(  long length, double J, std::string LogFile = "",
                             double Probability_Local_Update = 1.95,
                             double Probability_Reconnect = 0.05);
     void run_simulation(double J);

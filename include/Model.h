@@ -73,7 +73,7 @@ public:
         return lattice->ndim2();
     }
     Lattice *lattice = nullptr;
-    void set_J (double J_) {J = J_;flip_data.J = J;printf("Finish J = %f \n", flip_data.J);}
+    void set_J (double J_) {J = J_;}
 //protected:
     //Model-specific Energy function; returns double as J is expected to be double also
     KOKKOS_FUNCTION virtual double Energy () = 0;
@@ -138,7 +138,7 @@ public:
 class XY_SAW_LongInteraction : public  SAW_model<double> {
 public:
     XY_SAW_LongInteraction() {};
-    XY_SAW_LongInteraction(long length);
+    XY_SAW_LongInteraction(long length, double J);
 
     KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 

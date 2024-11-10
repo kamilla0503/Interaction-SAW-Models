@@ -14,12 +14,12 @@
 #define URD_SEED 121
 #define UID_SEED 123
 
-MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length, std::string LogFile_,
+MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length, double J, std::string LogFile_,
                                              double Probability_Local_Update,
                                              double Probability_Reconnect) {
     p_for_local_update = Probability_Local_Update;
     p_for_reconnect = p_for_local_update + Probability_Reconnect;
-    model = new XY_SAW_LongInteraction(length);
+    model = new XY_SAW_LongInteraction(length,J);
     LogFile = LogFile_;
 }
 
@@ -27,7 +27,7 @@ MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length, std::string LogFile_,
 //KOKKOS_INLINE_FUNCTION
 void MC_Interacting_SAW_XY::run_simulation(double J) {
 
-    model->set_J(J);
+    //model->set_J(J);
 
     std::fstream MCDataStream;
     std::string filename = LogFile + "/XY_MC" + std::to_string(model->number_of_spins()) +

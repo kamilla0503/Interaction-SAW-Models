@@ -44,13 +44,14 @@ void SAW_model<SpinType>::LatticeInitialization() {
     //lattice_nodes_positions_h.resize(number_of_spins(),NO_SAW_NODE);
 }
 
-XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length) : SAW_model<double>(length) {
+XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length, double J_) : SAW_model<double>(length) {
 #ifdef REGIME_2D
     lattice = new Lattice_2D(2 * L + OUT_Length);
 #else
     lattice = new Lattice_3D(2*L+OUT_Length);
 #endif
     if (lattice != nullptr) {
+        J = J_;
         LatticeInitialization();
         SequenceOnLatticeInitialization();
         StartConfiguration();
