@@ -361,11 +361,15 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
     }
     flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+    });
 
-    double new_E = Energy();
 
 
-    double p1 = exp(-(J * (new_E - E)));
+    auto new_E = Energy();
+
+    Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
+
+        double p1 = exp(-(J * (new_E - E)));
     double p_metropolis = Kokkos::min(1.0, p1);
 
     auto rand_gen = flip_data_local.rand_pool->get_state();
