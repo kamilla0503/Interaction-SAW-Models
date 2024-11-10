@@ -231,7 +231,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 // Random pool
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(123 /* seed or execution space */);
     //rand_pool.init(12345,256);
-    flip_data.rand_pool = &rand_pool;
+    flip_data.rand_pool = rand_pool;
 
     // Allocate views with size 1
     flip_data.start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("start_conformation", 1);
@@ -388,7 +388,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0)   )));
     double p_metropolis = Kokkos::min(1.0, p1);
 
-    auto rand_gen = flip_data_local.rand_pool->get_state();
+    auto rand_gen = flip_data_local.rand_pool.get_state();
     // Generate a random number between 0.0 and 1.0
     double q_ifaccept = rand_gen.drand(0., 1.);
    if (q_ifaccept < p_metropolis) { // accept the new state
@@ -416,7 +416,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         }
        flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
     }
-   flip_data_local.rand_pool->free_state(rand_gen);
+   flip_data_local.rand_pool.free_state(rand_gen);
 
     });
 }
