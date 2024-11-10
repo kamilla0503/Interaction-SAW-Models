@@ -57,6 +57,8 @@ struct FlipMoveData {
 
     Kokkos::View<double*, Kokkos::CudaSpace> oldspin;
     Kokkos::View<coord_t*, Kokkos::CudaSpace> save_start_conformation;
+    Kokkos::View<coord_t*, Kokkos::CudaSpace> save_end_conformation;
+
 };
 
 
