@@ -220,7 +220,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 // Scalars
     flip_data.J = J;
-    printf("Finish J = %f \n", E);
+    printf("Finish J = %f \n", flip_data.J);
     //flip_data.E = E;
     //printf("Finish E= %f \n", E);
 

@@ -73,7 +73,7 @@ public:
         return lattice->ndim2();
     }
     Lattice *lattice = nullptr;
-    void set_J (double J_) {J = J_;flip_data.J = J;}
+    void set_J (double J_) {J = J_;flip_data.J = J;printf("Finish J = %f \n", flip_data.J);}
 //protected:
     //Model-specific Energy function; returns double as J is expected to be double also
     KOKKOS_FUNCTION virtual double Energy () = 0;
