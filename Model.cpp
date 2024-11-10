@@ -249,6 +249,13 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(flip_data.start_conformation, start_conformation_host);
     Kokkos::deep_copy(flip_data.end_conformation, end_conformation_host);
 
+
+    flip_data.save_start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("save_start_conformation", 1);
+    flip_data.oldspin = Kokkos::View<double*, Kokkos::CudaSpace>("oldspin", 1);
+    auto save_start_conformation_host = Kokkos::create_mirror_view(flip_data.save_start_conformation);
+    auto oldspin_host = Kokkos::create_mirror_view(flip_data.oldspin);
+    save_start_conformation_host(0) = -1; // Your initial value
+    oldspin_host(0) = -1000;     // Your initial value
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -318,8 +325,8 @@ KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     auto flip_data_local = flip_data;
-    double oldspin;
-    coord_t save_start_conformation;
+    //double flip_data_local.oldspin(0);
+    //coord_t save_start_conformation;
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
@@ -336,9 +343,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
-    oldspin = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
-    //std::cout << "oldspin " << oldspin << std::endl;
-    printf("FlipMove_AddEnd new point = %f \n", oldspin);
+    flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
+    //std::cout << "flip_data_local.oldspin(0) " << flip_data_local.oldspin(0) << std::endl;
+    printf("FlipMove_AddEnd new point = %f \n", flip_data_local.oldspin(0));
     //self-avoidance condition:
     if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
@@ -396,7 +403,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = save_start_conformation;
         flip_data_local.next_monomers(save_start_conformation) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = save_start_conformation;
-        flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = oldspin;
+        flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = flip_data_local.oldspin(0);
 
         for (int i = flip_data_local.L - 1; i > 0; i--) {
             flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
