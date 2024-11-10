@@ -437,7 +437,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + direction);
-        double flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
+        flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     
