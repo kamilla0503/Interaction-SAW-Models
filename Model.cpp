@@ -385,7 +385,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
-        double p1 = exp(-(J * (new_E - flip_data_local.E(0)   )));
+        double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0)   )));
     double p_metropolis = Kokkos::min(1.0, p1);
 
     auto rand_gen = flip_data_local.rand_pool->get_state();
