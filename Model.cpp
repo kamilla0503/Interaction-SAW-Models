@@ -227,6 +227,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //flip_data.start_conformation = start_conformation;
     //flip_data.end_conformation = end_conformation;
     flip_data.L = L;
+    flip_data.lattice_side_device = lattice.lattice_side;
 // Random pool
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(123 /* seed or execution space */);
     //rand_pool.init(12345,256);
@@ -361,7 +362,35 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     }
     flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
 
-    double new_E = Energy();
+    //double new_E = Energy();
+    double new_E = 0;
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, flip_data_local.L), KOKKOS_LAMBDA(
+    const long i,
+    double &local_H) {
+        double r;
+        double energy_i = 0.0;  // Local energy contribution for this i
+        if (i < local_L ) {
+            for (long j = i + 1; j < lip_data_local.L ; j++) {
+                r = radius(flip_data_local.lattice_nodes_positions(i),
+                           flip_data_local.lattice_nodes_positions(j),
+                           flip_data_local.lattice_side_device);
+                r = Kokkos::pow(r, R_POWER / 2.0);
+                energy_i += Kokkos::cos(
+                        flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i)) -
+                        flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(j))) /
+                            r;
+            }
+        }
+        local_H += energy_i;  // Add local energy contribution to the reduction variable
+    }, new_E);
+
+        new_E = -new_E;
+
+
+
+
+
+
 
     double p1 = exp(-(J * (new_E - E)));
     double p_metropolis = Kokkos::min(1.0, p1);
