@@ -39,7 +39,9 @@ struct FlipMoveData {
 
     // Scalars
     double J;
-    double E;
+    //double E;
+
+    Kokkos::View<double*, Kokkos::CudaSpace> E;
 
 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> start_conformation;

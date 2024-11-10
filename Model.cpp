@@ -256,6 +256,12 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     auto oldspin_host = Kokkos::create_mirror_view(flip_data.oldspin);
     save_start_conformation_host(0) = -1; // Your initial value
     oldspin_host(0) = -1000;     // Your initial value
+
+
+    flip_data.E = Kokkos::View<double*, Kokkos::CudaSpace>("E", 1);
+    auto E_host = Kokkos::create_mirror_view(flip_data.E);
+    E_host(0) = E;
+    Kokkos::deep_copy(flip_data.E, E_host);
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -379,14 +385,14 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
-        double p1 = exp(-(J * (new_E - E)));
+        double p1 = exp(-(J * (new_E - flip_data_local.E(0)   )));
     double p_metropolis = Kokkos::min(1.0, p1);
 
     auto rand_gen = flip_data_local.rand_pool->get_state();
     // Generate a random number between 0.0 and 1.0
     double q_ifaccept = rand_gen.drand(0., 1.);
    if (q_ifaccept < p_metropolis) { // accept the new state
-       E = new_E;
+       flip_data_local.E(0) = new_E;
        flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
        flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
        flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = direction;
