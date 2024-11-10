@@ -318,6 +318,9 @@ KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     auto flip_data_local = flip_data;
+    double oldspin;
+    coord_t save_start_conformation;
+
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
               direction
@@ -333,13 +336,13 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
     printf("FlipMove_AddEnd new point = %ld \n", new_point);
-    double oldspin = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
+    oldspin = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
     //std::cout << "oldspin " << oldspin << std::endl;
     printf("FlipMove_AddEnd new point = %f \n", oldspin);
     //self-avoidance condition:
     if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
-    coord_t save_start_conformation;
+
 
     // delete the beginning of SAW
     save_start_conformation = flip_data_local.start_conformation(0);
