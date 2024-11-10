@@ -221,8 +221,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 // Scalars
     flip_data.J = J;
     printf("Finish J = %f \n", E);
-    flip_data.E = E;
-    printf("Finish E= %f \n", E);
+    //flip_data.E = E;
+    //printf("Finish E= %f \n", E);
 
     //flip_data.start_conformation = start_conformation;
     //flip_data.end_conformation = end_conformation;
