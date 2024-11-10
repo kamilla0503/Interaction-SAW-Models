@@ -408,7 +408,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
             //delete end
             coord_t del = flip_data_local.end_conformation(0);
             flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(flip_data_local.end_conformation(0));
-            flip_data_local.next_monomers(end_conformation) = NO_SAW_NODE;
+            flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.previous_monomers(del) = NO_SAW_NODE;
             flip_data_local.sequence_on_lattice(del) = NO_XY_SPIN;
     
