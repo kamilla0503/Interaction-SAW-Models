@@ -227,7 +227,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //flip_data.start_conformation = start_conformation;
     //flip_data.end_conformation = end_conformation;
     flip_data.L = L;
-    flip_data.lattice_side_device = lattice.lattice_side;
+    flip_data.lattice_side_device = lattice->lattice_side;
 // Random pool
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(123 /* seed or execution space */);
     //rand_pool.init(12345,256);
@@ -369,8 +369,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     double &local_H) {
         double r;
         double energy_i = 0.0;  // Local energy contribution for this i
-        if (i < local_L ) {
-            for (long j = i + 1; j < lip_data_local.L ; j++) {
+        if (i < flip_data_local.L  ) {
+            for (long j = i + 1; j < flip_data_local.L ; j++) {
                 r = radius(flip_data_local.lattice_nodes_positions(i),
                            flip_data_local.lattice_nodes_positions(j),
                            flip_data_local.lattice_side_device);
