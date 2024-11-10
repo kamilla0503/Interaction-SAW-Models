@@ -341,23 +341,23 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     //coord_t flip_data_local.save_start_conformation(0);
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
-        printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
+        //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
               direction
         );
-        printf("XY_SAW_LongInteraction:: FlipMove_AddEnd  end = %d ; direction =  %d  \n",
+        //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd  end = %d ; direction =  %d  \n",
                 flip_data_local.end_conformation(0), direction
         );
-        printf("XY_SAW_LongInteraction:: FlipMove_AddEnd ndim2 = %d; end = %d ; direction =  %d  \n",
+        //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd ndim2 = %d; end = %d ; direction =  %d  \n",
                flip_data_local.ndim2, flip_data_local.end_conformation(0), direction
                );
 
     coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
     //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
     //std::cout << "new_point " << new_point << std::endl;
-    printf("FlipMove_AddEnd new point = %ld \n", new_point);
+    //printf("FlipMove_AddEnd new point = %ld \n", new_point);
     flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
     //std::cout << "flip_data_local.oldspin(0) " << flip_data_local.oldspin(0) << std::endl;
-    printf("FlipMove_AddEnd new point = %f \n", flip_data_local.oldspin(0));
+    //printf("FlipMove_AddEnd new point = %f \n", flip_data_local.oldspin(0));
     //self-avoidance condition:
     if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
     //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
@@ -365,9 +365,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     // delete the beginning of SAW
     flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
-    printf("FlipMove_AddEnd save start = %ld \n", flip_data_local.save_start_conformation(0));
+    //printf("FlipMove_AddEnd save start = %ld \n", flip_data_local.save_start_conformation(0));
     flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
-    printf("FlipMove_AddEnd start = %ld \n", flip_data_local.start_conformation(0));
+    //printf("FlipMove_AddEnd start = %ld \n", flip_data_local.start_conformation(0));
     flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
     flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = NO_SAW_NODE;
     flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
