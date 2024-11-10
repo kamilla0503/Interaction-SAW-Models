@@ -563,9 +563,9 @@ void XY_SAW_LongInteraction::updateData() {
     double sum_cos_1 = 0.0;
     long int current = start_conformation;
     for (int e = 0; e < L; e++) {
-        sum_sin_1 += sin(sequence_on_lattice[current]);
-        sum_cos_1 += cos(sequence_on_lattice[current]);
-        current = next_monomers[current];
+        sum_sin_1 += sin(h_sequence_on_lattice_h[current]);
+        sum_cos_1 += cos(h_sequence_on_lattice_h[current]);
+        current = h_next_monomers_h[current];
     }
 
     sum_sin_1 /= L;
