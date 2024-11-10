@@ -62,9 +62,9 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-    long long n_steps_out = 100*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_equlibrium = 100*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_update = 100*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_out = 1*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_equlibrium = 1*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_update = 1*model->number_of_spins()*model->number_of_spins();
 
     //Kokkos::Tools::InitArguments args;
     //args.num_threads = 4;
@@ -77,7 +77,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     //for (long long i = 0; i < 1000000 + 20; ++i) {
         //if (i>20) return;
         mc_step_type = distribution_urd(generator_urd) ;
-        std::cout << i << " " << mc_step_type << std::endl;
+        //std::cout << i << " " << mc_step_type << std::endl;
         if (mc_step_type < p_for_local_update) {
             flipMoveType = distribution_urd(generator_urd) ;
             step = distribution_uid_steps(generators_steps);
