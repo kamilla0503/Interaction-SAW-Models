@@ -99,9 +99,9 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             //model->ClusterStep(spinvalue);
         }
 
-        if ( (i%100) ==0) {
+        /*if ( (i%100) ==0) {
             std::cout << "i = " << i << std::endl;
-        }
+        }*/
 
         if (i < n_steps_to_equlibrium) continue;
         //std::cout << "EQ achieved" << std::endl;
