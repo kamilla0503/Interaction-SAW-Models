@@ -468,14 +468,14 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         
-        double p1 = exp(-(J * (new_E - E)));
+        double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
     
         auto rand_gen = rand_pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
     
         if (q_ifaccept < p_metropolis) {
-            E = new_E;
+            flip_data_local.E(0) = new_E;
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(direction);
