@@ -326,7 +326,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     auto flip_data_local = flip_data;
     //double flip_data_local.oldspin(0);
-    //coord_t save_start_conformation;
+    //coord_t flip_data_local.save_start_conformation(0);
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
@@ -352,13 +352,13 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
 
     // delete the beginning of SAW
-    save_start_conformation = flip_data_local.start_conformation(0);
-    printf("FlipMove_AddEnd save start = %ld \n", save_start_conformation);
+    flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
+    printf("FlipMove_AddEnd save start = %ld \n", flip_data_local.save_start_conformation(0));
     flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
     printf("FlipMove_AddEnd start = %ld \n", flip_data_local.start_conformation(0));
-    flip_data_local.next_monomers(save_start_conformation) = NO_SAW_NODE;
+    flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
     flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = NO_SAW_NODE;
-    flip_data_local.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
+    flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
 
     //add the new monomer at the end of SAW
     flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
@@ -387,8 +387,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     double q_ifaccept = rand_gen.drand(0., 1.);
    if (q_ifaccept < p_metropolis) { // accept the new state
        E = new_E;
-       flip_data_local.sequence_on_lattice(save_start_conformation) = NO_XY_SPIN;
-       flip_data_local.directions(save_start_conformation) = NO_SAW_NODE;
+       flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
+       flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
        flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = direction;
     } else {
         //reject new state
@@ -400,9 +400,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         flip_data_local.sequence_on_lattice(del) = NO_XY_SPIN;
 
         //add the previous beginning
-        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = save_start_conformation;
-        flip_data_local.next_monomers(save_start_conformation) = flip_data_local.start_conformation(0);
-        flip_data_local.start_conformation(0) = save_start_conformation;
+        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = flip_data_local.save_start_conformation(0);
+        flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = flip_data_local.start_conformation(0);
+        flip_data_local.start_conformation(0) = flip_data_local.save_start_conformation(0);
         flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = flip_data_local.oldspin(0);
 
         for (int i = flip_data_local.L - 1; i > 0; i--) {
