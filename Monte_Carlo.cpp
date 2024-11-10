@@ -77,7 +77,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     //for (long long i = 0; i < 1000000 + 20; ++i) {
         //if (i>20) return;
         mc_step_type = distribution_urd(generator_urd) ;
-       // std::cout << i << " " << mc_step_type << std::endl;
+        std::cout << i << " " << mc_step_type << std::endl;
         if (mc_step_type < p_for_local_update) {
             flipMoveType = distribution_urd(generator_urd) ;
             step = distribution_uid_steps(generators_steps);
@@ -99,7 +99,9 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             //model->ClusterStep(spinvalue);
         }
 
-
+        if (i%100) ==0 {
+            std::cout << "i = " << i << std::endl; 
+        }
 
         if (i < n_steps_to_equlibrium) continue;
         //std::cout << "EQ achieved" << std::endl;
