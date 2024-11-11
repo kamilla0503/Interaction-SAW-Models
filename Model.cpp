@@ -313,11 +313,6 @@ double XY_SAW_LongInteraction::Energy() {
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
             for (long j = i + 1; j < local_L; j++) {
-                if (lattice_nodes_positions_local(i) == lattice_nodes_positions_local(j)) {
-                    printf(" Collision %ld %ld %ld %ld \n",
-                           lattice_nodes_positions_local(i), lattice_nodes_positions_local(j),
-                           lattice_nodes_positions_local(0), lattice_nodes_positions_local(local_L-1));
-                }
                 r = radius(lattice_nodes_positions_local(i), lattice_nodes_positions_local(j),
                            lattice_side_local);
                 r = Kokkos::pow(r, R_POWER / 2.0);
@@ -350,7 +345,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
-        printf("FlipMove_AddEnd new_point = %ld; end = %ld;   \n ",  new_point,flip_data_local.end_conformation(0));
+        //printf("FlipMove_AddEnd new_point = %ld; end = %ld;   \n ",  new_point,flip_data_local.end_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
@@ -376,24 +371,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         }
         flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
 
-
-
-        for (int i = 0; i < flip_data_local.L ; i++) {
-            for (int j = i+1; j < flip_data_local.L ; j++) {
-                if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
-                    printf(" AddEnd Alter Collision %ld %ld %ld %ld \n",
-                           flip_data_local.lattice_nodes_positions(i),
-                           flip_data_local.lattice_nodes_positions(j),
-                           flip_data_local.lattice_nodes_positions(0),
-                           flip_data_local.lattice_nodes_positions(flip_data_local.L-1));
-
-                    //delete flip_data;
-
-                }
-            }
-        }
-
-
     });
 
 
@@ -418,9 +395,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         auto rand_gen = flip_data_local.rand_pool.get_state();
         // Generate a random number between 0.0 and 1.0
         double q_ifaccept = rand_gen.drand(0., 1.);
-        printf("FlipMove_AddEnd q_ifaccept = %f \n ",  q_ifaccept);
-        printf("E = %f; new_E = %f;   p1 = %f ; ndim2 %d = \n",flip_data_local.E(0) ,
-               new_E, p1, flip_data_local.ndim2);
+        //printf("FlipMove_AddEnd q_ifaccept = %f \n ",  q_ifaccept);
+        //printf("E = %f; new_E = %f;   p1 = %f ; ndim2 %d = \n",flip_data_local.E(0) ,
+         //      new_E, p1, flip_data_local.ndim2);
        if (q_ifaccept < p_metropolis) { // accept the new state
            flip_data_local.E(0) = new_E;
            flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
@@ -447,29 +424,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
            flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
         }
        flip_data_local.rand_pool.free_state(rand_gen);
-
-
-        for (int i = 0; i < flip_data_local.L ; i++) {
-            for (int j = i+1; j < flip_data_local.L ; j++) {
-                if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
-                    printf(" AddEnd Revert Collision %ld %ld %ld %ld \n",
-                           flip_data_local.lattice_nodes_positions(i),
-                           flip_data_local.lattice_nodes_positions(j),
-                           flip_data_local.lattice_nodes_positions(0),
-                           flip_data_local.lattice_nodes_positions(flip_data_local.L-1));
-
-                   // delete flip_data;
-                }
-            }
-        }
-
-
-
-        for (int i = 0; i < flip_data_local.L ; i++) {
-            printf("%ld  ", flip_data_local.lattice_nodes_positions(i));
-        }
-        printf("\n");
-
     });
 
     Kokkos::fence();
@@ -489,7 +443,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + direction);
-        printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+       // printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
@@ -517,22 +471,6 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
 
 
-
-
-        for (int i = 0; i < flip_data_local.L ; i++) {
-            for (int j = i+1; j < flip_data_local.L ; j++) {
-                if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
-                    printf(" AddStart Alt Collision %ld %ld %ld %ld \n",
-                           flip_data_local.lattice_nodes_positions(i),
-                           flip_data_local.lattice_nodes_positions(j),
-                           flip_data_local.lattice_nodes_positions(0),
-                           flip_data_local.lattice_nodes_positions(flip_data_local.L-1));
-
-                   // delete flip_data;
-                }
-            }
-        }
-
     });
     Kokkos::fence();
     // Copy the flag value back to the host
@@ -553,15 +491,16 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     
         auto rand_gen = flip_data_local.rand_pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
-        printf("FlipMove_AddStart q_ifaccept = %f \n ",  q_ifaccept);
-        printf("E = %f; new_E = %f;   p1 = %f \n",flip_data_local.E(0) ,
-               new_E, p1);
+        //printf("FlipMove_AddStart q_ifaccept = %f \n ",  q_ifaccept);
+        //printf("E = %f; new_E = %f;   p1 = %f \n",flip_data_local.E(0) ,
+         //      new_E, p1);
         if (q_ifaccept < p_metropolis) {
             flip_data_local.E(0) = new_E;
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(direction);
-        } else {
+        }
+        else {
             //reject the new state
             //delete starte
             coord_t del = flip_data_local.start_conformation(0);
@@ -581,30 +520,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             }
             flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
 
-
-            for (int i = 0; i < flip_data_local.L ; i++) {
-                for (int j = i+1; j < flip_data_local.L ; j++) {
-                    if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
-                        printf(" AddStart Revert Collision %ld %ld %ld %ld \n",
-                               flip_data_local.lattice_nodes_positions(i),
-                               flip_data_local.lattice_nodes_positions(j),
-                               flip_data_local.lattice_nodes_positions(0),
-                               flip_data_local.lattice_nodes_positions(flip_data_local.L-1));
-
-                        //delete flip_data;
-                    }
-                }
-            }
-
-
         }
-
-        for (int i = 0; i < flip_data_local.L ; i++) {
-            printf("%ld  ", flip_data_local.lattice_nodes_positions(i));
-        }
-        printf("\n");
-
-
         flip_data_local.rand_pool.free_state(rand_gen);
         });
 
