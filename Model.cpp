@@ -562,7 +562,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
         }
 
-
+        for (int i = 0; i < flip_data_local.L ; i++) {
+            printf("%ld  ");
+        }
+        printf("\n");
 
 
         flip_data_local.rand_pool.free_state(rand_gen);
