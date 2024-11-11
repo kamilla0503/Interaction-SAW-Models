@@ -373,7 +373,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
 
         for (int i = 0; i < flip_data_local.L ; i++) {
-            for (int j = i; j < flip_data_local.L ; j++) {
+            for (int j = i+1; j < flip_data_local.L ; j++) {
                 if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
                     printf(" AddEnd Alter Collision %ld %ld %ld %ld \n",
                            flip_data_local.lattice_nodes_positions(i),
@@ -435,7 +435,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
 
         for (int i = 0; i < flip_data_local.L ; i++) {
-            for (int j = i; j < flip_data_local.L ; j++) {
+            for (int j = i+1; j < flip_data_local.L ; j++) {
                 if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
                     printf(" AddEnd Revert Collision %ld %ld %ld %ld \n",
                            flip_data_local.lattice_nodes_positions(i),
@@ -492,7 +492,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
 
         for (int i = 0; i < flip_data_local.L ; i++) {
-            for (int j = i; j < flip_data_local.L ; j++) {
+            for (int j = i+1; j < flip_data_local.L ; j++) {
                 if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
                     printf(" AddStart Alt Collision %ld %ld %ld %ld \n",
                            flip_data_local.lattice_nodes_positions(i),
@@ -546,7 +546,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
 
             for (int i = 0; i < flip_data_local.L ; i++) {
-                for (int j = i; j < flip_data_local.L ; j++) {
+                for (int j = i+1; j < flip_data_local.L ; j++) {
                     if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
                         printf(" AddStart Revert Collision %ld %ld %ld %ld \n",
                                flip_data_local.lattice_nodes_positions(i),
