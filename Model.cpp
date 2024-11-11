@@ -376,7 +376,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     Kokkos::fence();
     auto new_E = Energy();
     Kokkos::fence();
-    
+
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
         double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0)   )));
@@ -416,6 +416,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
        flip_data_local.rand_pool.free_state(rand_gen);
 
     });
+
+    Kokkos::fence();
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -496,6 +498,8 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
         flip_data_local.rand_pool.free_state(rand_gen);
         });
+
+    Kokkos::fence();
 }
 
 //KOKKOS_INLINE_FUNCTION
