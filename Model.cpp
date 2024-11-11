@@ -448,6 +448,13 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
             }
         }
 
+
+
+        for (int i = 0; i < flip_data_local.L ; i++) {
+            printf("%ld  ", flip_data_local.lattice_nodes_positions(i));
+        }
+        printf("\n");
+        
     });
 
     Kokkos::fence();
@@ -563,7 +570,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         }
 
         for (int i = 0; i < flip_data_local.L ; i++) {
-            printf("%ld  ");
+            printf("%ld  ", flip_data_local.lattice_nodes_positions(i));
         }
         printf("\n");
 
