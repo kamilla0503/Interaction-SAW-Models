@@ -313,6 +313,11 @@ double XY_SAW_LongInteraction::Energy() {
         double energy_i = 0.0;  // Local energy contribution for this i
         if (i < local_L ) {
             for (long j = i + 1; j < local_L; j++) {
+                if (lattice_nodes_positions_local(i) == lattice_nodes_positions_local(j)) {
+                    printf(" Collision %ld %ld %ld %ld \n",
+                           lattice_nodes_positions_local(i), lattice_nodes_positions_local(j),
+                           lattice_nodes_positions_local(0), lattice_nodes_positions_local(local_L-1));
+                }
                 r = radius(lattice_nodes_positions_local(i), lattice_nodes_positions_local(j),
                            lattice_side_local);
                 r = Kokkos::pow(r, R_POWER / 2.0);
@@ -452,7 +457,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
     auto  new_E = Energy();
 
-    Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
+    Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
         
         double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
