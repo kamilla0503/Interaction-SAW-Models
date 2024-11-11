@@ -343,14 +343,20 @@ KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     auto flip_data_local = flip_data;
-
+    // Declare a flag variable accessible on the device
+    Kokkos::View<int, Kokkos::MemoryTraits<Kokkos::Atomic>> accept_move("accept_move");
+    // Initialize the flag to 1 (accept by default)
+    Kokkos::deep_copy(accept_move, 1);
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
         printf("FlipMove_AddEnd new_point = %ld; end = %ld;   \n ",  new_point,flip_data_local.end_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
 
-        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
+        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
+            accept_move() = 0; // Set the flag to indicate rejection
+            return;
+        }
 
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
@@ -392,6 +398,15 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
 
     Kokkos::fence();
+    // Copy the flag value back to the host
+    int accept_move_host = 1;
+    Kokkos::deep_copy(accept_move_host, accept_move);
+
+    // If the flag indicates rejection, exit the function
+    if (accept_move_host == 0) {
+        return;
+    }
+
     auto new_E = Energy();
     Kokkos::fence();
 
@@ -454,7 +469,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
             printf("%ld  ", flip_data_local.lattice_nodes_positions(i));
         }
         printf("\n");
-        
+
     });
 
     Kokkos::fence();
@@ -467,14 +482,20 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     auto flip_data_local = flip_data;
     //double flip_data_local.flip_data_local.oldspin(0)(0);
     //coord_t flip_data_local.save_start_conformation(0);
+    // Declare a flag variable accessible on the device
+    Kokkos::View<int, Kokkos::MemoryTraits<Kokkos::Atomic>> accept_move("accept_move");
+    // Initialize the flag to 1 (accept by default)
+    Kokkos::deep_copy(accept_move, 1);
 
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + direction);
         printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
-        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
-    
+        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
+            accept_move() = 0; // Set the flag to indicate rejection
+            return;
+        }
         //coord_t flip_data_local.save_end_conformation(0);
     
         //delete end
@@ -514,6 +535,15 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
     });
     Kokkos::fence();
+    // Copy the flag value back to the host
+    int accept_move_host = 1;
+    Kokkos::deep_copy(accept_move_host, accept_move);
+
+    // If the flag indicates rejection, exit the function
+    if (accept_move_host == 0) {
+        return;
+    }
+
     auto  new_E = Energy();
     Kokkos::fence();
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
