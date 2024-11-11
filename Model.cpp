@@ -373,7 +373,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     });
 
-
     Kokkos::fence();
     // Copy the flag value back to the host
     int accept_move_host = 1;
@@ -395,9 +394,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         auto rand_gen = flip_data_local.rand_pool.get_state();
         // Generate a random number between 0.0 and 1.0
         double q_ifaccept = rand_gen.drand(0., 1.);
-        //printf("FlipMove_AddEnd q_ifaccept = %f \n ",  q_ifaccept);
-        //printf("E = %f; new_E = %f;   p1 = %f ; ndim2 %d = \n",flip_data_local.E(0) ,
-         //      new_E, p1, flip_data_local.ndim2);
        if (q_ifaccept < p_metropolis) { // accept the new state
            flip_data_local.E(0) = new_E;
            flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
