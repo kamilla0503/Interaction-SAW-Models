@@ -338,52 +338,33 @@ KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     auto flip_data_local = flip_data;
-    //double flip_data_local.oldspin(0);
-    //coord_t flip_data_local.save_start_conformation(0);
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
-        //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd   direction =  %d  \n",
-             // direction
-        //);
-        //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd  end = %d ; direction =  %d  \n",
-              //  flip_data_local.end_conformation(0), direction
-       // );
-        //printf("XY_SAW_LongInteraction:: FlipMove_AddEnd ndim2 = %d; end = %d ; direction =  %d  \n",
-           //    flip_data_local.ndim2, flip_data_local.end_conformation(0), direction
-            //   );
 
-    coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
-    //coord_t new_point = flip_data.map_of_contacts_int(lattice->ndim2() * end_conformation + direction);
-    //std::cout << "new_point " << new_point << std::endl;
-    //printf("FlipMove_AddEnd new point = %ld \n", new_point);
-    flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
-    //std::cout << "flip_data_local.oldspin(0) " << flip_data_local.oldspin(0) << std::endl;
-    //printf("FlipMove_AddEnd new point = %f \n", flip_data_local.oldspin(0));
-    //self-avoidance condition:
-    if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
-    //std::cout << "sequence_on_lattice(new_point)" << sequence_on_lattice(new_point) << std::endl;
+        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
 
+        flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
 
-    // delete the beginning of SAW
-    flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
-    //printf("FlipMove_AddEnd save start = %ld \n", flip_data_local.save_start_conformation(0));
-    flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
-    //printf("FlipMove_AddEnd start = %ld \n", flip_data_local.start_conformation(0));
-    flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
-    flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = NO_SAW_NODE;
-    flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
+        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) return;
 
-    //add the new monomer at the end of SAW
-    flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
-    flip_data_local.sequence_on_lattice(new_point) = spinValue; //new spin value
-    flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
-    flip_data_local.end_conformation(0) = new_point;
-    //std::cout << "Movement of positions  " << start_conformation << " " << spinValue << std::endl;
+        // delete the beginning of SAW
+        flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
+        flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
+        flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
+        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = NO_SAW_NODE;
+        flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
 
-    for (int i = 1; i < flip_data_local.L ; i++) {
-        flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
-    }
-    flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+        //add the new monomer at the end of SAW
+        flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
+        flip_data_local.sequence_on_lattice(new_point) = spinValue; //new spin value
+        flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
+        flip_data_local.end_conformation(0) = new_point;
+
+        for (int i = 1; i < flip_data_local.L ; i++) {
+            flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
+        }
+        flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+
     });
 
 
@@ -398,7 +379,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         auto rand_gen = flip_data_local.rand_pool.get_state();
         // Generate a random number between 0.0 and 1.0
         double q_ifaccept = rand_gen.drand(0., 1.);
-        printf(" q_ifaccept = %f \n ",  q_ifaccept);
+        printf("FlipMove_AddEnd q_ifaccept = %f \n ",  q_ifaccept);
         printf("E = %f; new_E = %f;   p1 = %f \n",flip_data_local.E(0) ,
                new_E, p1);
        if (q_ifaccept < p_metropolis) { // accept the new state
@@ -439,7 +420,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     //double flip_data_local.flip_data_local.oldspin(0)(0);
     //coord_t flip_data_local.save_start_conformation(0);
 
-    Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
+    Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + direction);
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
@@ -477,7 +458,9 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     
         auto rand_gen = flip_data_local.rand_pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
-    
+        printf("FlipMove_AddStart q_ifaccept = %f \n ",  q_ifaccept);
+        printf("E = %f; new_E = %f;   p1 = %f \n",flip_data_local.E(0) ,
+               new_E, p1);
         if (q_ifaccept < p_metropolis) {
             flip_data_local.E(0) = new_E;
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
