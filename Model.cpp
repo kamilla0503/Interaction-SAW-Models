@@ -370,6 +370,24 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         }
         flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
 
+
+
+        for (int i = 0; i < flip_data_local.L ; i++) {
+            for (int j = 0; j < flip_data_local.L ; j++) {
+                if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
+                    printf(" AddEnd Alter Collision %ld %ld %ld %ld \n",
+                           flip_data_local.lattice_nodes_positions(i),
+                           flip_data_local.lattice_nodes_positions(j),
+                           flip_data_local.lattice_nodes_positions(0),
+                           flip_data_local.lattice_nodes_positions(local_L-1));
+
+                    delete flip_data;
+
+                }
+            }
+        }
+
+
     });
 
 
@@ -415,6 +433,21 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         }
        flip_data_local.rand_pool.free_state(rand_gen);
 
+
+        for (int i = 0; i < flip_data_local.L ; i++) {
+            for (int j = 0; j < flip_data_local.L ; j++) {
+                if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
+                    printf(" AddEnd Revert Collision %ld %ld %ld %ld \n",
+                           flip_data_local.lattice_nodes_positions(i),
+                           flip_data_local.lattice_nodes_positions(j),
+                           flip_data_local.lattice_nodes_positions(0),
+                           flip_data_local.lattice_nodes_positions(local_L-1));
+
+                    delete flip_data;
+                }
+            }
+        }
+
     });
 
     Kokkos::fence();
@@ -454,7 +487,23 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
         }
         flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
-    
+
+
+
+
+        for (int i = 0; i < flip_data_local.L ; i++) {
+            for (int j = 0; j < flip_data_local.L ; j++) {
+                if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
+                    printf(" AddStart Alt Collision %ld %ld %ld %ld \n",
+                           flip_data_local.lattice_nodes_positions(i),
+                           flip_data_local.lattice_nodes_positions(j),
+                           flip_data_local.lattice_nodes_positions(0),
+                           flip_data_local.lattice_nodes_positions(local_L-1));
+
+                    delete flip_data;
+                }
+            }
+        }
 
     });
     Kokkos::fence();
@@ -494,7 +543,27 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
                 flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
             }
             flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+
+
+            for (int i = 0; i < flip_data_local.L ; i++) {
+                for (int j = 0; j < flip_data_local.L ; j++) {
+                    if (flip_data_local.lattice_nodes_positions(i) == flip_data_local.lattice_nodes_positions(j)) {
+                        printf(" AddStart Revert Collision %ld %ld %ld %ld \n",
+                               flip_data_local.lattice_nodes_positions(i),
+                               flip_data_local.lattice_nodes_positions(j),
+                               flip_data_local.lattice_nodes_positions(0),
+                               flip_data_local.lattice_nodes_positions(local_L-1));
+
+                        delete flip_data;
+                    }
+                }
+            }
+
+
         }
+
+
+
 
         flip_data_local.rand_pool.free_state(rand_gen);
         });
