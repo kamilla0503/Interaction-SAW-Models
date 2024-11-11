@@ -298,8 +298,61 @@ double radius(const coord_t& start, const coord_t& end, long lattice_side) {
     return r;
 }
 
-// Define the Energy function using Kokkos parallelization
 KOKKOS_FUNCTION
+double XY_SAW_LongInteraction::Energy() {
+    double H = 0.0;  // Total energy
+    const long local_L = L;
+    const double lattice_side_local = lattice_side_host(0);
+    auto lattice_nodes_positions_local = lattice_nodes_positions;
+    auto sequence_on_lattice_local = sequence_on_lattice;
+
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
+
+    // Determine the team size (you can experiment with different values)
+    const int team_size = 32;  // or Kokkos::AUTO
+
+    // Launch the parallel_reduce with team policy
+    Kokkos::parallel_reduce(
+            team_policy(local_L, team_size),
+            KOKKOS_LAMBDA(const member_type& team_member, double& H_total) {
+        const long i = team_member.league_rank();  // Get the 'i' index
+
+        double energy_i = 0.0;
+
+        // Parallelize the inner loop over 'j' within the team
+        Kokkos::parallel_reduce(
+                Kokkos::TeamThreadRange(team_member, i + 1, local_L),
+                [=](const long j, double& inner_energy) {
+                    double r = radius(
+                            lattice_nodes_positions_local(i),
+                            lattice_nodes_positions_local(j),
+                            lattice_side_local
+                    );
+                    r = Kokkos::pow(r, R_POWER / 2.0);
+
+                    inner_energy += Kokkos::cos(
+                            sequence_on_lattice_local(lattice_nodes_positions_local(i)) -
+                            sequence_on_lattice_local(lattice_nodes_positions_local(j))
+                    ) / r;
+                },
+                energy_i
+        );
+
+        // Each team contributes to the total energy
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            H_total += energy_i;
+        });
+    },
+    H
+    );
+
+    return -H;  // Return negative of the total energy
+}
+
+
+// Define the Energy function using Kokkos parallelization
+/*KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
     auto local_L = L;
@@ -325,7 +378,7 @@ double XY_SAW_LongInteraction::Energy() {
         local_H += energy_i;  // Add local energy contribution to the reduction variable
     }, H);  // H is the total energy accumulated across all threads
     return -H;  // Return negative of the total energy
-}
+}*/
 
 std::uniform_real_distribution<double> distribution_urd(0.0, 1.0);
 #ifdef SEED
@@ -427,7 +480,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
-
 
     auto flip_data_local = flip_data;
     //double flip_data_local.flip_data_local.oldspin(0)(0);
