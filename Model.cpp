@@ -97,7 +97,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     lattice_nodes_positions_h[this->number_of_spins() - 1] = end_conformation;
     for (int i = 1; i < L - 1; i++) {
         previous_monomers_h[i] = i - 1;
-        sequence_on_lattice_h[i] = PI;
+        sequence_on_lattice_h[i] = (i%6);  //PI;
         next_monomers_h[i] = i + 1;
         lattice_nodes_positions_h[i] = i;
     }
@@ -118,7 +118,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     for (int i = 1; i < middle; i++)
     {
         previous_monomers_h[i]=lattice->map_of_contacts_int_h[lattice->ndim2()*i +1];
-        sequence_on_lattice_h[i]=PI;
+        sequence_on_lattice_h[i]=  (i%6);  //PI;
         next_monomers_h[i]=lattice->map_of_contacts_int_h[lattice->ndim2()*i +0];
         directions_h[i]=0;
         lattice_nodes_positions_h[i] = i;
@@ -143,7 +143,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     for (int i = this->number_of_spins()/2 + 2; i < this->number_of_spins() ; i++)
     {
         previous_monomers_h[middle ]=lattice->map_of_contacts_int_h[lattice->ndim2()*middle  +0];
-        sequence_on_lattice_h[middle ]=PI;
+        sequence_on_lattice_h[middle ]= (i%6);  //PI;
         next_monomers_h[middle ]=lattice->map_of_contacts_int_h[lattice->ndim2()*middle  +1];
         directions_h[middle] = 1;
         middle = next_monomers_h[middle];
