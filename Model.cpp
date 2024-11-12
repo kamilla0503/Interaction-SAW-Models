@@ -650,11 +650,12 @@ void XY_SAW_LongInteraction::updateData() {
     long int current = start_conformation;
 
     Kokkos::deep_copy(h_sequence_on_lattice_h, flip_data.sequence_on_lattice);
+    Kokkos::deep_copy(h_lattice_nodes_positions_h, flip_data.lattice_nodes_positions);
 
     for (int e = 0; e < L; e++) {
-        sum_sin_1 += sin(h_sequence_on_lattice_h[current]);
-        sum_cos_1 += cos(h_sequence_on_lattice_h[current]);
-        current = h_next_monomers_h[current];
+        sum_sin_1 += sin(h_sequence_on_lattice_h[h_lattice_nodes_positions_h[e]]);
+        sum_cos_1 += cos(h_sequence_on_lattice_h[h_lattice_nodes_positions_h[e]]);
+        //current = h_next_monomers_h[current];
     }
 
     sum_sin_1 /= L;
