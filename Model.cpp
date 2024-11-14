@@ -48,7 +48,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length, double J_) : SAW_mod
 #ifdef REGIME_2D
     lattice = new Lattice_2D(2 * L + OUT_Length);
 #else
-    lattice = new Lattice_3D(2*L+OUT_Length);
+    lattice = new Lattice_3D(L+OUT_Length);
 #endif
     if (lattice != nullptr) {
         J = J_;
