@@ -29,6 +29,6 @@ for L in 600
 do
   for J in 0.12 0.15 0.18 0.21
   do
-  sbatch --time=05:10:00 --gpus=1 --wrap="./finite_element.cuda $L $J $resultFolder"
+  sbatch --time=6-0:0 --gpus=1 --wrap="./finite_element.cuda $L $J $resultFolder"
   done
 done
