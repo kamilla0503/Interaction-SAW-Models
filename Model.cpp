@@ -48,7 +48,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length, double J_) : SAW_mod
 #ifdef REGIME_2D
     lattice = new Lattice_2D(2 * L + OUT_Length);
 #else
-    lattice = new Lattice_3D(L+OUT_Length);
+    lattice = new Lattice_3D(0.75*L+OUT_Length);
 #endif
     if (lattice != nullptr) {
         J = J_;
@@ -230,7 +230,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.L = L;
     flip_data.lattice_side_device = lattice->lattice_side;
 // Random pool
-    rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(123 /* seed or execution space */);
+    rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
     //rand_pool.init(12345,256);
     flip_data.rand_pool = rand_pool;
 
