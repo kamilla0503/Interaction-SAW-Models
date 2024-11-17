@@ -63,7 +63,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 #endif
 
     long long n_steps_out = 10*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_equlibrium = 100*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 1*model->number_of_spins()*model->number_of_spins();
     //Kokkos::Tools::InitArguments args;
     //args.num_threads = 4;
