@@ -28,6 +28,7 @@
 #ifndef R_POWER
 #define R_POWER 3
 #endif
+constexpr double exponent = R_POWER / 2.0;
 
 template<class SpinType>
 SAW_model<SpinType>::SAW_model(long length) {
@@ -267,8 +268,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.save_end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("save_end_conformation", 1);
     auto save_end_conformation_host = Kokkos::create_mirror_view(flip_data.save_end_conformation);
     save_end_conformation_host(0) = -1; // Your initial value
- 
-    
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -329,7 +329,7 @@ double XY_SAW_LongInteraction::Energy() {
                             lattice_nodes_positions_local(j),
                             lattice_side_local
                     );
-                    r = Kokkos::pow(r, R_POWER / 2.0);
+                    r = Kokkos::exp(exponent * Kokkos::log(r)); //Kokkos::pow(r, R_POWER / 2.0);
 
                     inner_energy += Kokkos::cos(
                             sequence_on_lattice_local(lattice_nodes_positions_local(i)) -
@@ -338,7 +338,6 @@ double XY_SAW_LongInteraction::Energy() {
                 },
                 energy_i
         );
-
         // Each team contributes to the total energy
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total += energy_i;
@@ -437,7 +436,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     }
 
     auto new_E = Energy();
-    Kokkos::fence();
+   // Kokkos::fence();
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
@@ -531,7 +530,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     }
 
     auto  new_E = Energy();
-    Kokkos::fence();
+  //  Kokkos::fence();
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
         
         double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0))));
