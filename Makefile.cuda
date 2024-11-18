@@ -14,7 +14,7 @@ CXX = g++
 EXE = ${EXE_NAME}.host
 KOKKOS_ARCH = "BDW"
 endif
-CXXFLAGS = -O3 -Ofast -DREGIME_3D -DSTARTHALF -use_fast_math -I./include/
+CXXFLAGS = -O3 -DREGIME_3D -DSTARTHALF -use_fast_math -I./include/
 LINK = ${CXX}
 LINKFLAGS =
 DEPFLAGS = -M
