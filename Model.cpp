@@ -632,7 +632,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
                 flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
             }
             flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
-/*
+*/
         }
         flip_data_local.rand_pool.free_state(rand_gen);
         });
