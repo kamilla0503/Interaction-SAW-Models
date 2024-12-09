@@ -576,6 +576,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
             flip_data_local.start_conformation(0) = flip_data_local.save_start_conformation(0);
             flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = flip_data_local.oldspin(0);
 
+           flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
+
             /*
             for (int i = flip_data_local.L - 1; i > 0; i--) {
                 flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
@@ -678,6 +680,9 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = flip_data_local.end_conformation(0);
             flip_data_local.end_conformation(0) = flip_data_local.save_end_conformation(0);
             flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0)) = flip_data_local.oldspin(0);
+
+            flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+
 
 /*
             for (int i = 1; i < flip_data_local.L; i++) {
