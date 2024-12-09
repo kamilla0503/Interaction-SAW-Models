@@ -28,7 +28,8 @@
 #ifndef R_POWER
 #define R_POWER 3
 #endif
-constexpr double exponent = R_POWER / 2.0;
+
+double exponent = R_POWER / 2.0;
 
 template<class SpinType>
 SAW_model<SpinType>::SAW_model(long length) {
@@ -342,10 +343,56 @@ double XY_SAW_LongInteraction::Energy() {
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total += energy_i;
         });
-    },
-    H
-    );
+    },H);
+    return -H;  // Return negative of the total energy
+}
 
+
+KOKKOS_FUNCTION
+double XY_SAW_LongInteraction::Energy_Add_End() {
+    double H = 0.0;  // Total energy
+    const long local_L = L;
+    const double lattice_side_local = lattice_side_host(0);
+    auto lattice_nodes_positions_local = lattice_nodes_positions;
+    auto sequence_on_lattice_local = sequence_on_lattice;
+
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
+
+    // Determine the team size (you can experiment with different values)
+    const int team_size = 32;  // or Kokkos::AUTO
+
+    // Launch the parallel_reduce with team policy
+    Kokkos::parallel_reduce(
+            team_policy(local_L, team_size),
+            KOKKOS_LAMBDA(const member_type& team_member, double& H_total) {
+        const long i = team_member.league_rank();  // Get the 'i' index
+
+        double energy_i = 0.0;
+
+        // Parallelize the inner loop over 'j' within the team
+        Kokkos::parallel_reduce(
+                Kokkos::TeamThreadRange(team_member, i + 1, local_L),
+                [=](const long j, double& inner_energy) {
+                    double r = radius(
+                            lattice_nodes_positions_local(i),
+                            lattice_nodes_positions_local(j),
+                            lattice_side_local
+                    );
+                    r = Kokkos::exp(exponent * Kokkos::log(r)); //Kokkos::pow(r, R_POWER / 2.0);
+
+                    inner_energy += Kokkos::cos(
+                            sequence_on_lattice_local(lattice_nodes_positions_local(i)) -
+                            sequence_on_lattice_local(lattice_nodes_positions_local(j))
+                    ) / r;
+                },
+                energy_i
+        );
+        // Each team contributes to the total energy
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            H_total += energy_i;
+        });
+    },H);
     return -H;  // Return negative of the total energy
 }
 
@@ -418,10 +465,17 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = new_point;
 
+        /*
         for (int i = 1; i < flip_data_local.L ; i++) {
             flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
         }
         flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+*/
+
+        //temporary replacement
+        flip_data_local.lattice_nodes_positions(0) = flip_data_local.end_conformation(0);
+
+
 
     });
 
@@ -451,7 +505,11 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
            flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
            flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
            flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = direction;
-        } else {
+           for (int i = 1; i < flip_data_local.L ; i++) {
+               flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
+           }
+           flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+       } else {
             //reject new state
             //delete end
             coord_t del = flip_data_local.end_conformation(0);
@@ -465,11 +523,12 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
             flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = flip_data_local.start_conformation(0);
             flip_data_local.start_conformation(0) = flip_data_local.save_start_conformation(0);
             flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = flip_data_local.oldspin(0);
-    
+
+            /*
             for (int i = flip_data_local.L - 1; i > 0; i--) {
                 flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
             }
-           flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
+           flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);*/
         }
        flip_data_local.rand_pool.free_state(rand_gen);
     });
@@ -511,12 +570,14 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         flip_data_local.sequence_on_lattice(new_point) = spinValue; //выбор спина
         flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = new_point;
-    
+
+        /*
         for (int i = flip_data_local.L - 1; i > 0; i--) {
             flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
         }
-        flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
-
+        flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);*/
+        //temporary replacement
+        flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.start_conformation(0);
 
     });
     Kokkos::fence();
@@ -546,6 +607,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(direction);
+            for (int i = flip_data_local.L - 1; i > 0; i--) {
+                flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
+            }
+            flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
         }
         else {
             //reject the new state
@@ -561,12 +626,13 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = flip_data_local.end_conformation(0);
             flip_data_local.end_conformation(0) = flip_data_local.save_end_conformation(0);
             flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0)) = flip_data_local.oldspin(0);
-    
+
+/*
             for (int i = 1; i < flip_data_local.L; i++) {
                 flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
             }
             flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
-
+/*
         }
         flip_data_local.rand_pool.free_state(rand_gen);
         });

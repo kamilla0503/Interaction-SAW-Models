@@ -77,6 +77,8 @@ public:
 //protected:
     //Model-specific Energy function; returns double as J is expected to be double also
     KOKKOS_FUNCTION virtual double Energy () = 0;
+    KOKKOS_FUNCTION virtual double Energy_Add_Start () = 0;
+    KOKKOS_FUNCTION virtual double Energy_Add_End () = 0;
 
     long L; //Length of the model chain
     double E; //current value for energy; double as J
@@ -158,6 +160,9 @@ public:
     std::valarray<bool> used_coords;
 
     KOKKOS_FUNCTION double Energy ();
+    KOKKOS_FUNCTION double Energy_Add_Start () = 0;
+    KOKKOS_FUNCTION double Energy_Add_End () = 0;
+
 
     mc_stats::ScalarObservable<double> energy;
     mc_stats::ScalarObservable<double> energy_2;
