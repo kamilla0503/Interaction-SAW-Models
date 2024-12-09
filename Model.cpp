@@ -29,7 +29,9 @@
 #define R_POWER 3
 #endif
 
-#define exponent R_POWER / 2.0;
+//R_power = 3
+//FIx later to avoid misunderstanding
+#define exponent 1.5 
 
 template<class SpinType>
 SAW_model<SpinType>::SAW_model(long length) {
