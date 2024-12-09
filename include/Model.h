@@ -160,8 +160,8 @@ public:
     std::valarray<bool> used_coords;
 
     KOKKOS_FUNCTION double Energy ();
-    KOKKOS_FUNCTION double Energy_Add_Start () = 0;
-    KOKKOS_FUNCTION double Energy_Add_End () = 0;
+    KOKKOS_FUNCTION double Energy_Add_Start () ;
+    KOKKOS_FUNCTION double Energy_Add_End () ;
 
 
     mc_stats::ScalarObservable<double> energy;
