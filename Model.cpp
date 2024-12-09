@@ -494,10 +494,10 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     // Initialize the flag to 1 (accept by default)
     Kokkos::deep_copy(accept_move, 1);
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
-        printf("FlipMove_AddEnd dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
+    //    printf("FlipMove_AddEnd dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
-        printf("FlipMove_AddEnd new_point = %ld; end = %ld;   \n ",  new_point,flip_data_local.end_conformation(0));
+     //   printf("FlipMove_AddEnd new_point = %ld; end = %ld;   \n ",  new_point,flip_data_local.end_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
@@ -604,10 +604,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
 
-        printf("FlipMove_AddStart dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
+       // printf("FlipMove_AddStart dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + direction);
-        printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+      //  printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
