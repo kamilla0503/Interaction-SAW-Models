@@ -529,16 +529,15 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         }
         flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
 */
-
         //temporary replacement
         //flip_data_local.lattice_nodes_positions(0) = flip_data_local.end_conformation(0);
 
-
-        //write new end to the beginning:
+        //write new end to the beginning
         long position_new = flip_data_local.start_index_in_nodes_position(0) - 1;
         if (position_new == -1 ) position_new = flip_data_local.L - 1;
         //flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L;
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
+
     });
 
     Kokkos::fence();
@@ -649,7 +648,18 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         }
         flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);*/
         //temporary replacement
-        flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.start_conformation(0);
+        //flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.start_conformation(0);
+
+
+
+        //try drecrease number of movements
+        // write new start
+
+        long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L - 1) % flip_data_local.L ;
+        //if (position_new == -1 ) position_new = flip_data_local.L - 1;
+        flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
+
+
 
     });
     Kokkos::fence();
@@ -679,10 +689,15 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(direction);
-            for (int i = flip_data_local.L - 1; i > 0; i--) {
+            /*for (int i = flip_data_local.L - 1; i > 0; i--) {
                 flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
             }
-            flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
+            flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);*/
+
+            // new start is the new added value
+            long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L - 1) % flip_data_local.L ;
+            flip_data_local.start_index_in_nodes_position(0) = position_new;
+
         }
         else {
             //reject the new state
@@ -699,9 +714,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.end_conformation(0) = flip_data_local.save_end_conformation(0);
             flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0)) = flip_data_local.oldspin(0);
 
-            flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
+            long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L - 1) % flip_data_local.L ;
 
-
+            flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
+            
 /*
             for (int i = 1; i < flip_data_local.L; i++) {
                 flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
