@@ -61,7 +61,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length, double J_) : SAW_mod
         StartConfiguration();
     }
     //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
-    Kokkos::fence();
+    //Kokkos::fence();
     printf("Finish all configs \n");
 
     //lattice_side = lattice->lattice_side;
@@ -540,7 +540,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
     });
 
-    Kokkos::fence();
+    //Kokkos::fence();
     // Copy the flag value back to the host
     int accept_move_host = 1;
     Kokkos::deep_copy(accept_move_host, accept_move);
@@ -601,7 +601,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
        flip_data_local.rand_pool.free_state(rand_gen);
     });
 
-    Kokkos::fence();
+    //Kokkos::fence();
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -660,7 +660,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
 
 
     });
-    Kokkos::fence();
+
+
+    //Kokkos::fence();
+
     // Copy the flag value back to the host
     int accept_move_host = 1;
     Kokkos::deep_copy(accept_move_host, accept_move);
@@ -727,7 +730,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         flip_data_local.rand_pool.free_state(rand_gen);
         });
 
-    Kokkos::fence();
+    //Kokkos::fence();
 }
 
 //KOKKOS_INLINE_FUNCTION
