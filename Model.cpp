@@ -306,6 +306,8 @@ double radius(const coord_t& start, const coord_t& end, long lattice_side) {
     return r;
 }
 
+//this verison works and was used !
+/*
 KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
@@ -352,7 +354,79 @@ double XY_SAW_LongInteraction::Energy() {
         });
     },H);
     return -H;  // Return negative of the total energy
+}*/
+
+
+
+KOKKOS_FUNCTION
+double XY_SAW_LongInteraction::Energy() {
+    double H = 0.0;  // Total energy
+    const long local_L = L;
+    const double lattice_side_local = lattice_side_host(0);
+    auto lattice_nodes_positions_local = lattice_nodes_positions;
+    auto sequence_on_lattice_local = sequence_on_lattice;
+
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
+
+    // Determine the team size (you can experiment with different values)
+    const int team_size = 32;  // or Kokkos::AUTO
+
+    // Launch the parallel_reduce with team policy
+    Kokkos::parallel_reduce(
+            team_policy(local_L, team_size),
+            KOKKOS_LAMBDA(const member_type& team_member, double& H_total) {
+        const long i = team_member.league_rank();  // Get the 'i' index
+
+        double energy_i = 0.0;
+
+
+        const auto pos_i = lattice_nodes_positions_local(i);
+        const double theta_i = sequence_on_lattice_local(pos_i);
+
+
+        // Parallelize the inner loop over 'j' within the team
+        Kokkos::parallel_reduce(
+                Kokkos::TeamThreadRange(team_member, i + 1, local_L),
+                [=](const long j, double& inner_energy) {
+
+                    const auto pos_j = lattice_nodes_positions_local(j);
+                    const double theta_j = sequence_on_lattice_local(pos_j);
+
+                    double r_val = radius(pos_i, pos_j, lattice_side_local);
+                    r_val = Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
+                    inner_energy += Kokkos::cos(theta_i - theta_j) / r_val;
+
+                },
+                energy_i
+        );
+        // Each team contributes to the total energy
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            H_total += energy_i;
+        });
+    },H);
+    return -H;  // Return negative of the total energy
 }
+
+/*
+ //// map idx back to (i, j)
+KOKKOS_FUNCTION
+double XY_SAW_LongInteraction::Energy() {
+    double H = 0.0;  // Total energy
+    const long local_L = L;
+    const double lattice_side_local = lattice_side_host(0);
+    auto lattice_nodes_positions_local = lattice_nodes_positions;
+    auto sequence_on_lattice_local = sequence_on_lattice;
+
+    // Launch the parallel_reduce with team policy
+    long Npairs = local_L*(local_L-1)/2;
+    Kokkos::parallel_reduce("PairsReduce", Npairs, KOKKOS_LAMBDA(const long idx, double& val) {
+        // map idx back to (i, j)
+        // compute energy contribution
+    }, H);
+
+    return -H;  // Return negative of the total energy
+}*/
 
 
 KOKKOS_FUNCTION
