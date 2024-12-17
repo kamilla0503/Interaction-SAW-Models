@@ -387,7 +387,7 @@ double XY_SAW_LongInteraction::Energy() {
 
         // Parallelize the inner loop over 'j' within the team
         Kokkos::parallel_reduce(
-                Kokkos::TeamThreadRange(team_member, i + 1, local_L),
+                Kokkos::TeamVectorRange(team_member, i + 1, local_L),
                 [=](const long j, double& inner_energy) {
 
                     const auto pos_j = lattice_nodes_positions_local(j);
