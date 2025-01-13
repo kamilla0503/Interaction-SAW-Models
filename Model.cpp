@@ -370,7 +370,7 @@ double XY_SAW_LongInteraction::Energy() {
     using member_type = team_policy::member_type;
 
     // Determine the team size (you can experiment with different values)
-    const int team_size = Kokkos::AUTO; //32;  // or Kokkos::AUTO
+    const int team_size = 32;  // or Kokkos::AUTO
 
     // Launch the parallel_reduce with team policy
     Kokkos::parallel_reduce(
