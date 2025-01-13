@@ -370,7 +370,7 @@ double XY_SAW_LongInteraction::Energy() {
     using member_type = team_policy::member_type;
 
     // Determine the team size (you can experiment with different values)
-    const int team_size = 32;  // or Kokkos::AUTO
+    const int team_size = Kokkos::AUTO; //32;  // or Kokkos::AUTO
 
     // Launch the parallel_reduce with team policy
     Kokkos::parallel_reduce(
@@ -394,7 +394,8 @@ double XY_SAW_LongInteraction::Energy() {
                     const double theta_j = sequence_on_lattice_local(pos_j);
 
                     double r_val = radius(pos_i, pos_j, lattice_side_local);
-                    r_val = Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
+                    // is it faster? is it correct?
+                    r_val = Kokkos::sqrt(r_val)**3; //Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
                     inner_energy += Kokkos::cos(theta_i - theta_j) / r_val;
 
                 },
