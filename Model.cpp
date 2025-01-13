@@ -395,7 +395,7 @@ double XY_SAW_LongInteraction::Energy() {
 
                     double r_val = radius(pos_i, pos_j, lattice_side_local);
                     // is it faster? is it correct?
-                    r_val = Kokkos::sqrt(r_val)**3; //Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
+                    r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val); //Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
                     inner_energy += Kokkos::cos(theta_i - theta_j) / r_val;
 
                 },
