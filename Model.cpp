@@ -264,7 +264,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 
     flip_data.E = Kokkos::View<double*, Kokkos::CudaSpace>("E", 1);
+    flip_data.newE = Kokkos::View<double*, Kokkos::CudaSpace>("newE", 1);
     auto E_host = Kokkos::create_mirror_view(flip_data.E);
+    auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
     E_host(0) = E;
     Kokkos::deep_copy(flip_data.E, E_host);
 
@@ -442,7 +444,7 @@ double XY_SAW_LongInteraction::Energy_Add_End() {
     using member_type = team_policy::member_type;
 
     // Determine the team size (you can experiment with different values)
-    const int team_size = 32;  // or Kokkos::AUTO
+    const int team_size = 128; //32;  // or Kokkos::AUTO
 
     // Launch the parallel_reduce with team policy
     Kokkos::parallel_reduce(
