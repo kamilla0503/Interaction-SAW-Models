@@ -206,6 +206,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.E = Kokkos::View<double*, Kokkos::CudaSpace>("E", 1);
     flip_data.newE = Kokkos::View<double*, Kokkos::CudaSpace>("newE", 1);
     Energy();
+    Kokkos::deep_copy(E, flip_data.newE);
+    Kokkos::deep_copy(flip_data.E, E);
     auto E_host = Kokkos::create_mirror_view(flip_data.E);
     auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
     E_host(0) = E;
@@ -411,7 +413,7 @@ void XY_SAW_LongInteraction::Energy() {
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total -= energy_i;
         });
-    }, flip_data_local.newE(0));
+    }, flip_data_local.newE );
     //return -H;  // Return negative of the total energy
 }
 
