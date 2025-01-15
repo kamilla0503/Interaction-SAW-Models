@@ -204,12 +204,17 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 
     flip_data.E = Kokkos::View<double*, Kokkos::CudaSpace>("E", 1);
-    flip_data.newE = Kokkos::View<double*, Kokkos::CudaSpace>("newE", 1);
-    Energy();
-    Kokkos::deep_copy(E, flip_data.newE);
-    Kokkos::deep_copy(flip_data.E, E);
+    flip_data.newE = Kokkos::View<double, Kokkos::CudaSpace>("newE", 1);
     auto E_host = Kokkos::create_mirror_view(flip_data.E);
     auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
+    Energy();
+    Kokkos::deep_copy(E, flip_data.newE);
+    Kokkos::deep_copy(newE_host, flip_data.newE); // synchronizes and copies
+    E = newE_host();
+    Kokkos::deep_copy(flip_data.E, E);
+
+    //auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
+
     E_host(0) = E;
     //newE_host(0) =
     //Kokkos::deep_copy(flip_data.E, E_host);

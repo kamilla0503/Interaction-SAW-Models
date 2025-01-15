@@ -42,7 +42,7 @@ struct FlipMoveData {
     //double E;
 
     Kokkos::View<double*, Kokkos::CudaSpace> E;
-    Kokkos::View<double*, Kokkos::CudaSpace> newE;
+    Kokkos::View<double, Kokkos::CudaSpace> newE;
 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> start_conformation;
     Kokkos::View<coord_t*, Kokkos::CudaSpace> end_conformation;
