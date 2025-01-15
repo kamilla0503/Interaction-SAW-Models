@@ -268,6 +268,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     auto E_host = Kokkos::create_mirror_view(flip_data.E);
     auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
     E_host(0) = E;
+    //newE_host(0) =
     Kokkos::deep_copy(flip_data.E, E_host);
 
     flip_data.save_end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("save_end_conformation", 1);
@@ -359,7 +360,61 @@ double XY_SAW_LongInteraction::Energy() {
 }*/
 
 
+KOKKOS_FUNCTION
+void XY_SAW_LongInteraction::Energy() {
+    double H = 0.0;  // Total energy
+    const long local_L = L;
+    const double lattice_side_local = lattice_side_host(0);
+    auto lattice_nodes_positions_local = lattice_nodes_positions;
+    auto sequence_on_lattice_local = sequence_on_lattice;
+    auto flip_data_local = flip_data;
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
 
+    // Determine the team size (you can experiment with different values)
+    const int team_size = 128;  // or Kokkos::AUTO
+
+    // Launch the parallel_reduce with team policy
+    Kokkos::parallel_reduce(
+            team_policy(local_L, team_size),
+            KOKKOS_LAMBDA(const member_type& team_member, double& H_total) {
+        const long i = team_member.league_rank();  // Get the 'i' index
+
+        double energy_i = 0.0;
+
+
+        const auto pos_i = lattice_nodes_positions_local(i);
+        const double theta_i = sequence_on_lattice_local(pos_i);
+
+
+        // Parallelize the inner loop over 'j' within the team
+        Kokkos::parallel_reduce(
+                Kokkos::TeamVectorRange(team_member, i + 1, local_L),
+                [=](const long j, double& inner_energy) {
+
+                    const auto pos_j = lattice_nodes_positions_local(j);
+                    const double theta_j = sequence_on_lattice_local(pos_j);
+
+                    double r_val = radius(pos_i, pos_j, lattice_side_local);
+                    // is it faster? is it correct?
+                    r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val); //Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
+                    inner_energy += Kokkos::cos(theta_i - theta_j) / r_val;
+
+                },
+                energy_i
+        );
+        // Each team contributes to the total energy
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            H_total -= energy_i;
+        });
+    }, flip_data_local.newE);
+    //return -H;  // Return negative of the total energy
+}
+
+
+
+// also works
+/*
 KOKKOS_FUNCTION
 double XY_SAW_LongInteraction::Energy() {
     double H = 0.0;  // Total energy
@@ -409,7 +464,7 @@ double XY_SAW_LongInteraction::Energy() {
         });
     },H);
     return -H;  // Return negative of the total energy
-}
+}*/
 
 
 // Define the Energy function using Kokkos parallelization
@@ -508,19 +563,20 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
         return;
     }
 
-    auto new_E = Energy();
+    //auto new_E = Energy();
+    Energy();
    // Kokkos::fence();
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
-        double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0)   )));
+        double p1 = exp(-(flip_data_local.J * (flip_data_local.new_E - flip_data_local.E(0)   )));
         double p_metropolis = Kokkos::min(1.0, p1);
     
         auto rand_gen = flip_data_local.rand_pool.get_state();
         // Generate a random number between 0.0 and 1.0
         double q_ifaccept = rand_gen.drand(0., 1.);
        if (q_ifaccept < p_metropolis) { // accept the new state
-           flip_data_local.E(0) = new_E;
+           flip_data_local.E(0) = flip_data_local.new_E;
            flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
            flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
            flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = direction;
@@ -556,6 +612,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
             }
            flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);*/
         }
+        flip_data_local.new_E = 0;
        flip_data_local.rand_pool.free_state(rand_gen);
     });
 
@@ -631,11 +688,12 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         return;
     }
 
-    auto  new_E = Energy();
+    //auto  new_E = Energy();
+    Energy();
   //  Kokkos::fence();
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
         
-        double p1 = exp(-(flip_data_local.J * (new_E - flip_data_local.E(0))));
+        double p1 = exp(-(flip_data_local.J * (flip_data_local.new_E - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
     
         auto rand_gen = flip_data_local.rand_pool.get_state();
@@ -644,7 +702,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
         //printf("E = %f; new_E = %f;   p1 = %f \n",flip_data_local.E(0) ,
          //      new_E, p1);
         if (q_ifaccept < p_metropolis) {
-            flip_data_local.E(0) = new_E;
+            flip_data_local.E(0) = flip_data_local.new_E;
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(direction);
@@ -685,6 +743,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             flip_data_local.lattice_nodes_positions(flip_data_local.L - 1) = flip_data_local.end_conformation(0);
 */
         }
+        flip_data_local.new_E = 0;
         flip_data_local.rand_pool.free_state(rand_gen);
         });
 

@@ -78,7 +78,7 @@ public:
     void set_J (double J_) {J = J_;}
 //protected:
     //Model-specific Energy function; returns double as J is expected to be double also
-    KOKKOS_FUNCTION virtual double Energy () = 0;
+    KOKKOS_FUNCTION virtual void Energy () = 0;
     //KOKKOS_FUNCTION virtual double Energy_Add_Start () = 0;
     //KOKKOS_FUNCTION virtual double Energy_Add_End () = 0;
 
@@ -161,7 +161,7 @@ public:
 //protected:
     std::valarray<bool> used_coords;
 
-    KOKKOS_FUNCTION double Energy ();
+    KOKKOS_FUNCTION void Energy ();
     //KOKKOS_FUNCTION double Energy_Add_Start () ;
     //KOKKOS_FUNCTION double Energy_Add_End () ;
 
