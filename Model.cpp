@@ -550,7 +550,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
         //add the new monomer at the end of SAW
         flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
-        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue; //new spin value
+        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue(); //new spin value
         flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = new_point;
 
@@ -597,7 +597,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
            flip_data_local.E(0) = flip_data_local.newE();
            flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
            flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
-           flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = direction;
+           flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = flip_data_local.direction();
 
            flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L;
 
@@ -728,7 +728,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
             flip_data_local.E(0) = flip_data_local.newE();
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
-            flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(direction);
+            flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(flip_data_local.direction());
             /*for (int i = flip_data_local.L - 1; i > 0; i--) {
                 flip_data_local.lattice_nodes_positions(i) = flip_data_local.lattice_nodes_positions(i - 1);
             }
