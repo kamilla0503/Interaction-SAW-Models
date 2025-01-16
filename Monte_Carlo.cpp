@@ -88,7 +88,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             }
             else {
                 model->FlipMove_AddStart();
-                model->FlipMove_AddStart(step, spinvalue);
+               // model->FlipMove_AddStart(step, spinvalue);
             }
         }
         else if (mc_step_type < p_for_reconnect) {
