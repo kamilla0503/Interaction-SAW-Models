@@ -61,6 +61,9 @@ struct FlipMoveData {
 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> start_index_in_nodes_position;
 
+    Kokkos::View<long, Kokkos::CudaSpace> direction;
+    Kokkos::View<double, Kokkos::CudaSpace> spinValue;
+
 };
 
 
@@ -103,8 +106,13 @@ public:
 
     KOKKOS_INLINE_FUNCTION virtual void Reconnect(short direction) = 0; //Only Geometry changes --- the same for all SAW Models
 
-    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
-    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
+
+
+    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd () = 0; //depends on spin variables
+    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart () = 0; //depends on spin variables
+
+    //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
+    //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
    // virtual void ClusterStep (double flipdirection) = 0; //depends on spin variables
 
     void LatticeInitialization();
@@ -147,8 +155,12 @@ public:
     KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
 
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue) override;
+
+    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd () override;
+    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart() override;
+
+//    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;
+//    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue) override;
    // KOKKOS_INLINE_FUNCTION void ClusterStep (double flipdirection);
 
     void SequenceOnLatticeInitialization();

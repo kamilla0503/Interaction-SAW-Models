@@ -218,11 +218,13 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     E_host(0) = E;
     //newE_host(0) =
     //Kokkos::deep_copy(flip_data.E, E_host);
-
     //E = Energy();
 
     std::cout << "Model creation after energy" << std::endl;
     printf("Energy after all = %f \n", E);
+
+    flip_data.spinValue = Kokkos::View<double, Kokkos::CudaSpace>("spinValue");
+    flip_data.direction = Kokkos::View<long, Kokkos::CudaSpace>("direction");
 
 // Copy Kokkos::View members from Lattice
     flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
@@ -515,7 +517,7 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 #endif
 
 KOKKOS_INLINE_FUNCTION
-void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
+void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
     auto flip_data_local = flip_data;
     // Declare a flag variable accessible on the device
@@ -523,9 +525,12 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
     // Initialize the flag to 1 (accept by default)
     Kokkos::deep_copy(accept_move, 1);
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
+        auto rand_gen = flip_data_local.rand_pool.get_state();
+        flip_data_local.direction()  = rand_gen.urand64() % 6;
+
     //    printf("FlipMove_AddEnd dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
 
-        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + direction);
+        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + flip_data_local.direction() );
      //   printf("FlipMove_AddEnd new_point = %ld; end = %ld;   \n ",  new_point,flip_data_local.end_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
 
@@ -533,6 +538,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
             accept_move() = 0; // Set the flag to indicate rejection
             return;
         }
+
+        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*PI);
 
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
@@ -543,7 +550,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 
         //add the new monomer at the end of SAW
         flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
-        flip_data_local.sequence_on_lattice(new_point) = spinValue; //new spin value
+        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue; //new spin value
         flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = new_point;
 
@@ -631,7 +638,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd(long direction, double spinValue) {
 }
 
 KOKKOS_INLINE_FUNCTION
-void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue) {
+void XY_SAW_LongInteraction::FlipMove_AddStart() {
 
     auto flip_data_local = flip_data;
     //double flip_data_local.flip_data_local.oldspin(0)(0);
@@ -642,10 +649,11 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     Kokkos::deep_copy(accept_move, 1);
 
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
-
+        auto rand_gen = flip_data_local.rand_pool.get_state();
+        flip_data_local.direction()  = rand_gen.urand64() % 6;
        // printf("FlipMove_AddStart dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
 
-        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + direction);
+        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
       //  printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
@@ -654,7 +662,11 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
-    
+
+
+        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*PI);
+
+
         //delete end
         flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = flip_data_local.previous_monomers( flip_data_local.end_conformation(0));
@@ -664,7 +676,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart(long direction, double spinValue)
     
         //add the new beginning
         flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = new_point;
-        flip_data_local.sequence_on_lattice(new_point) = spinValue; //выбор спина
+        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue(); //выбор спина
         flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = new_point;
 
