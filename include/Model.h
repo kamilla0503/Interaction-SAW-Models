@@ -64,6 +64,9 @@ struct FlipMoveData {
     Kokkos::View<long, Kokkos::CudaSpace> direction;
     Kokkos::View<double, Kokkos::CudaSpace> spinValue;
 
+    Kokkos::View<double, Kokkos::CudaSpace> PI;
+    //PI = std::atan(1.0)*4;
+
 };
 
 

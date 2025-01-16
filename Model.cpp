@@ -226,6 +226,13 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.spinValue = Kokkos::View<double, Kokkos::CudaSpace>("spinValue");
     flip_data.direction = Kokkos::View<long, Kokkos::CudaSpace>("direction");
 
+
+    flip_data.PI = Kokkos::View<double, Kokkos::CudaSpace>("PI");
+    auto PI_host = Kokkos::create_mirror_view(flip_data.PI);
+    //flip_data.PI
+    PI_host() = std::atan(1.0)*4;
+    Kokkos::deep_copy(flip_data.PI,  PI_host);
+
 // Copy Kokkos::View members from Lattice
     flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
     flip_data.inverse_steps = lattice->inverse_steps;
@@ -539,7 +546,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
             return;
         }
 
-        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*PI);
+        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI() );
 
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
@@ -664,7 +671,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
         //coord_t flip_data_local.save_end_conformation(0);
 
 
-        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*PI);
+        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI());
 
 
         //delete end
