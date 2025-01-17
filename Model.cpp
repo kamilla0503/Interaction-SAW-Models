@@ -534,20 +534,15 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         auto rand_gen = flip_data_local.rand_pool.get_state();
         flip_data_local.direction()  = rand_gen.urand64() % 6;
-
-    //    printf("FlipMove_AddEnd dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
-
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + flip_data_local.direction() );
-     //   printf("FlipMove_AddEnd new_point = %ld; end = %ld;   \n ",  new_point,flip_data_local.end_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
-
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move() = 0; // Set the flag to indicate rejection
+            flip_data_local.rand_pool.free_state(rand_gen);
             return;
         }
-
         flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI() );
-
+        flip_data_local.rand_pool.free_state(rand_gen);
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
@@ -666,14 +661,13 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move() = 0; // Set the flag to indicate rejection
+            flip_data_local.rand_pool.free_state(rand_gen);
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
 
-
         flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI());
-
-
+        flip_data_local.rand_pool.free_state(rand_gen);
         //delete end
         flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = flip_data_local.previous_monomers( flip_data_local.end_conformation(0));
