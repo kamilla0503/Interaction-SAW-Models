@@ -587,7 +587,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                                FlipMoveData &flip_data_local,
+                                const  FlipMoveData &flip_data_local,
                                 Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // We'll store a bool `accept_move`. If it's false, we skip
@@ -640,7 +640,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                           FlipMoveData &flip_data_local,
+                           const  FlipMoveData &flip_data_local,
                            Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // 1) Attempt move
