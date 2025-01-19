@@ -73,7 +73,7 @@ void XY_SAW_LongInteraction::SequenceOnLatticeInitialization() {
     sequence_on_lattice_h.resize(lattice->NumberOfNodes(), NO_XY_SPIN);
     used_coords.resize(lattice->NumberOfNodes(), false);
 }
-
+/*
 static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> g_pool;
 
 // A helper function to initialize it
@@ -85,11 +85,11 @@ void initializePool(unsigned int seed)
 Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>& getGlobalPool()
 {
     return g_pool;
-}
+}*/
 
 void XY_SAW_LongInteraction::StartConfiguration() {
 
-    initializePool(12345);
+    //initializePool(12345);
     //Kokkos::View<double*> sequence_on_lattice("sequence_on_lattice", this->lattice->NumberOfNodes());
     //Kokkos::View<long*> A("A", N);
     long lattice_side_h = lattice->lattice_side ; // Assign the actual value you need here
@@ -704,11 +704,17 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 //KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
-// Suppose you have a "FlipMoveData flip_data;" properly filled with device Views etc.
+    static bool pool_initialized = false;
+    static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
+    if (!pool_initialized) {
+        my_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(12345); // seed
+        pool_initialized = true;
+    }
+
+    // Suppose you have a "FlipMoveData flip_data;" properly filled with device Views etc.
 // We'll do 1 team, e.g. 128 threads:
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-
     // (1, 128) => 1 team, 128 threads in that team
     team_policy policy(1, 128);
     //using member_type = team_policy::member_type;
@@ -718,7 +724,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         // we pass flip_data by reference or a captured copy.
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
-        hierarchicalOneKernel(team_member, flip_data, g_pool);
+        hierarchicalOneKernel(team_member, flip_data, my_pool);
     }
     );
 // That's it. No device->host copy of 'accept_move' needed.
