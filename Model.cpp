@@ -587,7 +587,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                                FlipMoveData &flip_data_local)
+                                FlipMoveData &flip_data_local,
+                                Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // We'll store a bool `accept_move`. If it's false, we skip
     bool accept_move = true;
@@ -595,7 +596,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
 
-        auto rand_gen =  getGlobalPool().get_state(); //flip_data_local.rand_pool.get_state();
+        auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
         long dir = rand_gen.urand64() % 6;
         flip_data_local.direction() = dir;
         flip_data_local.rand_pool.free_state(rand_gen);
@@ -607,7 +608,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
             accept_move = false;
             return;  // skip the rest
         }
-        auto rand_gen1 = getGlobalPool().get_state();
+        auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
         flip_data_local.rand_pool.free_state(rand_gen1);
         // delete the beginning of SAW
@@ -639,10 +640,11 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                           FlipMoveData &flip_data_local)
+                           FlipMoveData &flip_data_local,
+                           Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // 1) Attempt move
-    bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local);
+    bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
     team_member.team_barrier();
     if (!accept_move) {
         return;
@@ -656,7 +658,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
-        auto rand_gen = getGlobalPool().get_state();
+        auto rand_gen = pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
         flip_data_local.rand_pool.free_state(rand_gen);
 
@@ -716,7 +718,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         // we pass flip_data by reference or a captured copy.
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
-        hierarchicalOneKernel(team_member, flip_data);
+        hierarchicalOneKernel(team_member, flip_data, g_pool);
     }
     );
 // That's it. No device->host copy of 'accept_move' needed.
