@@ -534,13 +534,15 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
         auto rand_gen = flip_data_local.rand_pool.get_state();
         flip_data_local.direction()  = rand_gen.urand64() % 6;
+        flip_data_local.rand_pool.free_state(rand_gen);
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2* flip_data_local.end_conformation(0) + flip_data_local.direction() );
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move() = 0; // Set the flag to indicate rejection
-            flip_data_local.rand_pool.free_state(rand_gen);
+            //flip_data_local.rand_pool.free_state(rand_gen);
             return;
         }
+        rand_gen = flip_data_local.rand_pool.get_state();
         flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI() );
         flip_data_local.rand_pool.free_state(rand_gen);
         // delete the beginning of SAW
@@ -577,12 +579,10 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     // Copy the flag value back to the host
     int accept_move_host = 1;
     Kokkos::deep_copy(accept_move_host, accept_move);
-
     // If the flag indicates rejection, exit the function
     if (accept_move_host == 0) {
         return;
     }
-
     //auto new_E = Energy();
     Energy();
    // Kokkos::fence();
@@ -654,18 +654,17 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
         auto rand_gen = flip_data_local.rand_pool.get_state();
         flip_data_local.direction()  = rand_gen.urand64() % 6;
        // printf("FlipMove_AddStart dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
-
+        flip_data_local.rand_pool.free_state(rand_gen);
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
       //  printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move() = 0; // Set the flag to indicate rejection
-            flip_data_local.rand_pool.free_state(rand_gen);
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
-
+        rand_gen = flip_data_local.rand_pool.get_state();
         flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI());
         flip_data_local.rand_pool.free_state(rand_gen);
         //delete end
