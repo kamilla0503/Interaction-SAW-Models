@@ -542,7 +542,7 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                        FlipMoveData &flip_data)
+                        const  FlipMoveData &flip_data)
 {
     // We'll accumulate totalEnergy in a local variable, then write to flip_data.newE()
     double totalEnergy = 0.0;
