@@ -523,8 +523,188 @@ std::mt19937 generator(URD_SEED + 1);
 std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
+
+
+KOKKOS_INLINE_FUNCTION
+void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        FlipMoveData &flip_data)
+{
+    // We'll accumulate totalEnergy in a local variable, then write to flip_data.newE()
+    double totalEnergy = 0.0;
+
+    // Outer loop: [0..L)
+    Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team_member, flip_data.L),
+            [&](const long i, double& outer_sum) {
+                // gather i data
+                coord_t pos_i = flip_data.lattice_nodes_positions(i);
+                double theta_i = flip_data.sequence_on_lattice(pos_i);
+
+                double energy_i = 0.0;
+
+                // Inner loop [i+1..L)
+                Kokkos::parallel_reduce(
+                        Kokkos::TeamVectorRange(team_member, i+1, flip_data.L),
+                        [&](const long j, double& inner_sum) {
+                            coord_t pos_j = flip_data.lattice_nodes_positions(j);
+                            double theta_j = flip_data.sequence_on_lattice(pos_j);
+
+                            double r_val = radius(pos_i, pos_j, flip_data.lattice_side_device);
+                            // e.g. r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val);
+                            double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
+                            inner_sum += contrib;
+                        },
+                        energy_i
+                );
+
+                // same sign logic as your code: "H_total -= energy_i;"
+                outer_sum -= energy_i;
+            },
+            totalEnergy
+    );
+
+    // Store the final energy in flip_data.newE()
+    // We'll do a single op to ensure only one thread modifies it:
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        flip_data.newE() = totalEnergy;
+    });
+}
+
+KOKKOS_INLINE_FUNCTION
+bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                                FlipMoveData &flip_data_local)
+{
+    // We'll store a bool `accept_move`. If it's false, we skip
+    bool accept_move = true;
+    // single => only 1 thread in this team does the update
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        // Example random usage
+        auto rand_gen = flip_data_local.rand_pool.get_state();
+        long dir = rand_gen.urand64() % 6;
+        flip_data_local.direction() = dir;
+        flip_data_local.rand_pool.free_state(rand_gen);
+
+        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
+
+        // Check self-avoid
+        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
+            accept_move = false;
+            return;  // skip the rest
+        }
+        auto rand_gen1 = flip_data_local.rand_pool.get_state();
+        flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
+        flip_data_local.rand_pool.free_state(rand_gen1);
+        // delete the beginning of SAW
+        flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
+        flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
+        flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
+        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = NO_SAW_NODE;
+        flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
+
+        //add the new monomer at the end of SAW
+        flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
+        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue(); //new spin value
+        flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
+        flip_data_local.end_conformation(0) = new_point;
+
+        long position_new = flip_data_local.start_index_in_nodes_position(0) ;
+
+        flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
+
+    });
+
+    // barrier if you need all threads to see the updated structure
+    team_member.team_barrier();
+
+    return accept_move;
+}
+
+
+
+KOKKOS_INLINE_FUNCTION
+void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                           FlipMoveData &flip_data_local)
+{
+    // 1) Attempt move
+    bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local);
+    team_member.team_barrier();
+    if (!accept_move) {
+        return;
+    }
+
+    hierarchicalEnergy(team_member, flip_data_local);
+    team_member.team_barrier();
+
+    // 3) acceptance logic
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        double p1 = exp( -(flip_data.J * (flip_data.newE() - flip_data.E(0))) );
+        double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
+
+        auto rand_gen = flip_data.rand_pool.get_state();
+        double q_ifaccept = rand_gen.drand(0., 1.);
+        flip_data.rand_pool.free_state(rand_gen);
+
+        if (q_ifaccept < p_metropolis) {
+            // accept => flip_data.E(0) = flip_data.newE();
+            flip_data.E(0) = flip_data.newE();
+            flip_data_local.E(0) = flip_data_local.newE();
+            flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
+            flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
+            flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = flip_data_local.direction();
+            flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L;
+
+        } else {
+            // reject => revert
+            // e.g. remove newly added monomer, restore old
+            // ...
+            coord_t del = flip_data_local.end_conformation(0);
+            flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(flip_data_local.end_conformation(0));
+            flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
+            flip_data_local.previous_monomers(del) = NO_SAW_NODE;
+            flip_data_local.sequence_on_lattice(del) = NO_XY_SPIN;
+
+            //add the previous beginning
+            flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = flip_data_local.save_start_conformation(0);
+            flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = flip_data_local.start_conformation(0);
+            flip_data_local.start_conformation(0) = flip_data_local.save_start_conformation(0);
+            flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = flip_data_local.oldspin(0);
+
+            flip_data_local.lattice_nodes_positions(flip_data_local.start_index_in_nodes_position(0)) = flip_data_local.start_conformation(0);
+
+        }
+        flip_data_local.newE()= 0;
+        flip_data_local.rand_pool.free_state(rand_gen);
+    });
+
+    // optional barrier
+    team_member.team_barrier();
+}
+
+
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd() {
+
+// Suppose you have a "FlipMoveData flip_data;" properly filled with device Views etc.
+// We'll do 1 team, e.g. 128 threads:
+    Kokkos::TeamPolicy<Kokkos::Cuda> policy(1, 128);
+
+// Launch the single kernel
+    Kokkos::parallel_for("hierarchicalKernel", policy,
+                         KOKKOS_LAMBDA(const team_policy::member_type &team_member) {
+        // we pass flip_data by reference or a captured copy.
+        // If you want a copy, do auto flip_data_local = flip_data;
+        // but typically you can do it directly if everything is device accessible.
+        hierarchicalOneKernel(team_member, flip_data);
+    }
+    );
+// That's it. No device->host copy of 'accept_move' needed.
+}
+
+
+
+// This is correct separated version
+KOKKOS_INLINE_FUNCTION
+void XY_SAW_LongInteraction::FlipMove_AddEnd1() {
 
     auto flip_data_local = flip_data;
     // Declare a flag variable accessible on the device
@@ -635,7 +815,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         flip_data_local.newE()= 0;
        flip_data_local.rand_pool.free_state(rand_gen);
     });
-
     //Kokkos::fence();
 }
 
