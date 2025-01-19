@@ -279,7 +279,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
     //rand_pool.init(12345,256);
     flip_data.rand_pool = rand_pool;
-    rand_pool_host = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
+    //rand_pool_host = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
     // Allocate views with size 1
     flip_data.start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("start_conformation", 1);
     flip_data.end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("end_conformation", 1);
