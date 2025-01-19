@@ -542,9 +542,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
             //flip_data_local.rand_pool.free_state(rand_gen);
             return;
         }
-        rand_gen = flip_data_local.rand_pool.get_state();
-        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI() );
-        flip_data_local.rand_pool.free_state(rand_gen);
+        auto rand_gen1 = flip_data_local.rand_pool.get_state();
+        flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
+        flip_data_local.rand_pool.free_state(rand_gen1);
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
@@ -664,9 +664,9 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
-        rand_gen = flip_data_local.rand_pool.get_state();
-        flip_data_local.spinValue() = rand_gen.drand(0, 2.0*flip_data_local.PI());
-        flip_data_local.rand_pool.free_state(rand_gen);
+        auto rand_gen1 = flip_data_local.rand_pool.get_state();
+        flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI());
+        flip_data_local.rand_pool.free_state(rand_gen1);
         //delete end
         flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = flip_data_local.previous_monomers( flip_data_local.end_conformation(0));
