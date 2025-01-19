@@ -637,12 +637,12 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 
     // 3) acceptance logic
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        double p1 = exp( -(flip_data.J * (flip_data.newE() - flip_data.E(0))) );
+        double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
-        auto rand_gen = flip_data.rand_pool.get_state();
+        auto rand_gen = flip_data_local.rand_pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
-        flip_data.rand_pool.free_state(rand_gen);
+        flip_data_local.rand_pool.free_state(rand_gen);
 
         if (q_ifaccept < p_metropolis) {
             // accept => flip_data.E(0) = flip_data.newE();
@@ -681,7 +681,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 }
 
 
-KOKKOS_INLINE_FUNCTION
+//KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
 // Suppose you have a "FlipMoveData flip_data;" properly filled with device Views etc.

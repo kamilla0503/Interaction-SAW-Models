@@ -111,7 +111,8 @@ public:
 
 
 
-    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd () = 0; //depends on spin variables
+    //KOKKOS_INLINE_FUNCTION
+    virtual void FlipMove_AddEnd () = 0; //depends on spin variables
     KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd1 () = 0; //depends on spin variables
     KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart () = 0; //depends on spin variables
 
@@ -161,7 +162,8 @@ public:
 
 
     KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd1 () override;
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd () override;
+    //KOKKOS_INLINE_FUNCTION
+    void FlipMove_AddEnd () override;
     KOKKOS_INLINE_FUNCTION void FlipMove_AddStart() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;
