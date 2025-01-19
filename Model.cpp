@@ -646,7 +646,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 
         if (q_ifaccept < p_metropolis) {
             // accept => flip_data.E(0) = flip_data.newE();
-            flip_data.E(0) = flip_data.newE();
+           // flip_data.E(0) = flip_data.newE();
             flip_data_local.E(0) = flip_data_local.newE();
             flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
@@ -679,6 +679,8 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
     // optional barrier
     team_member.team_barrier();
 }
+
+
 
 
 //KOKKOS_INLINE_FUNCTION
