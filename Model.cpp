@@ -715,12 +715,14 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     using member_type = team_policy::member_type;
     team_policy policy(1, 128);
 
+    auto flip_data_local = flip_data;
+
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         // we pass flip_data by reference or a captured copy.
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
-        hierarchicalOneKernel(team_member, flip_data, local_pool);
+        hierarchicalOneKernel(team_member, flip_data_local, local_pool);
     }
     );
 }
