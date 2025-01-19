@@ -74,7 +74,22 @@ void XY_SAW_LongInteraction::SequenceOnLatticeInitialization() {
     used_coords.resize(lattice->NumberOfNodes(), false);
 }
 
+static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> g_pool;
+
+// A helper function to initialize it
+void initializePool(unsigned int seed)
+{
+    g_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(seed);
+}
+
+Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>& getGlobalPool()
+{
+    return g_pool;
+}
+
 void XY_SAW_LongInteraction::StartConfiguration() {
+
+    initializePool(12345);
     //Kokkos::View<double*> sequence_on_lattice("sequence_on_lattice", this->lattice->NumberOfNodes());
     //Kokkos::View<long*> A("A", N);
     long lattice_side_h = lattice->lattice_side ; // Assign the actual value you need here
@@ -579,7 +594,8 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // single => only 1 thread in this team does the update
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
-        auto rand_gen =  rand_pool_host.get_state(); //flip_data_local.rand_pool.get_state();
+
+        auto rand_gen =  getGlobalPool().get_state(); //flip_data_local.rand_pool.get_state();
         long dir = rand_gen.urand64() % 6;
         flip_data_local.direction() = dir;
         flip_data_local.rand_pool.free_state(rand_gen);
@@ -591,7 +607,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
             accept_move = false;
             return;  // skip the rest
         }
-        auto rand_gen1 = rand_pool_host.get_state();
+        auto rand_gen1 = getGlobalPool().get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
         flip_data_local.rand_pool.free_state(rand_gen1);
         // delete the beginning of SAW
@@ -640,7 +656,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
-        auto rand_gen = rand_pool_host.get_state();
+        auto rand_gen = getGlobalPool().get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
         flip_data_local.rand_pool.free_state(rand_gen);
 
