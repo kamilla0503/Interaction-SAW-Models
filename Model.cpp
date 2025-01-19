@@ -688,11 +688,15 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
 // Suppose you have a "FlipMoveData flip_data;" properly filled with device Views etc.
 // We'll do 1 team, e.g. 128 threads:
-    Kokkos::TeamPolicy<Kokkos::Cuda> policy(1, 128);
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
 
+    // (1, 128) => 1 team, 128 threads in that team
+    team_policy policy(1, 128);
+    //using member_type = team_policy::member_type;
 // Launch the single kernel
     Kokkos::parallel_for("hierarchicalKernel", policy,
-                         KOKKOS_LAMBDA(const team_policy::member_type &team_member) {
+                         KOKKOS_LAMBDA(const member_type &team_member) {
         // we pass flip_data by reference or a captured copy.
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
