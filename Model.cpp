@@ -264,7 +264,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
     //rand_pool.init(12345,256);
     flip_data.rand_pool = rand_pool;
-
+    rand_pool_host = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
     // Allocate views with size 1
     flip_data.start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("start_conformation", 1);
     flip_data.end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("end_conformation", 1);
@@ -579,7 +579,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // single => only 1 thread in this team does the update
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
-        auto rand_gen = flip_data_local.rand_pool.get_state();
+        auto rand_gen =  rand_pool_host.get_state(); //flip_data_local.rand_pool.get_state();
         long dir = rand_gen.urand64() % 6;
         flip_data_local.direction() = dir;
         flip_data_local.rand_pool.free_state(rand_gen);
@@ -591,7 +591,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
             accept_move = false;
             return;  // skip the rest
         }
-        auto rand_gen1 = flip_data_local.rand_pool.get_state();
+        auto rand_gen1 = rand_pool_host.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
         flip_data_local.rand_pool.free_state(rand_gen1);
         // delete the beginning of SAW
@@ -640,7 +640,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
-        auto rand_gen = flip_data_local.rand_pool.get_state();
+        auto rand_gen = rand_pool_host.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
         flip_data_local.rand_pool.free_state(rand_gen);
 

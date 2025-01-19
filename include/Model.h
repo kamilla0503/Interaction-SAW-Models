@@ -149,6 +149,8 @@ public:
 
     Kokkos::View<long*, Kokkos::CudaSpace> lattice_nodes_positions;
     Kokkos::View<SpinType*, Kokkos::CudaSpace> sequence_on_lattice;
+
+    Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool_host;
 };
 
 //Class for XY long-interacting Model on SAWs
