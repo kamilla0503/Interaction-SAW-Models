@@ -691,7 +691,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 
         }
         flip_data_local.newE()= 0;
-        flip_data_local.rand_pool.free_state(rand_gen);
+        //flip_data_local.rand_pool.free_state(rand_gen);
     });
 
     // optional barrier
