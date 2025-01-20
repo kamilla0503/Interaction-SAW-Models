@@ -733,7 +733,11 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         // we pass flip_data by reference or a captured copy.
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
-        hierarchicalOneKernel(team_member, flip_data_local, local_pool);
+
+        if(team_member.team_rank() == 0) {
+            hierarchicalOneKernel(team_member, flip_data_local, local_pool);
+        }
+        //hierarchicalOneKernel(team_member, flip_data_local, local_pool);
     }
     );
 
