@@ -546,7 +546,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     // We'll accumulate totalEnergy in a local variable, then write to flip_data.newE()
     double totalEnergy = 0.0;
-
+    printf("start hierarchicalEnergy \n");
     // Outer loop: [0..L)
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member, flip_data.L),
@@ -583,6 +583,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         flip_data.newE() = totalEnergy;
     });
+
+    printf("finish hierarchicalEnergy \n"); 
 }
 
 KOKKOS_INLINE_FUNCTION
