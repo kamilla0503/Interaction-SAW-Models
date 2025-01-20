@@ -584,7 +584,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
         flip_data.newE() = totalEnergy;
     });
 
-    printf("finish hierarchicalEnergy \n"); 
+    printf("finish hierarchicalEnergy \n");
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -725,14 +725,26 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
     auto flip_data_local = flip_data;
 
-    Kokkos::parallel_for("hierarchicalKernel", policy,
+   /* Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         // we pass flip_data by reference or a captured copy.
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
         hierarchicalOneKernel(team_member, flip_data_local, local_pool);
     }
-    );
+    );*/
+
+
+    Kokkos::parallel_for("hierarchicalKernel", policy, KOKKOS_LAMBDA(const member_type& team_member) {
+        // Only the single "leader" thread in each team does this
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            printf("Team Rank = %d, running once per team.\n", team_member.league_rank());
+            hierarchicalOneKernel(team_member, flip_data_local, local_pool);
+        });
+    });
+
+
+
 
     printf("end step \n");
 }
