@@ -565,7 +565,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                             double theta_j = flip_data.sequence_on_lattice(pos_j);
 
                             double r_val = radius(pos_i, pos_j, flip_data.lattice_side_device);
-                            // e.g. r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val);
+                            // e.g.
+                            r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val);
                             double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
                             inner_sum += contrib;
                         },
