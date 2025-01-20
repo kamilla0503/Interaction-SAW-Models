@@ -553,8 +553,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             Kokkos::TeamThreadRange(team_member, flip_data.L),
             [&](const long i, double& outer_sum) {
 
-                printf("finish hierarchicalEnergy flip_data.L %d \n", flip_data.L);
-                printf("TeamRank=%d i=%ld\n", int(team_member.team_rank()), i);
+                //printf("finish hierarchicalEnergy flip_data.L %d \n", flip_data.L);
+              //  printf("TeamRank=%d i=%ld\n", int(team_member.team_rank()), i);
 
                 // gather i data
                 coord_t pos_i = flip_data.lattice_nodes_positions(i);
@@ -586,7 +586,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     // We'll do a single op to ensure only one thread modifies it:
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         flip_data.newE() = - totalEnergy;
-        printf("finish hierarchicalEnergy %f \n", flip_data.newE());
+       // printf("finish hierarchicalEnergy %f \n", flip_data.newE());
     });
 }
 
@@ -728,23 +728,23 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
     auto flip_data_local = flip_data;
 
-   /* Kokkos::parallel_for("hierarchicalKernel", policy,
+   Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         // we pass flip_data by reference or a captured copy.
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
         hierarchicalOneKernel(team_member, flip_data_local, local_pool);
     }
-    );*/
+    );
 
-
+/*
     Kokkos::parallel_for("hierarchicalKernel", policy, KOKKOS_LAMBDA(const member_type& team_member) {
         // Only the single "leader" thread in each team does this
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             //printf("Team Rank = %d, running once per team.\n", team_member.league_rank());
             hierarchicalOneKernel(team_member, flip_data_local, local_pool);
         });
-    });
+    });*/
 
 
 
