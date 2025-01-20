@@ -599,7 +599,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
         long dir = rand_gen.urand64() % 6;
         flip_data_local.direction() = dir;
-        flip_data_local.rand_pool.free_state(rand_gen);
+        pool.free_state(rand_gen);
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
 
@@ -610,7 +610,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         }
         auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
-        flip_data_local.rand_pool.free_state(rand_gen1);
+        pool.free_state(rand_gen1);
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
@@ -660,7 +660,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 
         auto rand_gen = pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
-        flip_data_local.rand_pool.free_state(rand_gen);
+        pool.free_state(rand_gen);
 
         if (q_ifaccept < p_metropolis) {
             // accept => flip_data.E(0) = flip_data.newE();
