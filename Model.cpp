@@ -546,7 +546,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     // We'll accumulate totalEnergy in a local variable, then write to flip_data.newE()
     double totalEnergy = 0.0;
-    printf("start hierarchicalEnergy \n");
+  //  printf("start hierarchicalEnergy \n");
     // Outer loop: [0..L)
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member, flip_data.L),
@@ -584,7 +584,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
         flip_data.newE() = totalEnergy;
     });
 
-    printf("finish hierarchicalEnergy \n");
+   // printf("finish hierarchicalEnergy \n");
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -602,7 +602,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         long dir = rand_gen.urand64() % 6;
         flip_data_local.direction() = dir;
         pool.free_state(rand_gen);
-        printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+       // printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
 
@@ -648,7 +648,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
-    printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+    //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
     team_member.team_barrier();
     if (!accept_move) {
@@ -660,7 +660,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 
     // 3) acceptance logic
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+        //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
 
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
@@ -738,7 +738,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("hierarchicalKernel", policy, KOKKOS_LAMBDA(const member_type& team_member) {
         // Only the single "leader" thread in each team does this
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-            printf("Team Rank = %d, running once per team.\n", team_member.league_rank());
+            //printf("Team Rank = %d, running once per team.\n", team_member.league_rank());
             hierarchicalOneKernel(team_member, flip_data_local, local_pool);
         });
     });
@@ -746,7 +746,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
 
 
-    printf("end step \n");
+   // printf("end step \n");
 }
 
 
