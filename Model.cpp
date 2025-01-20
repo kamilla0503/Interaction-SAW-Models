@@ -548,9 +548,12 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     double totalEnergy = 0.0;
   //  printf("start hierarchicalEnergy \n");
     // Outer loop: [0..L)
+    
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member, flip_data.L),
             [&](const long i, double& outer_sum) {
+
+                printf("finish hierarchicalEnergy flip_data.L %d \n", flip_data.L);
                 // gather i data
                 coord_t pos_i = flip_data.lattice_nodes_positions(i);
                 double theta_i = flip_data.sequence_on_lattice(pos_i);
@@ -574,7 +577,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 );
 
                 // same sign logic as your code: "H_total -= energy_i;"
-                outer_sum -= energy_i;
+                outer_sum += energy_i;
             },
             totalEnergy
     );
@@ -582,10 +585,11 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     // Store the final energy in flip_data.newE()
     // We'll do a single op to ensure only one thread modifies it:
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        flip_data.newE() = totalEnergy;
+        flip_data.newE() = - totalEnergy;
+        printf("finish hierarchicalEnergy %f \n", flip_data.newE());
     });
 
-   // printf("finish hierarchicalEnergy \n");
+
 }
 
 KOKKOS_INLINE_FUNCTION
