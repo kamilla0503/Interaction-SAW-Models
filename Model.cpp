@@ -600,6 +600,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         long dir = rand_gen.urand64() % 6;
         flip_data_local.direction() = dir;
         pool.free_state(rand_gen);
+        printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
 
@@ -645,6 +646,8 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
+    printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+
     team_member.team_barrier();
     if (!accept_move) {
         return;
@@ -655,6 +658,9 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 
     // 3) acceptance logic
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+
+
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
@@ -725,6 +731,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         hierarchicalOneKernel(team_member, flip_data_local, local_pool);
     }
     );
+
+    printf("end step \n");
 }
 
 
@@ -859,7 +867,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
         auto rand_gen = flip_data_local.rand_pool.get_state();
         flip_data_local.direction()  = rand_gen.urand64() % 6;
-       // printf("FlipMove_AddStart dir  = %ld; end = %ld;   \n ",  direction,flip_data_local.end_conformation(0));
+        printf("FlipMove_AddStart dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
         flip_data_local.rand_pool.free_state(rand_gen);
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
       //  printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
