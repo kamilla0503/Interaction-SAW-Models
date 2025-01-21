@@ -445,10 +445,6 @@ void XY_SAW_LongInteraction::Energy() {
     }, flip_data_local.newE );
     //return -H;  // Return negative of the total energy
 
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        //flip_data.newE() = - totalEnergy;
-        printf("finish Energy %f \n", flip_data.newE());
-    });
 }
 
 
@@ -955,7 +951,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     Energy();
   //  Kokkos::fence();
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
-        
+        printf("finish Energy %f \n", flip_data.newE());
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
     
