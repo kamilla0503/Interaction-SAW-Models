@@ -753,7 +753,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
 
 
-   // printf("end step \n");
+   printf("end step \n");
 }
 
 
