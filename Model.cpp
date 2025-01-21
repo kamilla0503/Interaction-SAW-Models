@@ -444,6 +444,11 @@ void XY_SAW_LongInteraction::Energy() {
         });
     }, flip_data_local.newE );
     //return -H;  // Return negative of the total energy
+
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        //flip_data.newE() = - totalEnergy;
+        printf("finish Energy %f \n", flip_data.newE());
+    });
 }
 
 
@@ -586,7 +591,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     // We'll do a single op to ensure only one thread modifies it:
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         flip_data.newE() = - totalEnergy;
-        //printf("finish hierarchicalEnergy %f \n", flip_data.newE());
+        printf("finish hierarchicalEnergy %f \n", flip_data.newE());
     });
 }
 
