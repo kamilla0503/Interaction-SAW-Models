@@ -587,7 +587,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     // We'll do a single op to ensure only one thread modifies it:
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         flip_data.newE() = - totalEnergy;
-       // printf("finish hierarchicalEnergy %f \n", flip_data.newE());
+        printf("finish hierarchicalEnergy %f \n", flip_data.newE());
+        printf("flip_data.lattice_side_device = %d", flip_data.lattice_side_device);
     });
 }
 
@@ -604,8 +605,8 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
         long dir = rand_gen.urand64() % 6;
-        flip_data_local.direction() = dir;
         pool.free_state(rand_gen);
+        flip_data_local.direction() = dir;
        // printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
@@ -617,8 +618,9 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         }
         auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
-        flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
         pool.free_state(rand_gen1);
+        flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
+
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
@@ -952,7 +954,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     Energy();
   //  Kokkos::fence();
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
-        //printf("finish Energy Add Start %f \n", flip_data.newE());
+        printf("finish Energy Add Start %f \n", flip_data.newE());
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
     
