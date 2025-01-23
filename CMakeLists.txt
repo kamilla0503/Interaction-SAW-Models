@@ -4,7 +4,7 @@ project(MySimulation LANGUAGES CXX CUDA)
 # ------------------------------------------------------------------------------
 # 1) Basic C++/CUDA Settings
 # ------------------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # If you want to control CUDA standard as well
