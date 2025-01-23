@@ -40,7 +40,7 @@ add_subdirectory(
 # 4) Gather Your Simulation Source Files
 # ------------------------------------------------------------------------------
 file(GLOB SIM_SRC
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
         # add other .cu/.cpp if needed
 )
 
