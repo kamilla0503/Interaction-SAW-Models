@@ -36,6 +36,10 @@ add_subdirectory(
         "/home/knfayzullina/kokkos"
         "/home/knfayzullina/kokkos/install"
 )
+
+set(Kokkos_DIR "/home/knfayzullina/kokkos/install/lib64/cmake/Kokkos")
+find_package(Kokkos REQUIRED)
+
 # ------------------------------------------------------------------------------
 # 4) Gather Your Simulation Source Files
 # ------------------------------------------------------------------------------
