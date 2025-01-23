@@ -31,7 +31,7 @@ option(Kokkos_ARCH_AMPERE80 "Build Kokkos for Ampere80 (sm_80)" OFF)
 # 3) Add Kokkos Subdirectory
 #    This will configure and build Kokkos as part of your project
 # ------------------------------------------------------------------------------
-add_subdirectory(kokkos)
+add_subdirectory(${HOME}/kokkos)
 
 # ------------------------------------------------------------------------------
 # 4) Gather Your Simulation Source Files
