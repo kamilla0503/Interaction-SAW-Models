@@ -1,68 +1,76 @@
-cmake_minimum_required(VERSION 3.10)
-project(finite_element LANGUAGES CXX CUDA)
+#cmake_minimum_required(VERSION 3.10)
+project(MySimulation LANGUAGES CXX CUDA)
 
-# -------------------------------------------------------------------
-# 1. Set C++ and CUDA Standards
-# -------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# 1) Basic C++/CUDA Settings
+# ------------------------------------------------------------------------------
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# If you want to control CUDA standard as well
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# -------------------------------------------------------------------
-# 2. Define Build Options
-# -------------------------------------------------------------------
-option(USE_CUDA "Enable CUDA support" ON)
+# ------------------------------------------------------------------------------
+# 2) Kokkos Configuration Options
+#    (You can turn these ON/OFF as needed, or set them via command line)
+# ------------------------------------------------------------------------------
+option(Kokkos_ENABLE_CUDA "Enable CUDA in Kokkos" ON)
+option(Kokkos_ENABLE_OPENMP "Enable OpenMP in Kokkos" OFF)
+option(Kokkos_ENABLE_SERIAL "Enable Serial in Kokkos" OFF)
+option(Kokkos_ENABLE_TESTS "Enable Kokkos tests" OFF)
 
-# -------------------------------------------------------------------
-# 3. Locate Kokkos
-# -------------------------------------------------------------------
-# Set Kokkos_DIR to the directory containing KokkosConfig.cmake
-# Adjust the path if Kokkos is installed elsewhere
-#set(Kokkos_DIR "${HOME}/kokkos/build/lib/cmake/Kokkos")
-set(Kokkos_DIR "${HOME}/kokkos/build/")
-find_package(Kokkos REQUIRED PATHS "${Kokkos_DIR}" NO_DEFAULT_PATH)
+# GPU architecture flags:
+option(Kokkos_ARCH_VOLTA70 "Build Kokkos for Volta70 (sm_70)" OFF)
+option(Kokkos_ARCH_AMPERE80 "Build Kokkos for Ampere80 (sm_80)" OFF)
+# etc. for other arches if needed:
+# option(Kokkos_ARCH_PASCAL60 "..." OFF)
+# option(Kokkos_ARCH_MAXWELL52 "..." OFF)
 
-# -------------------------------------------------------------------
-# 4. Set Compilation Flags
-# -------------------------------------------------------------------
-# Equivalent to CXXFLAGS in Makefile
-set(CXX_FLAGS "-O3 -DREGIME_3D -DSTARTHALF -use_fast_math -I./include/")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
+# ------------------------------------------------------------------------------
+# 3) Add Kokkos Subdirectory
+#    This will configure and build Kokkos as part of your project
+# ------------------------------------------------------------------------------
+add_subdirectory(kokkos)
 
-# If using CUDA, set additional CUDA flags
-if(USE_CUDA)
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -DREGIME_3D -DSTARTHALF -use_fast_math")
-endif()
+# ------------------------------------------------------------------------------
+# 4) Gather Your Simulation Source Files
+# ------------------------------------------------------------------------------
+file(GLOB SIM_SRC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+        # add other .cu/.cpp if needed
+)
 
-add_definitions(-DUSE_CUDA)
+# ------------------------------------------------------------------------------
+# 5) Create the Executable for Your Simulation
+# ------------------------------------------------------------------------------
+add_executable(finite_element ${SIM_SRC})
 
-# -------------------------------------------------------------------
-# 5. Gather Source Files
-# -------------------------------------------------------------------
-file(GLOB SRC_FILES "*.cpp")
+# ------------------------------------------------------------------------------
+# 6) Link Against Kokkos
+#    Kokkos exposes a CMake target named Kokkos::kokkos
+# ------------------------------------------------------------------------------
+target_link_libraries(finite_element PRIVATE Kokkos::kokkos)
 
-# -------------------------------------------------------------------
-# 6. Add Executable
-# -------------------------------------------------------------------
-add_executable(${PROJECT_NAME} ${SRC_FILES})
+# ------------------------------------------------------------------------------
+# 7) Include Directories for Your Headers
+# ------------------------------------------------------------------------------
+target_include_directories(finite_element PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
 
-# -------------------------------------------------------------------
-# 7. Link Kokkos
-# -------------------------------------------------------------------
-target_link_libraries(${PROJECT_NAME} Kokkos::kokkos)
+# ------------------------------------------------------------------------------
+# 8) Optional: Additional Compile Flags (Equivalent to your CXXFLAGS)
+# ------------------------------------------------------------------------------
+set_property(TARGET finite_element PROPERTY CXX_STANDARD 14)
+set_property(TARGET finite_element PROPERTY CUDA_STANDARD 14)
 
-# -------------------------------------------------------------------
-# 8. Optional: Define Macros or Additional Includes
-# -------------------------------------------------------------------
-# If you have additional include directories or libraries, add them here
-# target_include_directories(${PROJECT_NAME} PRIVATE /path/to/includes)
-# target_link_libraries(${PROJECT_NAME} PRIVATE /path/to/libs)
+# Example: replicating your -O3 -DREGIME_3D -DSTARTHALF -use_fast_math
+target_compile_options(finite_element PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+        $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+)
 
-# -------------------------------------------------------------------
-# 9. Set CUDA Properties (Optional)
-# -------------------------------------------------------------------
-if(USE_CUDA)
-    set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-    # Add any CUDA-specific compile options or properties here
-endif()
+# ------------------------------------------------------------------------------
+# That’s it! You now have a single build that compiles Kokkos and your simulation.
+# ------------------------------------------------------------------------------
