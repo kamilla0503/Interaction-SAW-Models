@@ -19,7 +19,7 @@ option(USE_CUDA "Enable CUDA support" ON)
 # -------------------------------------------------------------------
 # Set Kokkos_DIR to the directory containing KokkosConfig.cmake
 # Adjust the path if Kokkos is installed elsewhere
-set(Kokkos_DIR "${HOME}/kokkos/install/lib/cmake/Kokkos")
+set(Kokkos_DIR "${HOME}/kokkos/build/lib/cmake/Kokkos")
 
 find_package(Kokkos REQUIRED PATHS "${Kokkos_DIR}" NO_DEFAULT_PATH)
 
@@ -34,6 +34,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
 if(USE_CUDA)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -DREGIME_3D -DSTARTHALF -use_fast_math")
 endif()
+
+add_definitions(-DUSE_CUDA)
 
 # -------------------------------------------------------------------
 # 5. Gather Source Files

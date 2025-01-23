@@ -1,0 +1,1 @@
+ cmake ..   -DKokkos_ENABLE_CUDA=ON  -DKokkos_ARCH_VOLTA70=ON  -DKokkos_ENABLE_LAMBDA=ON   -DKokkos_ENABLE_FORCE_UVM=ON   -DCMAKE_INSTALL_PREFIX=${HOME}/kokkos/install
