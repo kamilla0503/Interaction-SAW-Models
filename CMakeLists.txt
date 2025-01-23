@@ -34,8 +34,7 @@ option(Kokkos_ARCH_AMPERE80 "Build Kokkos for Ampere80 (sm_80)" OFF)
 #add_subdirectory(${HOME}/kokkos)
 add_subdirectory(
         "/home/knfayzullina/kokkos"
-        "/home/knfayzullina/kokkos/build"
-        #"${CMAKE_CURRENT_BINARY_DIR}/kokkos_build"
+        "/home/knfayzullina/kokkos/install"
 )
 # ------------------------------------------------------------------------------
 # 4) Gather Your Simulation Source Files
