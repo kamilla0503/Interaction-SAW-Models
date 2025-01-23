@@ -19,8 +19,8 @@ option(USE_CUDA "Enable CUDA support" ON)
 # -------------------------------------------------------------------
 # Set Kokkos_DIR to the directory containing KokkosConfig.cmake
 # Adjust the path if Kokkos is installed elsewhere
-set(Kokkos_DIR "${HOME}/kokkos/build/lib/cmake/Kokkos")
-
+#set(Kokkos_DIR "${HOME}/kokkos/build/lib/cmake/Kokkos")
+set(Kokkos_DIR "${HOME}/kokkos/build/")
 find_package(Kokkos REQUIRED PATHS "${Kokkos_DIR}" NO_DEFAULT_PATH)
 
 # -------------------------------------------------------------------
