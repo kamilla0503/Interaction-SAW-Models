@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
+set(CMAKE_CXX_COMPILER "/home/knfayzullina/kokkos/bin/nvcc_wrapper")
 # ------------------------------------------------------------------------------
 # 2) Kokkos Configuration Options
 #    (You can turn these ON/OFF as needed, or set them via command line)
