@@ -39,7 +39,7 @@ option(Kokkos_ARCH_AMPERE80 "Build Kokkos for Ampere80 (sm_80)" OFF)
 #)
 
 set(Kokkos_DIR "/home/knfayzullina/kokkos/install/lib64/cmake/Kokkos")
-#find_package(Kokkos REQUIRED)
+find_package(Kokkos REQUIRED)
 
 # ------------------------------------------------------------------------------
 # 4) Gather Your Simulation Source Files
