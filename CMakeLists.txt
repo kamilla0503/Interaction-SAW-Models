@@ -33,10 +33,10 @@ option(Kokkos_ARCH_AMPERE80 "Build Kokkos for Ampere80 (sm_80)" OFF)
 #    This will configure and build Kokkos as part of your project
 # ------------------------------------------------------------------------------
 #add_subdirectory(${HOME}/kokkos)
-add_subdirectory(
-        "/home/knfayzullina/kokkos"
-        "/home/knfayzullina/kokkos/install"
-)
+#add_subdirectory(
+#        "/home/knfayzullina/kokkos"
+#        "/home/knfayzullina/kokkos/install"
+#)
 
 set(Kokkos_DIR "/home/knfayzullina/kokkos/install/lib64/cmake/Kokkos")
 #find_package(Kokkos REQUIRED)
