@@ -894,6 +894,14 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
         flip_data_local.direction()  = rand_gen.urand64() % 6;
        // printf("FlipMove_AddStart dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
         flip_data_local.rand_pool.free_state(rand_gen);
+
+        printf("FlipMove_AddStart: start=%ld end=%ld direction=%ld\n",
+               (long)flip_data_local.start_conformation(0),
+               (long)flip_data_local.end_conformation(0),
+               (long)flip_data_local.direction());
+        printf("  sequence_on_lattice.extent(0)=%lu\n",
+               sequence_on_lattice.extent(0));
+
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
       //  printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
