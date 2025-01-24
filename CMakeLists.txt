@@ -18,7 +18,7 @@ set(CMAKE_CXX_COMPILER "/home/knfayzullina/kokkos/bin/nvcc_wrapper")
 # ------------------------------------------------------------------------------
 option(Kokkos_ENABLE_CUDA "Enable CUDA in Kokkos" ON)
 option(Kokkos_ENABLE_OPENMP "Enable OpenMP in Kokkos" OFF)
-option(Kokkos_ENABLE_SERIAL "Enable Serial in Kokkos" OFF)
+option(Kokkos_ENABLE_SERIAL "Enable Serial in Kokkos" ON)
 option(Kokkos_ENABLE_TESTS "Enable Kokkos tests" OFF)
 
 # GPU architecture flags:
@@ -39,7 +39,7 @@ add_subdirectory(
 )
 
 set(Kokkos_DIR "/home/knfayzullina/kokkos/install/lib64/cmake/Kokkos")
-find_package(Kokkos REQUIRED)
+#find_package(Kokkos REQUIRED)
 
 # ------------------------------------------------------------------------------
 # 4) Gather Your Simulation Source Files
