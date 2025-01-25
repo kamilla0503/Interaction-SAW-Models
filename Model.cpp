@@ -578,18 +578,18 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 );
 
                 // same sign logic as your code: "H_total -= energy_i;"
-                outer_sum += energy_i;
+                outer_sum -= energy_i;
             },
-            totalEnergy
+            flip_data.newE()
     );
 
     // Store the final energy in flip_data.newE()
     // We'll do a single op to ensure only one thread modifies it:
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+    /* Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         flip_data.newE() = - totalEnergy;
         printf("finish hierarchicalEnergy %f \n", flip_data.newE());
         printf("flip_data.lattice_side_device = %d \n", flip_data.lattice_side_device);
-    });
+    }); */
 }
 
 KOKKOS_INLINE_FUNCTION
