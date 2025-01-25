@@ -553,7 +553,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
     Kokkos::parallel_reduce(
             "hEnergyKernel",
-            //Kokkos::TeamPolicy<Kokkos::Cuda>(1, 128),
+            Kokkos::TeamPolicy<Kokkos::Cuda>(1, 128),
+            KOKKOS_LAMBDA(const member_type& team_member, double& outer_sum)
             //KOKKOS_LAMBDA(const member_type& team, double& outer_sum)
             //KOKKOS_LAMBDA(const member_type& team, double& outer_sum)
             //Kokkos::TeamPolicy<Kokkos::Cuda>(flip_data.L, team_size),
@@ -562,8 +563,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             // KOKKOS_LAMBDA(const member_type& team, double& totalEnergy),
             //Kokkos::TeamPolicy<Kokkos::Cuda>(flip_data.L, team_size),
             //KOKKOS_LAMBDA(const member_type& team, double& H_total)
-           Kokkos::TeamThreadRange(team_member, flip_data.L), //was used
-            [&](const long i, double& outer_sum // was used
+           //Kokkos::TeamThreadRange(team_member, flip_data.L), //was used
+            //[&](const long i, double& outer_sum // was used
             )
             {
 
@@ -589,9 +590,9 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         },
                         energy_i
                 );
-                Kokkos::single(Kokkos::PerTeam(team), [&]() {
+                //Kokkos::single(Kokkos::PerTeam(team), [&]() {
                     outer_sum  -= energy_i;
-                });
+                //});
                 // same sign logic as your code: "H_total -= energy_i;"
                // outer_sum -= energy_i;
             },
