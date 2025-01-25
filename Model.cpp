@@ -553,8 +553,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
     Kokkos::parallel_reduce(
             "hEnergyKernel",
-            Kokkos::TeamPolicy<Kokkos::Cuda>(1, 128),
-            KOKKOS_LAMBDA(const member_type& team, double& outer_sum)
+            //Kokkos::TeamPolicy<Kokkos::Cuda>(1, 128),
+            //KOKKOS_LAMBDA(const member_type& team, double& outer_sum)
             //KOKKOS_LAMBDA(const member_type& team, double& outer_sum)
             //Kokkos::TeamPolicy<Kokkos::Cuda>(flip_data.L, team_size),
             //KOKKOS_LAMBDA(const member_type& team, double& outer_sum),
@@ -562,8 +562,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             // KOKKOS_LAMBDA(const member_type& team, double& totalEnergy),
             //Kokkos::TeamPolicy<Kokkos::Cuda>(flip_data.L, team_size),
             //KOKKOS_LAMBDA(const member_type& team, double& H_total)
-           // Kokkos::TeamThreadRange(team_member, flip_data.L), //was used
-           // [&](const long i, double& outer_sum // was used
+           Kokkos::TeamThreadRange(team_member, flip_data.L), //was used
+            [&](const long i, double& outer_sum // was used
             )
             {
 
