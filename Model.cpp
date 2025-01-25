@@ -588,7 +588,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         flip_data.newE() = - totalEnergy;
         printf("finish hierarchicalEnergy %f \n", flip_data.newE());
-        printf("flip_data.lattice_side_device = %d", flip_data.lattice_side_device);
+        printf("flip_data.lattice_side_device = %d \n", flip_data.lattice_side_device);
     });
 }
 
@@ -900,10 +900,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
                (long)flip_data_local.end_conformation(0),
                (long)flip_data_local.direction());
         printf("  sequence_on_lattice.extent(0)=%lu\n",
-               sequence_on_lattice.extent(0));
+               flip_data_local.sequence_on_lattice.extent(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
-      //  printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+        printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
     
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
