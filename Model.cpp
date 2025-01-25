@@ -569,7 +569,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
                 //printf("finish hierarchicalEnergy flip_data.L %d \n", flip_data.L);
               //  printf("TeamRank=%d i=%ld\n", int(team_member.team_rank()), i);
-                long i = team.league_rank();
+                //long i = team.league_rank();
                 // gather i data
                 coord_t pos_i = flip_data.lattice_nodes_positions(i);
                 double theta_i = flip_data.sequence_on_lattice(pos_i);
