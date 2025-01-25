@@ -547,16 +547,29 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     // We'll accumulate totalEnergy in a local variable, then write to flip_data.newE()
     double totalEnergy = 0.0;
-  //  printf("start hierarchicalEnergy \n");
+   printf("start hierarchicalEnergy \n");
+   printf("%d  L = \n", flip_data.L);
     // Outer loop: [0..L)
 
     Kokkos::parallel_reduce(
-            Kokkos::TeamThreadRange(team_member, flip_data.L),
-            [&](const long i, double& outer_sum) {
+            "hEnergyKernel",
+            Kokkos::TeamPolicy<Kokkos::Cuda>(1, 128),
+            KOKKOS_LAMBDA(const member_type& team, double& outer_sum)
+            //KOKKOS_LAMBDA(const member_type& team, double& outer_sum)
+            //Kokkos::TeamPolicy<Kokkos::Cuda>(flip_data.L, team_size),
+            //KOKKOS_LAMBDA(const member_type& team, double& outer_sum),
+            //policy,
+            // KOKKOS_LAMBDA(const member_type& team, double& totalEnergy),
+            //Kokkos::TeamPolicy<Kokkos::Cuda>(flip_data.L, team_size),
+            //KOKKOS_LAMBDA(const member_type& team, double& H_total)
+           // Kokkos::TeamThreadRange(team_member, flip_data.L), //was used
+           // [&](const long i, double& outer_sum // was used
+            )
+            {
 
                 //printf("finish hierarchicalEnergy flip_data.L %d \n", flip_data.L);
               //  printf("TeamRank=%d i=%ld\n", int(team_member.team_rank()), i);
-
+                long i = team.league_rank();
                 // gather i data
                 coord_t pos_i = flip_data.lattice_nodes_positions(i);
                 double theta_i = flip_data.sequence_on_lattice(pos_i);
@@ -576,9 +589,11 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         },
                         energy_i
                 );
-
+                Kokkos::single(Kokkos::PerTeam(team), [&]() {
+                    outer_sum  -= energy_i;
+                });
                 // same sign logic as your code: "H_total -= energy_i;"
-                outer_sum -= energy_i;
+               // outer_sum -= energy_i;
             },
             flip_data.newE()
     );
