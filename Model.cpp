@@ -709,8 +709,8 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
         return;
     }
 
-    Energy();
-    //hierarchicalEnergy(team_member, flip_data_local);
+    //Energy();
+    hierarchicalEnergy(team_member, flip_data_local);
     team_member.team_barrier();
 
     // 3) acceptance logic
