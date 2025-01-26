@@ -609,7 +609,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
     Kokkos::parallel_reduce(
             Kokkos::TeamPolicy<Kokkos::Cuda> (flip_data.L, 128),
-            KOKKOS_LAMBDA(const member_type& team, double &H_total) {
+            KOKKOS_LAMBDA(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type& team, double &H_total) {
         const long i = team.league_rank();
         double energy_i = 0.0;
         coord_t pos_i = flip_data.lattice_nodes_positions(i);
