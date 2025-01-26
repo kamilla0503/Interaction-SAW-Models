@@ -550,7 +550,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
    printf("start hierarchicalEnergy \n");
    printf("%d  L = \n", flip_data.L);
     // Outer loop: [0..L)
-
+/*
     Kokkos::parallel_reduce(
             "hEnergyKernel",
             Kokkos::TeamPolicy<Kokkos::Cuda>(1, 128),
@@ -597,7 +597,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                // outer_sum -= energy_i;
             },
             flip_data.newE()
-    );
+    );  */
 
     // Store the final energy in flip_data.newE()
     // We'll do a single op to ensure only one thread modifies it:
@@ -606,6 +606,37 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
         printf("finish hierarchicalEnergy %f \n", flip_data.newE());
         printf("flip_data.lattice_side_device = %d \n", flip_data.lattice_side_device);
     }); */
+
+    Kokkos::parallel_reduce(
+            Kokkos::TeamPolicy<flip_data.L, team_size>(flip_data.L, team_size),
+            KOKKOS_LAMBDA(const member_type& team, double &H_total) {
+        const long i = team.league_rank();
+        double energy_i = 0.0;
+        coord_t pos_i = flip_data.lattice_nodes_positions(i);
+        double theta_i = flip_data.sequence_on_lattice(pos_i);
+        Kokkos::parallel_reduce(
+                Kokkos::TeamVectorRange(team, i+1, flip_data.L),
+                [&](long j, double &innerSum) {
+                    coord_t pos_j = flip_data.lattice_nodes_positions(j);
+                    double theta_j = flip_data.sequence_on_lattice(pos_j);
+
+                    double r_val = radius(pos_i, pos_j, flip_data.lattice_side_device);
+                    // e.g.
+                    r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val);
+                    double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
+                    inner_sum += contrib;
+                },
+                energy_i
+        );
+        Kokkos::single(Kokkos::PerTeam(team), [&]() {
+            H_total -= energy_i;
+        });
+    },
+    flip_data_local.newE
+    );
+
+
+
 }
 
 KOKKOS_INLINE_FUNCTION
