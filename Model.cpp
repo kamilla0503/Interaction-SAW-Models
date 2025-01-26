@@ -770,7 +770,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     static bool pool_initialized = false;
     static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
     if (!pool_initialized) {
-        my_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(12345); // seed
+        my_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(Kokkos::Cuda(), 256, 12345); // seed
         pool_initialized = true;
     }
     auto local_pool = my_pool;
@@ -789,23 +789,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         if(team_member.team_rank() == 0) {
             hierarchicalOneKernel(team_member, flip_data_local, local_pool);
         }
-        //hierarchicalOneKernel(team_member, flip_data_local, local_pool);
     }
     );
-
-/*
-    Kokkos::parallel_for("hierarchicalKernel", policy, KOKKOS_LAMBDA(const member_type& team_member) {
-        // Only the single "leader" thread in each team does this
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-            //printf("Team Rank = %d, running once per team.\n", team_member.league_rank());
-            hierarchicalOneKernel(team_member, flip_data_local, local_pool);
-        });
-    });*/
-
-
-
-
-   //printf("end step \n");
 }
 
 
