@@ -624,7 +624,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     // e.g.
                     r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val);
                     double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
-                    inner_sum += contrib;
+                    innerSum += contrib;
                 },
                 energy_i
         );
@@ -632,7 +632,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             H_total -= energy_i;
         });
     },
-    flip_data_local.newE
+    flip_data.newE
     );
 
 
