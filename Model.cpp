@@ -625,7 +625,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
         double theta_i = flip_data.sequence_on_lattice(pos_i);
         printf(" i = %d \n", i);
         Kokkos::parallel_reduce(
-                Kokkos::TeamVectorRange(team, i+1, flip_data.L),
+                Kokkos::TeamVectorRange(team_member, i+1, flip_data.L),
                 [&](long j, double &innerSum) {
                     printf(" i = %d \n", j);
                     coord_t pos_j = flip_data.lattice_nodes_positions(j);
