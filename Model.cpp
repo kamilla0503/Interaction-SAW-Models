@@ -610,14 +610,16 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
         printf("finish hierarchicalEnergy %f \n", flip_data.newE());
         printf("flip_data.lattice_side_device = %d \n", flip_data.lattice_side_device);
     }); */
-    
+
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team, flip_data.L),
             [&](const long i, double &H_total)
+                    //Kokkos::TeamThreadRange(team, flip_data.L),
+            //[&](const long i, double &H_total)
             //Kokkos::TeamPolicy<Kokkos::Cuda> (flip_data.L, 1),
             //KOKKOS_LAMBDA(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type& team, double &H_total)
             {
-        const long i = team.league_rank();
+        //const long i = team.league_rank();
         double energy_i = 0.0;
         coord_t pos_i = flip_data.lattice_nodes_positions(i);
         double theta_i = flip_data.sequence_on_lattice(pos_i);
