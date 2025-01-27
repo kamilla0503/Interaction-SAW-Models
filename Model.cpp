@@ -710,11 +710,11 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
     }
 
     //Energy();
-    print("Start Energy \n");
+    printf("Start Energy \n");
     hierarchicalEnergy(team_member, flip_data_local);
-    print("End before barrier \n");
+    printf("End before barrier \n");
     team_member.team_barrier();
-    print("End After barried \n");
+    printf("End After barried \n");
     // 3) acceptance logic
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
