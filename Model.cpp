@@ -639,9 +639,9 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 },
                 energy_i
         );
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+       // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total -= energy_i;
-        });
+       // });
     },
     flip_data.newE
     );
