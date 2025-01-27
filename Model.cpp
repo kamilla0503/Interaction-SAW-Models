@@ -276,8 +276,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.L = L;
     flip_data.lattice_side_device = lattice->lattice_side;
 // Random pool
-    rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
-    //rand_pool.init(12345,256);
+    rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(); //(17 /* seed or execution space */);
+    rand_pool.init(12345,256);
     flip_data.rand_pool = rand_pool;
     //rand_pool_host = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
     // Allocate views with size 1
