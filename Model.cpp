@@ -612,7 +612,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     }); */
 
     Kokkos::parallel_reduce(
-            Kokkos::TeamThreadRange(team, flip_data.L),
+            Kokkos::TeamThreadRange(team_member, flip_data.L),
             [&](const long i, double &H_total)
                     //Kokkos::TeamThreadRange(team, flip_data.L),
             //[&](const long i, double &H_total)
