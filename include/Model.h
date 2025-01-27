@@ -52,7 +52,7 @@ struct FlipMoveData {
     long L;
     long lattice_side_device;
     // Random number generator pool
-   //Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
+   Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
 
 
     Kokkos::View<double*, Kokkos::CudaSpace> oldspin;
