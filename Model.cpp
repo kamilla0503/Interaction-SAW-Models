@@ -615,11 +615,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member, flip_data.L),
             [&](const long i, double &H_total)
-                    //Kokkos::TeamThreadRange(team, flip_data.L),
-            //[&](const long i, double &H_total)
-            //Kokkos::TeamPolicy<Kokkos::Cuda> (flip_data.L, 1),
-            //KOKKOS_LAMBDA(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type& team, double &H_total)
-            {
+             {
         //const long i = team.league_rank();
         double energy_i = 0.0;
         coord_t pos_i = flip_data.lattice_nodes_positions(i);
@@ -637,6 +633,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val);
                     double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
                     innerSum += contrib;
+
+                    printf(" i = %d j = %d  contrib = %f \n", i, j, contrib);
                 },
                 energy_i
         );
@@ -793,7 +791,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(1, 128);
+    team_policy policy(L, 128);
 
     auto flip_data_local = flip_data;
     //std::cout << "Pool states = " << rand_pool.get_num_states() << std::endl;
