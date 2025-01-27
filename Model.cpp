@@ -771,7 +771,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
     if (!pool_initialized) {
          //my_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(Kokkos::Cuda(), 256, 12345); // seed
-        my_pool.init(Kokkos::Cuda(), 256, 12345);
+        my_pool.init(256, 12345);
         pool_initialized = true;
     }
     auto local_pool = my_pool;
