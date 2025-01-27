@@ -281,7 +281,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     rand_pool.init(12345,256);
     flip_data.rand_pool = rand_pool;
 
-    std::cout << "Start Configuration Pool states = " << rand_pool.get_num_states() << std::endl;
+    //std::cout << "Start Configuration Pool states = " << rand_pool.get_num_states() << std::endl;
 
     //rand_pool_host = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
     // Allocate views with size 1
@@ -778,7 +778,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
          //my_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(Kokkos::Cuda(), 256, 12345); // seed
         my_pool.init(256, 12345);
         pool_initialized = true;
-        std::cout << "Pool states Init  = " << rand_pool.get_num_states() << std::endl;
+       // std::cout << "Pool states Init  = " << rand_pool.get_num_states() << std::endl;
     }
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
@@ -786,7 +786,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     team_policy policy(1, 128);
 
     auto flip_data_local = flip_data;
-    std::cout << "Pool states = " << rand_pool.get_num_states() << std::endl;
+    //std::cout << "Pool states = " << rand_pool.get_num_states() << std::endl;
    Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         // we pass flip_data by reference or a captured copy.
@@ -794,7 +794,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         // but typically you can do it directly if everything is device accessible.
 
         if(team_member.team_rank() == 0) {
-            printf("Start check of states %d = \n", local_pool.get_num_states());
+            //printf("Start check of states %d = \n", local_pool.get_num_states());
             hierarchicalOneKernel(team_member, flip_data_local, local_pool);
         }
     }
