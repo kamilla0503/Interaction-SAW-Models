@@ -628,7 +628,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
                     long j = i + 1 + jj;
 
-                    printf(" j = %d \n", j);
+                    printf(" j = %d \n", jj);
                     coord_t pos_j = flip_data.lattice_nodes_positions(j);
                     double theta_j = flip_data.sequence_on_lattice(pos_j);
 
