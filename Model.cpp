@@ -634,7 +634,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
                     innerSum += contrib;
 
-                    printf(" i = %d j = %d  contrib = %f \n", i, j, contrib);
+                    printf(" i = %d j = %d  contrib = %f ; r_val = %f; t1 = %f; t2 = %f \n",
+                           i, j, contrib, r_val, theta_i, theta_j);
                 },
                 energy_i
         );
