@@ -791,7 +791,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(L, 128);
+    team_policy policy(1, 128);
 
     auto flip_data_local = flip_data;
     //std::cout << "Pool states = " << rand_pool.get_num_states() << std::endl;
