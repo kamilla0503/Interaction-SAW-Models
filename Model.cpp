@@ -216,8 +216,6 @@ void XY_SAW_LongInteraction::StartConfiguration() {
       //auto lattice_nodes_positions_check = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_nodes_positions);
     std::cout << "Model creation before energy" << std::endl;
 
-
-
     flip_data.E = Kokkos::View<double*, Kokkos::CudaSpace>("E", 1);
     flip_data.newE = Kokkos::View<double, Kokkos::CudaSpace>("newE");
     auto E_host = Kokkos::create_mirror_view(flip_data.E);
@@ -613,8 +611,10 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     //double totalEnergy = 0.0;
 
     Kokkos::parallel_reduce(
-            Kokkos::TeamThreadRange(team_member, flip_data.L),
-            [&](const long i, double &H_total)
+            team_policy(local_L, team_size),
+            KOKKOS_LAMBDA(const member_type& team_member, double& H_total)
+    //Kokkos::TeamThreadRange(team_member, flip_data.L),
+            //[&](const long i, double &H_total)
              {
         //const long i = team.league_rank();
         double energy_i = 0.0;
@@ -807,10 +807,10 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
         // If you want a copy, do auto flip_data_local = flip_data;
         // but typically you can do it directly if everything is device accessible.
 
-        if(team_member.team_rank() == 0) {
+        //if(team_member.team_rank() == 0) {
             //printf("Start check of states %d = \n", local_pool.get_num_states());
             hierarchicalOneKernel(team_member, flip_data_local, local_pool);
-        }
+       // }
     }
     );
 }
