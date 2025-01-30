@@ -416,22 +416,15 @@ void XY_SAW_LongInteraction::Energy() {
             team_policy(local_L, team_size),
             KOKKOS_LAMBDA(const member_type& team_member, double& H_total) {
         const long i = team_member.league_rank();  // Get the 'i' index
-
         double energy_i = 0.0;
-
-
         const auto pos_i = lattice_nodes_positions_local(i);
         const double theta_i = sequence_on_lattice_local(pos_i);
-
-
         // Parallelize the inner loop over 'j' within the team
         Kokkos::parallel_reduce(
                 Kokkos::TeamVectorRange(team_member, i + 1, local_L),
                 [=](const long j, double& inner_energy) {
-
                     const auto pos_j = lattice_nodes_positions_local(j);
                     const double theta_j = sequence_on_lattice_local(pos_j);
-
                     double r_val = radius(pos_i, pos_j, lattice_side_local);
                     // is it faster? is it correct?
                     r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val); //Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
@@ -445,11 +438,7 @@ void XY_SAW_LongInteraction::Energy() {
             H_total -= energy_i;
         });
     }, flip_data_local.newE );
-    //return -H;  // Return negative of the total energy
-
 }
-
-
 
 // also works
 /*
@@ -541,8 +530,6 @@ std::mt19937 generator(URD_SEED + 1);
 std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-
-
 KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const  FlipMoveData &flip_data)
@@ -566,7 +553,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 Kokkos::TeamVectorRange(team_member, num_j),
                 [&](long jj, double &innerSum) {
 
-                    long j = i + jj; // i + 1 + jj;
+                    long j = i + jj + 1; // i + 1 + jj;
 
                     printf(" j = %ld \n", j);
                     coord_t pos_j = flip_data.lattice_nodes_positions(j);
@@ -589,10 +576,6 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     },
     flip_data.newE()  // totalEnergy   //Kokkos::Sum<double>(totalEnergy)
     );
-
-    /*Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        flip_data.newE() = totalEnergy;
-    });*/
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -677,8 +660,6 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
         pool.free_state(rand_gen);
 
         if (q_ifaccept < p_metropolis) {
-            // accept => flip_data.E(0) = flip_data.newE();
-           // flip_data.E(0) = flip_data.newE();
             flip_data_local.E(0) = flip_data_local.newE();
             flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
@@ -705,38 +686,33 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
 
         }
         flip_data_local.newE()= 0;
-        //flip_data_local.rand_pool.free_state(rand_gen);
     });
-
     // optional barrier
     team_member.team_barrier();
 }
 
 //KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd() {
-
     static bool pool_initialized = false;
     static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
     if (!pool_initialized) {
-         //my_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(Kokkos::Cuda(), 256, 12345); // seed
         my_pool.init(256, 12345);
         pool_initialized = true;
-       // std::cout << "Pool states Init  = " << rand_pool.get_num_states() << std::endl;
     }
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(1, 128);
+    int teamSize = 128;
+    int numTeams = (L + teamSize - 1) / teamSize;
+    int vectorLength = 1;
+    team_policy policy(numTeams, teamSize, vectorLength);
+
+    //team_policy policy(1, 128);
 
     auto flip_data_local = flip_data;
-    //std::cout << "Pool states = " << rand_pool.get_num_states() << std::endl;
    Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-
-        //if(team_member.team_rank() == 0) {
-            //printf("Start check of states %d = \n", local_pool.get_num_states());
             hierarchicalOneKernel(team_member, flip_data_local, local_pool);
-       // }
     }
     );
 }
