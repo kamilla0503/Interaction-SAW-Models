@@ -549,7 +549,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
         printf(" i = %ld \n", i);
         long num_j = flip_data.L - (i + 1);
                  printf("  num_j = %ld \n",  num_j);
-        Kokkos::parallel_reduce(
+                Kokkos::parallel_reduce(
                 Kokkos::TeamVectorRange(team_member, num_j),
                 [&](long jj, double &innerSum) {
 
@@ -574,7 +574,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             H_total -= energy_i;
         });
     },
-    flip_data.newE()  // totalEnergy   //Kokkos::Sum<double>(totalEnergy)
+    flip_data.newE  // totalEnergy   //Kokkos::Sum<double>(totalEnergy)
     );
 }
 
