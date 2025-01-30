@@ -566,7 +566,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 Kokkos::TeamVectorRange(team_member, num_j),
                 [&](long jj, double &innerSum) {
 
-                    long j = i + 1 + jj;
+                    long j = i + jj; // i + 1 + jj;
 
                     printf(" j = %ld \n", j);
                     coord_t pos_j = flip_data.lattice_nodes_positions(j);
