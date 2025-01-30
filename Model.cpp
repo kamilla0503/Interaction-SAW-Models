@@ -546,16 +546,16 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
         double energy_i = 0.0;
         coord_t pos_i = flip_data.lattice_nodes_positions(i);
         double theta_i = flip_data.sequence_on_lattice(pos_i);
-        printf(" i = %ld \n", i);
+        //printf(" i = %ld \n", i);
         long num_j = flip_data.L - (i + 1);
-                 printf("  num_j = %ld \n",  num_j);
+              //   printf("  num_j = %ld \n",  num_j);
                 Kokkos::parallel_reduce(
                 Kokkos::TeamVectorRange(team_member, num_j),
                 [&](long jj, double &innerSum) {
 
                     long j = i + jj + 1; // i + 1 + jj;
 
-                    printf(" j = %ld \n", j);
+                   // printf(" j = %ld \n", j);
                     coord_t pos_j = flip_data.lattice_nodes_positions(j);
                     double theta_j = flip_data.sequence_on_lattice(pos_j);
 
@@ -565,14 +565,17 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
                     innerSum += contrib;
 
-                    printf(" i = %ld j = %ld  contrib = %f ; r_val = %f; t1 = %f; t2 = %f \n",
-                           i, j, contrib, r_val, theta_i, theta_j);
+                    //printf(" i = %ld j = %ld  contrib = %f ; r_val = %f; t1 = %f; t2 = %f \n",
+                    //       i, j, contrib, r_val, theta_i, theta_j);
                 },
                 energy_i
         );
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total -= energy_i;
         });
+
+        printf(" i = %ld    e_i = %f \n",
+               i,  energy_i);
     },
     totalEnergy  //flip_data.newE  // totalEnergy   //Kokkos::Sum<double>(totalEnergy)
     );
