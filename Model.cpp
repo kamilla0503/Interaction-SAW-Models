@@ -549,7 +549,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     // We'll accumulate totalEnergy in a local variable, then write to flip_data.newE()
     double totalEnergy = 0.0;
-   printf("start hierarchicalEnergy \n");
+   //printf("start hierarchicalEnergy \n");
    //printf("%d  L = \n", flip_data.L);
     // Outer loop: [0..L)
 /*
@@ -629,7 +629,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
                     long j = i + 1 + jj;
 
-                    printf(" j = %ld \n", jj);
+                    printf(" j = %ld \n", j);
                     coord_t pos_j = flip_data.lattice_nodes_positions(j);
                     double theta_j = flip_data.sequence_on_lattice(pos_j);
 
@@ -640,7 +640,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     innerSum += contrib;
 
                     printf(" i = %ld j = %ld  contrib = %f ; r_val = %f; t1 = %f; t2 = %f \n",
-                           i, jj, contrib, r_val, theta_i, theta_j);
+                           i, j, contrib, r_val, theta_i, theta_j);
                 },
                 energy_i
         );
