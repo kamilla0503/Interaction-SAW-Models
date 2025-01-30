@@ -611,10 +611,10 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     //double totalEnergy = 0.0;
 
     Kokkos::parallel_reduce(
-            team_policy(local_L, team_size),
-            KOKKOS_LAMBDA(const member_type& team_member, double& H_total)
-    //Kokkos::TeamThreadRange(team_member, flip_data.L),
-            //[&](const long i, double &H_total)
+            //team_policy(local_L, team_size),
+           // KOKKOS_LAMBDA(const member_type& team_member, double& H_total)
+    Kokkos::TeamThreadRange(team_member, flip_data.L),
+            [&](const long i, double &H_total)
              {
         //const long i = team.league_rank();
         double energy_i = 0.0;
