@@ -541,6 +541,51 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        const FlipMoveData &flip_data)
+{
+    // Each team corresponds to one chain index 'i'
+    const long i = team_member.league_rank();
+
+    // Compute the energy contribution for the i-th monomer:
+    double energy_i = 0.0;
+    coord_t pos_i   = flip_data.lattice_nodes_positions(i);
+    double theta_i  = flip_data.sequence_on_lattice(pos_i);
+
+    // Determine the number of j values (j = i+1, ..., flip_data.L-1)
+    const long num_j = flip_data.L - (i + 1);
+
+    // Use the vector level to sum contributions over j
+    Kokkos::parallel_reduce(
+            Kokkos::TeamVectorRange(team_member, num_j),
+            [&](const long jj, double &innerSum) {
+                const long j = i + jj + 1;
+                coord_t pos_j   = flip_data.lattice_nodes_positions(j);
+                double theta_j  = flip_data.sequence_on_lattice(pos_j);
+                double r_val    = radius(pos_i, pos_j, flip_data.lattice_side_device);
+                // Instead of calling Kokkos::pow, do the multiplication:
+                r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
+            },
+            energy_i
+    );
+
+    // Optionally print the energy computed for this i (only one thread prints)
+    if (team_member.team_rank() == 0) {
+        printf(" i = %ld    e_i = %f \n", i, energy_i);
+    }
+
+    // Accumulate the per-team (per-i) contribution into the global total energy.
+    // Here, we assume that flip_data.newE() returns a reference or pointer that is safe
+    // for atomic updates. Alternatively, you could have the host reduce over team outputs.
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        Kokkos::atomic_add(&flip_data.newE(), -energy_i);
+    });
+}
+
+
+/*
+KOKKOS_INLINE_FUNCTION
+void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const  FlipMoveData &flip_data)
 {
     double totalEnergy = 0.0;
@@ -579,23 +624,18 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 },
                 energy_i
         );
-
-
-       // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total -= energy_i;
-       // });
-
         printf(" i = %ld    e_i = %f \n",
                i,  energy_i);
     },
-    totalEnergy  //flip_data.newE  // totalEnergy   //Kokkos::Sum<double>(totalEnergy)
+    totalEnergy
     );
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         flip_data.newE() = totalEnergy;
     });
 
-}
+}*/
 
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
