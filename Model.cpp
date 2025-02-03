@@ -251,6 +251,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.lattice_side_device = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side_device");
     auto L_host =  Kokkos::create_mirror_view(flip_data.L);
     auto lattice_side_host =  Kokkos::create_mirror_view(flip_data.lattice_side_device);
+    L_host() = L;
+    lattice_side_host() =  lattice_side_h;
     Kokkos::deep_copy(flip_data.L,  L_host);
     Kokkos::deep_copy(flip_data.lattice_side_device,  lattice_side_host);
 
