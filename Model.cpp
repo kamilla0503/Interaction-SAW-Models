@@ -540,6 +540,8 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 #endif
 
 
+
+
 /*
 KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
@@ -594,6 +596,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
 }*/
 
+/*
 KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
@@ -635,7 +638,61 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         Kokkos::atomic_add(&flip_data.newE(), -energy_i);
     });
+}*/
+
+
+KOKKOS_INLINE_FUNCTION
+void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        const FlipMoveData &flip_data)
+{
+    // The total energy is computed by summing contributions from every chain index 'i'
+    double totalEnergy = 0.0;
+
+    // Use TeamThreadRange to loop over all indices i from 0 to flip_data.L - 1.
+    // (Since your league size is 1, you must distribute the outer loop among the team threads.)
+    Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team_member, flip_data.L),
+            [&](const long i, double &H_total) {
+                double energy_i = 0.0;
+                // Get the position and theta for the i-th monomer.
+                coord_t pos_i   = flip_data.lattice_nodes_positions(i);
+                double theta_i  = flip_data.sequence_on_lattice(pos_i);
+
+                // For each i, the inner loop runs over j = i+1 ... flip_data.L-1.
+                const long num_j = flip_data.L - (i + 1);
+
+                // Use TeamVectorRange to parallelize the inner loop.
+                Kokkos::parallel_reduce(
+                        Kokkos::TeamVectorRange(team_member, num_j),
+                        [=](const long jj, double &innerSum) {
+                            const long j = i + jj + 1;
+                            coord_t pos_j  = flip_data.lattice_nodes_positions(j);
+                            double theta_j = flip_data.sequence_on_lattice(pos_j);
+                            double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device);
+                            // Compute r_val^1.5 as before.
+                            r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                            innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
+                        },
+                        energy_i
+                );
+
+                // Subtract the computed energy contribution.
+                H_total -= energy_i;
+
+                // Optionally, print the computed energy for each i (printed only by one thread per team).
+                if (team_member.team_rank() == 0) {
+                    printf(" i = %ld    e_i = %f \n", i, energy_i);
+                }
+            },
+            totalEnergy
+    );
+
+    // Write the computed total energy back to flip_data.
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        flip_data.newE() = totalEnergy;
+    });
 }
+
 
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
