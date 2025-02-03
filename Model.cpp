@@ -651,7 +651,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     // Use TeamThreadRange to loop over all indices i from 0 to flip_data.L - 1.
     // (Since your league size is 1, you must distribute the outer loop among the team threads.)
     Kokkos::parallel_reduce(
-            Kokkos::TeamThreadRange(team_member, flip_data.L),
+            //Kokkos::TeamThreadRange(team_member, flip_data.L),
+            Kokkos::TeamThreadRange(team_member, 100),
             [&](const long i, double &H_total) {
                 double energy_i = 0.0;
                 // Get the position and theta for the i-th monomer.
