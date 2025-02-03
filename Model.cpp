@@ -658,9 +658,6 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     // The total energy is computed by summing contributions from every chain index 'i'
     double totalEnergy = 0.0;
-
-    // Use TeamThreadRange to loop over all indices i from 0 to flip_data.L - 1.
-    // (Since your league size is 1, you must distribute the outer loop among the team threads.)
     Kokkos::parallel_reduce(
             //Kokkos::TeamThreadRange(team_member, flip_data.L),
             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
@@ -684,30 +681,16 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                             // Compute r_val^1.5 as before.
                             r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                             innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
+
+                            printf(" i = %ld j = %ld  contrib = %f ; r_val = %f; t1 = %f; t2 = %f \n",
+                                   i, j, contrib, r_val, theta_i, theta_j);
                         },
                         energy_i
                 );
-
-                // Subtract the computed energy contribution.
-                //H_total -= energy_i;
-
-                //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                     H_total -= energy_i;
-                //});
-
-                // Optionally, print the computed energy for each i (printed only by one thread per team).
-                /*if (team_member.team_rank() == 0) {
-                    printf(" i = %ld    e_i = %f \n", i, energy_i);
-                }*/
             },
-            flip_data.newE() // totalEnergy
+            flip_data.newE()
     );
-
-    /*
-    // Write the computed total energy back to flip_data.
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        flip_data.newE() = totalEnergy;
-    });*/
 }
 
 
