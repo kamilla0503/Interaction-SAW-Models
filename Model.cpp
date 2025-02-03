@@ -764,7 +764,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     int teamSize = 128;
     int numTeams = (L + teamSize - 1) / teamSize;
     int vectorLength = 1;
-    team_policy policy(L, 32, 8);
+    team_policy policy(1, 32, 8);
     //team_policy policy(numTeams, teamSize, vectorLength);
 
     //team_policy policy(1, 128);
