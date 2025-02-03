@@ -280,8 +280,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     //flip_data.start_conformation = start_conformation;
     //flip_data.end_conformation = end_conformation;
-    flip_data.L = L;
-    flip_data.lattice_side_device = lattice->lattice_side;
+    //flip_data.L = L;
+    //flip_data.lattice_side_device = lattice->lattice_side;
 // Random pool
     //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(); //(17 /* seed or execution space */);
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>();
@@ -790,7 +790,7 @@ void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &
             flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = flip_data_local.direction();
-            flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L;
+            flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L();
 
         } else {
             // reject => revert
@@ -925,7 +925,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd1() {
            flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
            flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = flip_data_local.direction();
 
-           flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L;
+           flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L();
 
            /*for (int i = 1; i < flip_data_local.L ; i++) {
                flip_data_local.lattice_nodes_positions(i - 1) = flip_data_local.lattice_nodes_positions(i);
