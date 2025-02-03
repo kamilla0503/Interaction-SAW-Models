@@ -49,8 +49,11 @@ struct FlipMoveData {
 
     //long end_conformation;
     //long start_conformation;
-    long L;
-    long lattice_side_device;
+    //long L;
+    //long lattice_side_device;
+
+    Kokkos::View<long, Kokkos::CudaSpace> L;
+    Kokkos::View<long, Kokkos::CudaSpace> lattice_side_device;
     // Random number generator pool
    Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
 

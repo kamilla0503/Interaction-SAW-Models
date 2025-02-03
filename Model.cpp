@@ -246,6 +246,15 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     PI_host() = std::atan(1.0)*4;
     Kokkos::deep_copy(flip_data.PI,  PI_host);
 
+
+    flip_data.L = Kokkos::View<long, Kokkos::CudaSpace>("L");
+    flip_data.lattice_side_device = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side_device");
+    auto L_host =  Kokkos::create_mirror_view(flip_data.L);
+    auto lattice_side_host =  Kokkos::create_mirror_view(flip_data.lattice_side_device);
+    Kokkos::deep_copy(flip_data.L,  L_host);
+    Kokkos::deep_copy(flip_data.lattice_side_device,  lattice_side_host);
+
+
 // Copy Kokkos::View members from Lattice
     flip_data.map_of_contacts_int = lattice->map_of_contacts_int;
     flip_data.inverse_steps = lattice->inverse_steps;
@@ -652,7 +661,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     // (Since your league size is 1, you must distribute the outer loop among the team threads.)
     Kokkos::parallel_reduce(
             //Kokkos::TeamThreadRange(team_member, flip_data.L),
-            Kokkos::TeamThreadRange(team_member, 100),
+            Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
             [&](const long i, double &H_total) {
                 double energy_i = 0.0;
                 // Get the position and theta for the i-th monomer.
@@ -660,7 +669,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 double theta_i  = flip_data.sequence_on_lattice(pos_i);
 
                 // For each i, the inner loop runs over j = i+1 ... flip_data.L-1.
-                const long num_j = flip_data.L - (i + 1);
+                const long num_j = flip_data.L() - (i + 1);
 
                 // Use TeamVectorRange to parallelize the inner loop.
                 Kokkos::parallel_reduce(
@@ -669,7 +678,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                             const long j = i + jj + 1;
                             coord_t pos_j  = flip_data.lattice_nodes_positions(j);
                             double theta_j = flip_data.sequence_on_lattice(pos_j);
-                            double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device);
+                            double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
                             // Compute r_val^1.5 as before.
                             r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                             innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
@@ -681,9 +690,9 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 H_total -= energy_i;
 
                 // Optionally, print the computed energy for each i (printed only by one thread per team).
-                if (team_member.team_rank() == 0) {
+                /*if (team_member.team_rank() == 0) {
                     printf(" i = %ld    e_i = %f \n", i, energy_i);
-                }
+                }*/
             },
             totalEnergy
     );
