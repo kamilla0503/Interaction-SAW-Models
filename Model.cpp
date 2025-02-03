@@ -682,13 +682,14 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                             r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                             innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
 
-                            printf(" i = %ld j = %ld  contrib = %f ; r_val = %f; t1 = %f; t2 = %f \n",
-                                   i, j,  Kokkos::cos(theta_i - theta_j) / r_val,
-                                   r_val, theta_i, theta_j);
                         },
                         energy_i
                 );
                     H_total -= energy_i;
+
+                if (team_member.team_rank() == 0) {
+                    printf(" i = %ld    e_i = %f \n", i, energy_i);
+                }
             },
             flip_data.newE()
     );
