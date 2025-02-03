@@ -434,9 +434,19 @@ void XY_SAW_LongInteraction::Energy() {
                 energy_i
         );
         // Each team contributes to the total energy
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        /*Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total -= energy_i;
-        });
+        });*/
+
+
+        H_total -= energy_i;
+        // (Optionally, if you want to print only once per team you might do:)
+        if (team_member.team_rank() == 0) {
+            printf(" i = %ld    e_i = %f \n", i, energy_i);
+        }
+
+
+
     }, flip_data_local.newE );
 }
 
