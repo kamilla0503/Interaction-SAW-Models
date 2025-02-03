@@ -691,9 +691,9 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 // Subtract the computed energy contribution.
                 //H_total -= energy_i;
 
-                Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+                //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                     H_total -= energy_i;
-                });
+                //});
 
                 // Optionally, print the computed energy for each i (printed only by one thread per team).
                 /*if (team_member.team_rank() == 0) {
