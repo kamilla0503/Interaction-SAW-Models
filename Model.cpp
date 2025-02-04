@@ -657,7 +657,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         const FlipMoveData &flip_data)
 {
     // The total energy is computed by summing contributions from every chain index 'i'
-    double totalEnergy = 0.0;
+    //double totalEnergy = 0.0;
     Kokkos::parallel_reduce(
             //Kokkos::TeamThreadRange(team_member, flip_data.L),
             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
@@ -687,9 +687,9 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 );
                     H_total -= energy_i;
 
-                if (team_member.team_rank() == 0) {
+               // if (team_member.team_rank() == 0) {
                     printf(" i = %ld    e_i = %f \n", i, energy_i);
-                }
+                //}
             },
             flip_data.newE()
     );
