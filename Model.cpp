@@ -234,7 +234,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //E = Energy();
 
     std::cout << "Model creation after energy" << std::endl;
-    printf("Energy after all = %f \n", E);
+    //printf("Energy after all = %f \n", E);
 
     flip_data.spinValue = Kokkos::View<double, Kokkos::CudaSpace>("spinValue");
     flip_data.direction = Kokkos::View<long, Kokkos::CudaSpace>("direction");
@@ -692,8 +692,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                 Kokkos::single(Kokkos::PerThread(team_member), [&]() {
                     H_total -= energy_i;
                 });*/
-
-                //Kokkos::single (Kokkos::PerThread (team_member), [&] () {
+                    //Kokkos::single (Kokkos::PerThread (team_member), [&] () {
                     H_total -= energy_i;
                // });
 
