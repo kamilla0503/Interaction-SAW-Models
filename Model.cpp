@@ -754,27 +754,31 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     });
 
     // barrier if you need all threads to see the updated structure
-    team_member.team_barrier();
+ //   team_member.team_barrier();
 
     return accept_move;
 }
 
 KOKKOS_INLINE_FUNCTION
-void hierarchicalOneKernel(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+void hierarchicalOneKernel_AddEndStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                            const  FlipMoveData &flip_data_local,
                            Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-    team_member.team_barrier();
+
+   // team_member.team_barrier(); Do I need it?
+
+
+
     if (!accept_move) {
         return;
     }
     //Energy();
     hierarchicalEnergy(team_member, flip_data_local);
 
-    team_member.team_barrier();
+   // team_member.team_barrier();
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
@@ -840,7 +844,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     auto flip_data_local = flip_data;
    Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-            hierarchicalOneKernel(team_member, flip_data_local, local_pool);
+            hierarchicalOneKernel_AddEndStart(team_member, flip_data_local, local_pool);
     }
     );
 }
