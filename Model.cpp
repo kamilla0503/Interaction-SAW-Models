@@ -711,6 +711,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
+        pool.free_state(rand_gen);
         if (q_ifaccept < p_metropolis) {
             flip_data_local.E(0) = flip_data_local.newE();
             flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
@@ -741,7 +742,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
             flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
         }
         flip_data_local.newE() = 0;
-        pool.free_state(rand_gen);
+
 
     });
 }
