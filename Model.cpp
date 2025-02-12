@@ -1048,13 +1048,13 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     Energy();
   //  Kokkos::fence();
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
-      //  printf("finish Energy Add Start %f \n", flip_data_local.newE());
+       printf("finish Energy Add Start %f \n", flip_data_local.newE());
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
     
         auto rand_gen = flip_data_local.rand_pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
-        printf("FlipMove_AddStart q_ifaccept = %f \n ",  q_ifaccept);
+        //printf("FlipMove_AddStart q_ifaccept = %f \n ",  q_ifaccept);
         //printf("E = %f; new_E = %f;   p1 = %f \n",flip_data_local.E(0) ,
          //      new_E, p1);
         if (q_ifaccept < p_metropolis) {
