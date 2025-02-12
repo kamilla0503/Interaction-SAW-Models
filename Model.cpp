@@ -228,7 +228,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     //auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
 
-    E_host(0) = E;
+    //E_host(0) = E;
     //newE_host(0) =
     //Kokkos::deep_copy(flip_data.E, E_host);
     //E = Energy();
@@ -239,6 +239,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.spinValue = Kokkos::View<double, Kokkos::CudaSpace>("spinValue");
     flip_data.direction = Kokkos::View<long, Kokkos::CudaSpace>("direction");
 
+    std::cout << "Model creation start two scalars" << std::endl;
 
     flip_data.PI = Kokkos::View<double, Kokkos::CudaSpace>("PI");
     auto PI_host = Kokkos::create_mirror_view(flip_data.PI);
@@ -246,6 +247,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     PI_host() = std::atan(1.0)*4;
     Kokkos::deep_copy(flip_data.PI,  PI_host);
 
+    std::cout << "Pi preparation" << std::endl;
 
     flip_data.L = Kokkos::View<long, Kokkos::CudaSpace>("L");
     flip_data.lattice_side_device = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side_device");
