@@ -516,35 +516,6 @@ double XY_SAW_LongInteraction::Energy() {
 }*/
 
 
-// Define the Energy function using Kokkos parallelization
-/*KOKKOS_FUNCTION
-double XY_SAW_LongInteraction::Energy() {
-    double H = 0.0;  // Total energy
-    auto local_L = L;
-    auto lattice_side_local = lattice_side_host(0);
-    auto lattice_nodes_positions_local = lattice_nodes_positions;
-    auto sequence_on_lattice_local = sequence_on_lattice;
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(0, local_L), KOKKOS_LAMBDA(
-    const long i,
-    double &local_H) {
-        double r;
-        double energy_i = 0.0;  // Local energy contribution for this i
-        if (i < local_L ) {
-            for (long j = i + 1; j < local_L; j++) {
-                r = radius(lattice_nodes_positions_local(i), lattice_nodes_positions_local(j),
-                           lattice_side_local);
-                r = Kokkos::pow(r, R_POWER / 2.0);
-                energy_i += Kokkos::cos(
-                        sequence_on_lattice_local(lattice_nodes_positions_local(i)) -
-                        sequence_on_lattice_local(lattice_nodes_positions_local(j))) /
-                                r;
-            }
-        }
-        local_H += energy_i;  // Add local energy contribution to the reduction variable
-    }, H);  // H is the total energy accumulated across all threads
-    return -H;  // Return negative of the total energy
-}*/
-
 std::uniform_real_distribution<double> distribution_urd(0.0, 1.0);
 #ifdef SEED
 std::mt19937 generator(URD_SEED + 1);
@@ -553,107 +524,8 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 #endif
 
 
-
-
-/*
-KOKKOS_INLINE_FUNCTION
-void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                        const  FlipMoveData &flip_data)
-{
-    double totalEnergy = 0.0;
-
-    Kokkos::parallel_reduce(
-            //team_policy(local_L, team_size),
-           // KOKKOS_LAMBDA(const member_type& team_member, double& H_total)
-    Kokkos::TeamThreadRange(team_member, flip_data.L),
-            [&](const long i, double &H_total)
-             {
-        //const long i = team.league_rank();
-        double energy_i = 0.0;
-        coord_t pos_i = flip_data.lattice_nodes_positions(i);
-        double theta_i = flip_data.sequence_on_lattice(pos_i);
-        //printf(" i = %ld \n", i);
-        long num_j = flip_data.L - (i + 1);
-              //   printf("  num_j = %ld \n",  num_j);
-                Kokkos::parallel_reduce(
-                Kokkos::TeamVectorRange(team_member, num_j),
-                [&](long jj, double &innerSum) {
-
-                    long j = i + jj + 1; // i + 1 + jj;
-
-                   // printf(" j = %ld \n", j);
-                    coord_t pos_j = flip_data.lattice_nodes_positions(j);
-                    double theta_j = flip_data.sequence_on_lattice(pos_j);
-
-                    double r_val = radius(pos_i, pos_j, flip_data.lattice_side_device);
-                    // e.g.
-                    r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val);
-                    double contrib = Kokkos::cos(theta_i - theta_j) / r_val;
-                    innerSum += contrib;
-
-                    //printf(" i = %ld j = %ld  contrib = %f ; r_val = %f; t1 = %f; t2 = %f \n",
-                    //       i, j, contrib, r_val, theta_i, theta_j);
-                },
-                energy_i
-        );
-            H_total -= energy_i;
-        printf(" i = %ld    e_i = %f \n",
-               i,  energy_i);
-    },
-    totalEnergy
-    );
-
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        flip_data.newE() = totalEnergy;
-    });
-
-}*/
-
-/*
-KOKKOS_INLINE_FUNCTION
-void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                        const FlipMoveData &flip_data)
-{
-    // Each team corresponds to one chain index 'i'
-    const long i = team_member.league_rank();
-
-    // Compute the energy contribution for the i-th monomer:
-    double energy_i = 0.0;
-    coord_t pos_i   = flip_data.lattice_nodes_positions(i);
-    double theta_i  = flip_data.sequence_on_lattice(pos_i);
-
-    // Determine the number of j values (j = i+1, ..., flip_data.L-1)
-    const long num_j = flip_data.L - (i + 1);
-
-    // Use the vector level to sum contributions over j
-    Kokkos::parallel_reduce(
-            Kokkos::TeamVectorRange(team_member, num_j),
-            [&](const long jj, double &innerSum) {
-                const long j = i + jj + 1;
-                coord_t pos_j   = flip_data.lattice_nodes_positions(j);
-                double theta_j  = flip_data.sequence_on_lattice(pos_j);
-                double r_val    = radius(pos_i, pos_j, flip_data.lattice_side_device);
-                // Instead of calling Kokkos::pow, do the multiplication:
-                r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
-                innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
-            },
-            energy_i
-    );
-
-    // Optionally print the energy computed for this i (only one thread prints)
-    if (team_member.team_rank() == 0) {
-        printf(" i = %ld    e_i = %f \n", i, energy_i);
-    }
-
-    // Accumulate the per-team (per-i) contribution into the global total energy.
-    // Here, we assume that flip_data.newE() returns a reference or pointer that is safe
-    // for atomic updates. Alternatively, you could have the host reduce over team outputs.
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        Kokkos::atomic_add(&flip_data.newE(), -energy_i);
-    });
-}*/
-
-
+//My favourite and only working version for hierarchicalEnergy
+//Love it
 KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
@@ -688,17 +560,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         },
                         energy_i
                 );
-                    //H_total -= energy_i;
-
-                    /*
-                Kokkos::single(Kokkos::PerThread(team_member), [&]() {
                     H_total -= energy_i;
-                });*/
-                    //Kokkos::single (Kokkos::PerThread (team_member), [&] () {
-                    H_total -= energy_i;
-               // });
-
-                    //printf(" i = %ld    e_i = %f \n", i, energy_i);
             },
             flip_data.newE()
     );
