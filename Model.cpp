@@ -630,13 +630,11 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     int teamSize = 128;
     int numTeams = (L + teamSize - 1) / teamSize;
     int vectorLength = 1;
-    team_policy policy(1, 32, 16);
+    team_policy policy(1, 32, 16); //not bad choice
     //team_policy policy(numTeams, teamSize, vectorLength);
 
-    //team_policy policy(1, 128);
-
     auto flip_data_local = flip_data;
-   Kokkos::parallel_for("hierarchicalKernel", policy,
+    Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
             hierarchicalOneKernel_AddEndStart(team_member, flip_data_local, local_pool);
     }
