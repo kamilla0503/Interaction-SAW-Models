@@ -565,7 +565,6 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-
    // team_member.team_barrier(); Do I need it?
 
     if (!accept_move) {
@@ -641,9 +640,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     );
 }
 
-
-
-
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                 const  FlipMoveData &flip_data_local,
@@ -710,10 +706,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     }
     hierarchicalEnergy(team_member, flip_data_local);
 
-
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-
-
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = pool.get_state();
@@ -750,15 +743,9 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         flip_data_local.newE() = 0;
         pool.free_state(rand_gen);
 
-
-
-
-
     });
-
-
-
 }
+
 void XY_SAW_LongInteraction::FlipMove_AddStart() {
     static bool pool_initialized = false;
     static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;

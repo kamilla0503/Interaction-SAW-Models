@@ -172,6 +172,7 @@ public:
     KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd1 () override;
     //KOKKOS_INLINE_FUNCTION
     void FlipMove_AddEnd () override;
+    void FlipMove_AddStart () override;
     KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;
