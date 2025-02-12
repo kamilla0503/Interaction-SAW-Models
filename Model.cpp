@@ -462,60 +462,6 @@ void XY_SAW_LongInteraction::Energy() {
     }, flip_data_local.newE );
 }
 
-// also works
-/*
-KOKKOS_FUNCTION
-double XY_SAW_LongInteraction::Energy() {
-    double H = 0.0;  // Total energy
-    const long local_L = L;
-    const double lattice_side_local = lattice_side_host(0);
-    auto lattice_nodes_positions_local = lattice_nodes_positions;
-    auto sequence_on_lattice_local = sequence_on_lattice;
-
-    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    using member_type = team_policy::member_type;
-
-    // Determine the team size (you can experiment with different values)
-    const int team_size = 128;  // or Kokkos::AUTO
-
-    // Launch the parallel_reduce with team policy
-    Kokkos::parallel_reduce(
-            team_policy(local_L, team_size),
-            KOKKOS_LAMBDA(const member_type& team_member, double& H_total) {
-        const long i = team_member.league_rank();  // Get the 'i' index
-
-        double energy_i = 0.0;
-
-
-        const auto pos_i = lattice_nodes_positions_local(i);
-        const double theta_i = sequence_on_lattice_local(pos_i);
-
-
-        // Parallelize the inner loop over 'j' within the team
-        Kokkos::parallel_reduce(
-                Kokkos::TeamVectorRange(team_member, i + 1, local_L),
-                [=](const long j, double& inner_energy) {
-
-                    const auto pos_j = lattice_nodes_positions_local(j);
-                    const double theta_j = sequence_on_lattice_local(pos_j);
-
-                    double r_val = radius(pos_i, pos_j, lattice_side_local);
-                    // is it faster? is it correct?
-                    r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val); //Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
-                    inner_energy += Kokkos::cos(theta_i - theta_j) / r_val;
-
-                },
-                energy_i
-        );
-        // Each team contributes to the total energy
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-            H_total += energy_i;
-        });
-    },H);
-    return -H;  // Return negative of the total energy
-}*/
-
-
 std::uniform_real_distribution<double> distribution_urd(0.0, 1.0);
 #ifdef SEED
 std::mt19937 generator(URD_SEED + 1);
@@ -530,23 +476,14 @@ KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
 {
-    // The total energy is computed by summing contributions from every chain index 'i'
-    //double totalEnergy = 0.0;
     Kokkos::parallel_reduce(
-            //Kokkos::TeamThreadRange(team_member, flip_data.L),
             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
             [&](const long i, double &H_total) {
                 double energy_i = 0.0;
-                // Get the position and theta for the i-th monomer.
                 coord_t pos_i   = flip_data.lattice_nodes_positions(i);
                 double theta_i  = flip_data.sequence_on_lattice(pos_i);
-
-                // For each i, the inner loop runs over j = i+1 ... flip_data.L-1.
                 const long num_j = flip_data.L() - (i + 1);
-
-                // Use TeamVectorRange to parallelize the inner loop.
                 Kokkos::parallel_reduce(
-                        //Kokkos::TeamVectorRange(team_member, num_j),
                         Kokkos::ThreadVectorRange(team_member, num_j),
                         [=](const long jj, double &innerSum) {
                             const long j = i + jj + 1;
@@ -556,7 +493,6 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                             // Compute r_val^1.5 as before.
                             r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                             innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
-
                         },
                         energy_i
                 );
@@ -632,14 +568,10 @@ void hierarchicalOneKernel_AddEndStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::m
 
    // team_member.team_barrier(); Do I need it?
 
-
-
     if (!accept_move) {
         return;
     }
-    //Energy();
     hierarchicalEnergy(team_member, flip_data_local);
-
    // team_member.team_barrier();
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
