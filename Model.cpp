@@ -655,20 +655,20 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         // Example random usage
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
         flip_data_local.direction()  = rand_gen.urand64() % 6;
-        pool.rand_pool.free_state(rand_gen);
+        pool.free_state(rand_gen);
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
         // printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
-            accept_move() = 0; // Set the flag to indicate rejection
+            accept_move = 0; // Set the flag to indicate rejection
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
-        auto rand_gen1 = pool.rand_pool.get_state();
+        auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI());
-        pool.rand_pool.free_state(rand_gen1);
+        pool.free_state(rand_gen1);
         //delete end
         flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = flip_data_local.previous_monomers( flip_data_local.end_conformation(0));
@@ -716,7 +716,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
-        auto rand_gen = pool.rand_pool.get_state();
+        auto rand_gen = pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
         if (q_ifaccept < p_metropolis) {
             flip_data_local.E(0) = flip_data_local.newE();
@@ -748,7 +748,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
             flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
         }
         flip_data_local.newE() = 0;
-        pool.rand_pool.free_state(rand_gen);
+        pool.free_state(rand_gen);
 
 
 
