@@ -867,7 +867,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
 
     auto flip_data_local = flip_data;
 
-    static id = 0;
+    static long id = 0;
 
     auto local_n_iters = n_iters;
     Kokkos::parallel_for("hierarchicalKernel", policy,
@@ -876,7 +876,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
         printf(" XY_SAW_LongInteraction::LaunchIterations ; n_iters = %lld ; id = %lld \n" ,
                local_n_iters, id);
         hLaunchIterations (team_member, flip_data_local, local_pool, local_n_iters);
-        id += 1; 
+        id += 1;
     }
     );
 
