@@ -834,33 +834,33 @@ KOKKOS_INLINE_FUNCTION
 void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                        FlipMoveData flip_data_local,
                        Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool,
-                       long long MC_STEPS) {
+                       ) {
 
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-    double p_for_local_update = 1.;
-    for (long long step = 0; step < flip_data_local.iters_to_update() ; ++step) {
-        //printf(" step = %lld \n", step);
-        auto rand_gen = pool.get_state();
-        double mc_step_type = rand_gen.drand(0.0, 1.0);
-        pool.free_state(rand_gen);
-        // Decide which type of update to perform:
-        if (mc_step_type < p_for_local_update) {
-            auto rand_gen2 = pool.get_state();
-            double flipMoveType = rand_gen2.drand(0.0, 1.0);
-            pool.free_state(rand_gen2);
-            if (flipMoveType < 0.5) {
-                // Instead of FlipMove_AddEnd(), call your hierarchical energy update for "end"
-                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, pool);
-            }
-            else {
-                // Instead of FlipMove_AddStart(), call your hierarchical energy update for "start"
-                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, pool);
+   // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+    if (team_member.league_rank() == 0 && team_member.team_rank() == 0) {
+        double p_for_local_update = 1.;
+        for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
+            //printf(" step = %lld \n", step);
+            auto rand_gen = pool.get_state();
+            double mc_step_type = rand_gen.drand(0.0, 1.0);
+            pool.free_state(rand_gen);
+            // Decide which type of update to perform:
+            if (mc_step_type < p_for_local_update) {
+                auto rand_gen2 = pool.get_state();
+                double flipMoveType = rand_gen2.drand(0.0, 1.0);
+                pool.free_state(rand_gen2);
+                if (flipMoveType < 0.5) {
+                    // Instead of FlipMove_AddEnd(), call your hierarchical energy update for "end"
+                    hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, pool);
+                } else {
+                    // Instead of FlipMove_AddStart(), call your hierarchical energy update for "start"
+                    hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, pool);
+                }
             }
         }
     }
-    });
+    //});
 }
-
 
 void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     static bool pool_initialized = false;
@@ -873,23 +873,12 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
     team_policy policy(1, 1023, 1);
-
     auto flip_data_local = flip_data;
-
-    //static long id = 0;
-
-    auto local_n_iters = n_iters;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-
-        //printf(" XY_SAW_LongInteraction::LaunchIterations ; n_iters = %lld   \n" ,
-        //       local_n_iters );
-        hLaunchIterations (team_member, flip_data_local, local_pool, local_n_iters);
-       // id += 1;
+        hLaunchIterations (team_member, flip_data_local, local_pool );
     }
     );
-
-
 }
 
 // This is correct separated version
