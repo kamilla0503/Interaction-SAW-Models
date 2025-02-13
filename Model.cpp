@@ -833,7 +833,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
 KOKKOS_INLINE_FUNCTION
 void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                        FlipMoveData flip_data_local,
-                       Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool,
+                       Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool
                        ) {
 
    // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
