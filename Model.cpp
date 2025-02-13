@@ -823,7 +823,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     );
 }
 
-void LaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                        FlipMoveData flip_data_local,
                        Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool,
                        const long MC_STEPS) {
@@ -867,7 +867,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto local_n_iters = n_iters;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-        LaunchIterations (team_member, flip_data_local, local_pool, local_n_iters);
+        hLaunchIterations (team_member, flip_data_local, local_pool, local_n_iters);
 
 
     }
