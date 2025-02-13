@@ -811,9 +811,6 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    //int teamSize = 128;
-    // int numTeams = (L + teamSize - 1) / teamSize;
-    int vectorLength = 1;
     team_policy policy(1, 1023, 1);
     // team_policy policy(1, 32, 16); //not bad choice
     //team_policy policy(numTeams, teamSize, vectorLength);
