@@ -836,9 +836,9 @@ void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                        Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool,
                        long long MC_STEPS) {
 
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() { 
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
     double p_for_local_update = 1.;
-    for (long long step = 0; step < flip_data_local.iters_to_update ; ++step) {
+    for (long long step = 0; step < flip_data_local.iters_to_update() ; ++step) {
         //printf(" step = %lld \n", step);
         auto rand_gen = pool.get_state();
         double mc_step_type = rand_gen.drand(0.0, 1.0);
