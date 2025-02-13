@@ -617,7 +617,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
-    //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+    printf("hierarchicalOneKernel AddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
    // team_member.team_barrier(); Do I need it?
 
     if (!accept_move) {
@@ -751,7 +751,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
-    //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+    printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
     // team_member.team_barrier(); Do I need it?
 
@@ -826,9 +826,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
 void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                        FlipMoveData flip_data_local,
                        Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool,
-                       const long MC_STEPS) {
+                       long long MC_STEPS) {
     double p_for_local_update = 1.;
     for (long long step = 0; step < MC_STEPS; ++step) {
+        printf(" step = %lld", step);
         auto rand_gen = pool.get_state();
         double mc_step_type = rand_gen.drand(0.0, 1.0);
         pool.free_state(rand_gen);
@@ -868,8 +869,6 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         hLaunchIterations (team_member, flip_data_local, local_pool, local_n_iters);
-
-
     }
     );
 
