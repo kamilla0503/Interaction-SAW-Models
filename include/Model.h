@@ -122,6 +122,8 @@ public:
 
 
 
+    virtual void LaunchIterations (long long n_iters) = 0 ;
+
     //KOKKOS_INLINE_FUNCTION
     virtual void FlipMove_AddEnd () = 0; //depends on spin variables
     virtual void FlipMove_AddStart () = 0;
@@ -181,6 +183,9 @@ public:
     //KOKKOS_INLINE_FUNCTION
     void FlipMove_AddEnd () override;
     void FlipMove_AddStart () override;
+
+    void LaunchIterations (long long n_iters) override ;
+
     KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;

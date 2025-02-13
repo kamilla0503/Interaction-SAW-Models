@@ -72,23 +72,29 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 //                               .set_num_threads(4));
     auto flip_data_copy = model->flip_data; // Capture data by value
     std:: cout << "Start MC" << std:: endl;
+
+    for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {
+
+        model->LaunchIterations(n_steps_to_update);
+
+        if (i < n_steps_to_equlibrium) continue;
+        if (i%(n_steps_to_update)==0)
+            model->updateData();
+        if (i%(n_steps_out)==0) {
+            model->out_MC_data(MCDataStream, i);
+        }
+
+    }
+    /*
     for (long long i = 0; i < MC_STEPS + 20; ++i) {
-    //for (long long i = 0; i < 1000000 + 20; ++i) {
-        //if (i>20) return;
         mc_step_type = distribution_urd(generator_urd) ;
-        //std::cout << i << " " << mc_step_type << std::endl;
         if (mc_step_type < p_for_local_update) {
             flipMoveType = distribution_urd(generator_urd) ;
-          //  step = distribution_uid_steps(generators_steps);
-           // spinvalue =  distribution_theta(generators_theta);
             if (flipMoveType<0.5) {
                 model->FlipMove_AddEnd();
-                //model->FlipMove_AddEnd(step, spinvalue);
-                //FlipMove_AddEnd_Device(flip_data_copy, step, spinvalue);
             }
             else {
                 model->FlipMove_AddStart();
-               // model->FlipMove_AddStart(step, spinvalue);
             }
         }
         else if (mc_step_type < p_for_reconnect) {
@@ -97,23 +103,14 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
         }
         else {
             spinvalue =  distribution_theta(generators_theta);
-            //model->ClusterStep(spinvalue);
         }
-
-        /*if ( (i%100) ==0) {
-            std::cout << "i = " << i << std::endl;
-        }*/
-
         if (i < n_steps_to_equlibrium) continue;
-        //std::cout << "EQ achieved" << std::endl;
         if (i%(n_steps_to_update)==0)
         model->updateData();
-
         if (i%(n_steps_out)==0) {
             model->out_MC_data(MCDataStream, i);
         }
     }
-    //Kokkos::finalize();
-
+*/
     MCDataStream.close();
 }
