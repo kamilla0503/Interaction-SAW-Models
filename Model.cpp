@@ -827,6 +827,7 @@ void LaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team
                        FlipMoveData flip_data_local,
                        Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool,
                        const long MC_STEPS) {
+    double p_for_local_update = 1.;
     for (long long step = 0; step < MC_STEPS; ++step) {
         auto rand_gen = pool.get_state();
         double mc_step_type = rand_gen.drand(0.0, 1.0);
