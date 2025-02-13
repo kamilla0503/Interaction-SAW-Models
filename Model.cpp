@@ -358,6 +358,12 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     N_pairs_host() = pairs_number;
     Kokkos::deep_copy(flip_data.N_pairs,  N_pairs_host);
 
+
+    flip_data.iters_to_update = Kokkos::View<long, Kokkos::CudaSpace>("iters_to_update");
+    auto iters_to_update_host = Kokkos::create_mirror_view(flip_data.iters_to_update);
+    iters_to_update_host() = L*L;
+    Kokkos::deep_copy(flip_data.iters_to_update,  iters_to_update_host);
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -617,7 +623,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
-    printf("hierarchicalOneKernel AddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+   // printf("hierarchicalOneKernel AddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
    // team_member.team_barrier(); Do I need it?
 
     if (!accept_move) {
@@ -751,7 +757,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
-    printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+    //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
     // team_member.team_barrier(); Do I need it?
 
@@ -829,9 +835,11 @@ void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                        FlipMoveData flip_data_local,
                        Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool,
                        long long MC_STEPS) {
+
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() { 
     double p_for_local_update = 1.;
-    for (long long step = 0; step < 20000; ++step) {
-        printf(" step = %lld \n", step);
+    for (long long step = 0; step < flip_data_local.iters_to_update ; ++step) {
+        //printf(" step = %lld \n", step);
         auto rand_gen = pool.get_state();
         double mc_step_type = rand_gen.drand(0.0, 1.0);
         pool.free_state(rand_gen);
@@ -850,6 +858,7 @@ void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             }
         }
     }
+    });
 }
 
 
