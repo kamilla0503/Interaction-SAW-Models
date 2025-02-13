@@ -342,7 +342,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     int i_pair = 0 ;
     for (int i =0; i < L; i++) {
-        for (j = i + 1; j < L; j++) {
+        for (int j = i + 1; j < L; j++) {
             i_index_host(i_pair) = i;
             j_index_host(i_pair) = j;
             i_pair += 1;
