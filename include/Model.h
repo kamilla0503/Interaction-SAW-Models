@@ -70,6 +70,11 @@ struct FlipMoveData {
     Kokkos::View<double, Kokkos::CudaSpace> PI;
     //PI = std::atan(1.0)*4;
 
+
+    Kokkos::View<long*, Kokkos::CudaSpace> i_index;
+    Kokkos::View<long*, Kokkos::CudaSpace> j_index;
+
+    Kokkos::View<long, Kokkos::CudaSpace> N_pairs;
 };
 
 
@@ -102,8 +107,7 @@ public:
     Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool;
 
 
-    Kokkos::View<long*, Kokkos::CudaSpace> i_index;
-    Kokkos::View<long*, Kokkos::CudaSpace> j_index;
+
 
 };
 

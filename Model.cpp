@@ -351,6 +351,12 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(flip_data.i_index, i_index_host);
     Kokkos::deep_copy(flip_data.j_index, j_index_host);
 
+    flip_data.N_pairs = Kokkos::View<long, Kokkos::CudaSpace>("N_pairs");
+
+    auto N_pairs_host = Kokkos::create_mirror_view(flip_data.N_pairs);
+    //flip_data.PI
+    N_pairs_host() = pairs_number;
+    Kokkos::deep_copy(flip_data.N_pairs,  N_pairs_host);
 
 }
 
@@ -495,7 +501,7 @@ std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count
 //My favourite and only working version for hierarchicalEnergy
 //Love it
 KOKKOS_INLINE_FUNCTION
-void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+void hierarchicalEnergy1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
 {
     Kokkos::parallel_reduce(
@@ -524,6 +530,31 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     );
 }
 
+
+
+
+
+//Try new loop
+KOKKOS_INLINE_FUNCTION
+void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        const FlipMoveData &flip_data)
+{
+    Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
+            [&](const long ind, double &H_total) {
+                long i = flip.data.i_index(ind);
+                long j = flip.data.j_index(ind);
+                coord_t pos_i   = flip_data.lattice_nodes_positions(i);
+                double theta_i  = flip_data.sequence_on_lattice(pos_i);
+                coord_t pos_j  = flip_data.lattice_nodes_positions(j);
+                double theta_j = flip_data.sequence_on_lattice(pos_j);
+                double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
+                r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
+            },
+            flip_data.newE()
+    );
+}
 
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
@@ -651,7 +682,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     //int teamSize = 128;
    // int numTeams = (L + teamSize - 1) / teamSize;
     int vectorLength = 1;
-    team_policy policy(1, 32, 16); //not bad choice
+    team_policy policy(1, 512, 1);
+    //team_policy policy(1, 32, 16); //not bad choice
     //team_policy policy(numTeams, teamSize, vectorLength);
 
     auto flip_data_local = flip_data;
@@ -782,7 +814,8 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     //int teamSize = 128;
     // int numTeams = (L + teamSize - 1) / teamSize;
     int vectorLength = 1;
-    team_policy policy(1, 32, 16); //not bad choice
+    team_policy policy(1, 512, 1);
+    // team_policy policy(1, 32, 16); //not bad choice
     //team_policy policy(numTeams, teamSize, vectorLength);
 
     auto flip_data_local = flip_data;
