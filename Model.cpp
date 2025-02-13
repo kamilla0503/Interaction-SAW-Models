@@ -882,8 +882,8 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
-        printf(" XY_SAW_LongInteraction::LaunchIterations ; n_iters = %lld   \n" ,
-               local_n_iters );
+        //printf(" XY_SAW_LongInteraction::LaunchIterations ; n_iters = %lld   \n" ,
+        //       local_n_iters );
         hLaunchIterations (team_member, flip_data_local, local_pool, local_n_iters);
        // id += 1;
     }
