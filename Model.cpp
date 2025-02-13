@@ -330,6 +330,28 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     start_index_in_nodes_position_host(0) = 0;
     Kokkos::deep_copy(flip_data.start_index_in_nodes_position, start_index_in_nodes_position_host);
 
+
+    // Try add i and j pairs
+    long pairs_number = L*(L-1)/2;
+
+    flip_data.i_index = Kokkos::View<long*, Kokkos::CudaSpace>("i_index", pairs_number);
+    flip_data.j_index = Kokkos::View<long*, Kokkos::CudaSpace>("j_index", pairs_number);
+    auto i_index_host = Kokkos::create_mirror_view(flip_data.i_index);
+    auto j_index_host = Kokkos::create_mirror_view(flip_data.j_index);
+
+
+    int i_pair = 0 ;
+    for (int i =0; i < L; i++) {
+        for (j = i + 1; j < L; j++) {
+            i_index_host(i_pair) = i;
+            j_index_host(i_pair) = j;
+            i_pair += 1;
+        }
+    }
+    Kokkos::deep_copy(flip_data.i_index, i_index_host);
+    Kokkos::deep_copy(flip_data.j_index, j_index_host);
+
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -612,7 +634,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
         flip_data_local.newE()= 0;
     });
     // optional barrier
-    team_member.team_barrier();
+   // team_member.team_barrier();
 }
 
 //KOKKOS_INLINE_FUNCTION

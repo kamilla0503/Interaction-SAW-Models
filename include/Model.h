@@ -101,6 +101,10 @@ public:
 
     Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool;
 
+
+    Kokkos::View<long*, Kokkos::CudaSpace> i_index;
+    Kokkos::View<long*, Kokkos::CudaSpace> j_index;
+
 };
 
 // Abstract Class for geometry related work
