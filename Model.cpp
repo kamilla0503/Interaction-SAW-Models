@@ -882,20 +882,20 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
             double p_for_local_update = 1.;
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
                 //printf(" step = %lld \n", step);
-                auto rand_gen = pool.get_state();
+                auto rand_gen = local_pool.get_state();
                 double mc_step_type = rand_gen.drand(0.0, 1.0);
                 pool.free_state(rand_gen);
                 // Decide which type of update to perform:
                 if (mc_step_type < p_for_local_update) {
-                    auto rand_gen2 = pool.get_state();
+                    auto rand_gen2 = local_pool.get_state();
                     double flipMoveType = rand_gen2.drand(0.0, 1.0);
                     pool.free_state(rand_gen2);
                     if (flipMoveType < 0.5) {
                         // Instead of FlipMove_AddEnd(), call your hierarchical energy update for "end"
-                        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, pool);
+                        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
                     } else {
                         // Instead of FlipMove_AddStart(), call your hierarchical energy update for "start"
-                        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, pool);
+                        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                     }
                 }
             }
