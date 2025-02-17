@@ -549,7 +549,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         const FlipMoveData &flip_data)
 {
     Kokkos::parallel_reduce(
-            Kokkos::TeamVectorRange(team_member,  flip_data.N_pairs() ),
+            Kokkos::ThreadVectorRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
                 long i = flip_data.i_index(ind);
                 long j = flip_data.j_index(ind);
@@ -739,8 +739,6 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
             printf("hierarchicalOneKernel Add start  Energy %f \n", flip_data_local.newE());
-
-
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
             double p_metropolis = Kokkos::min(1.0, p1);
             auto rand_gen = pool.get_state();
