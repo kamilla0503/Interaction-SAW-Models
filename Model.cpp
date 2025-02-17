@@ -586,6 +586,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 
         // Check self-avoid
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
+            printf("At least once violation \n");
             accept_move = false;
             return;  // skip the rest
         }
@@ -722,6 +723,7 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move = 0; // Set the flag to indicate rejection
+            printf("At least once violation \n");
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
