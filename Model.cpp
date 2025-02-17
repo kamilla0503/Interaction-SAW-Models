@@ -573,7 +573,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // We'll store a bool `accept_move`. If it's false, we skip
     bool accept_move = true;
     // single => only 1 thread in this team does the update
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+    Kokkos::single(Kokkos::PerThread(team_member), [&]() {
         // Example random usage
 
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
@@ -814,7 +814,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
               });
 
                 team_member.team_barrier();
-                
+
               if (flip_data_local.flip_move_type() < 0.5) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
                 } else {
