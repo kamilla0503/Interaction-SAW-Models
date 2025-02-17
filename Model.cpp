@@ -732,9 +732,9 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
 
-    team_member.team_barrier();
+  //  team_member.team_barrier();
 
-    
+
     if (!accept_move) {
         //return;
     }
@@ -804,14 +804,14 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
 
 
-        team_member.team_barrier();
+       // team_member.team_barrier();
 
 
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+      //  hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
 
 
 
-        team_member.team_barrier();
+    //    team_member.team_barrier();
 
 
 
