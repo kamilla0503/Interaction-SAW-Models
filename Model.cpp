@@ -818,9 +818,13 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
 
               if (flip_data_local.flip_move_type() < 0.5) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+
+                    printf("Finish MC End \n ");
                 } else {
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-                }
+
+                  printf("Finish MC Start  \n ");
+              }
 
                 //team_member.team_barrier();
 
