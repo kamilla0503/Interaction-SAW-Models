@@ -549,7 +549,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         const FlipMoveData &flip_data)
 {
     Kokkos::parallel_reduce(
-            Kokkos::TeamVectorRange(team_member,  flip_data.N_pairs() ),
+            Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
                 long i = flip_data.i_index(ind);
                 long j = flip_data.j_index(ind);
@@ -796,7 +796,8 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(1, 1, 1023);
+    //team_policy policy(1, 1, 1023);
+    team_policy policy(1, 1023, 1);
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
