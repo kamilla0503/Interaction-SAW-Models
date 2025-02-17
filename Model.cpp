@@ -890,7 +890,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                 if (mc_step_type < p_for_local_update) {
                     auto rand_gen2 = local_pool.get_state();
                     double flipMoveType = rand_gen2.drand(0.0, 1.0);
-                    pool.free_state(rand_gen2);
+                    local_pool.free_state(rand_gen2);
                     if (flipMoveType < 0.5) {
                         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
                     } else {
