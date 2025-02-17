@@ -801,7 +801,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
                Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-             //   printf("step = %lld \n", step);
+               printf("step = %lld \n", step);
                 // Generate the random number once.
                 {
                     auto rand_gen2 = local_pool.get_state();
