@@ -737,7 +737,7 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 
     });
 
-    team_member.team_barrier();
+   // team_member.team_barrier();
 
     return accept_move;
 }
@@ -751,7 +751,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
-    team_member.team_barrier(); //Do I need it?
+   // team_member.team_barrier(); //Do I need it?
 
     if (!accept_move) {
         //return;
