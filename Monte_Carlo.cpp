@@ -75,7 +75,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     std:: cout << "Start MC" << std:: endl;
 
     for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {
-
+        std:: cout <<  i  << std:: endl;
         model->LaunchIterations(n_steps_to_update);
 
         if (i < n_steps_to_equlibrium) continue;
