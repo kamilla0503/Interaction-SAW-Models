@@ -811,19 +811,18 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                     local_pool.free_state(rand_gen2);
                   //  printf("before barrier %f \n",flip_data_local.flip_move_type()  );
                 }
-
-
                 //team_member.team_barrier();
 
-              if (flip_data_local.flip_move_type() < 0.5) {
+               });
+
+
+                if (flip_data_local.flip_move_type() < 0.5) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
                     printf("Finish MC End \n ");
                 } else {
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-                  printf("Finish MC Start  \n ");
-              }
-
-               });
+                    printf("Finish MC Start  \n ");
+                }
 
                 team_member.team_barrier();
 
