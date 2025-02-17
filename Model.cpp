@@ -827,12 +827,12 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                     local_pool.free_state(rand_gen2);
                 }
 
-                printf("before barrier %f \n",lip_data_local.flip_move_type()  );
+                printf("before barrier %f \n",flip_data_local.flip_move_type()  );
 
                 // Synchronize so that all threads get the updated flag (even though they won't run the loop).
                 team_member.team_barrier();
 
-                printf("after barrier %f \n",lip_data_local.flip_move_type()  );
+                printf("after barrier %f \n",flip_data_local.flip_move_type()  );
 
                 // Call the hierarchical update.
                 // Note: hierarchicalOneKernel_* functions are expected to use the full team internally.
