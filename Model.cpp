@@ -737,7 +737,6 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     else {
         hierarchicalEnergy(team_member, flip_data_local);
         Kokkos::single(Kokkos::PerThread(team_member), [&]() {
-
             printf("hierarchicalOneKernel Add start  Energy %f \n", flip_data_local.newE());
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
             double p_metropolis = Kokkos::min(1.0, p1);
@@ -797,9 +796,14 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
+
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+
+
         // Ensure only one thread per team drives the simulation loop.
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-            for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
+          /*  for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
                //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
              //  printf("step = %lld \n", step);
                 // Generate the random number once.
@@ -810,7 +814,6 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                   //  printf("before barrier %f \n",flip_data_local.flip_move_type()  );
                 }
                 //team_member.team_barrier();
-
                    if (flip_data_local.flip_move_type() < 0.5) {
                        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
                        printf("Finish MC End \n ");
@@ -820,12 +823,9 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                    }
 
                //});
-
-
-
                // team_member.team_barrier();
 
-            }
+            } */
     }
     );
 }
