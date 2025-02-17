@@ -588,7 +588,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
             printf("At least once violation \n");
             accept_move = false;
-           // return;  // skip the rest
+            return;  // skip the rest
         }
         auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
@@ -617,7 +617,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // barrier if you need all threads to see the updated structure
  //   team_member.team_barrier();
 
-    team_member.team_barrier();
+   // team_member.team_barrier();
 
     return accept_move;
 }
@@ -630,10 +630,10 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
    // printf("hierarchicalOneKernel AddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-   team_member.team_barrier(); // Do I need it?
+   //team_member.team_barrier(); // Do I need it?
 
     if (!accept_move) {
-       // return;
+       return;
     }
     else {
 //        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
@@ -826,13 +826,9 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
         // Ensure only one thread per team drives the simulation loop.
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
-
-
                 Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                 printf("step = %lld \n", step);
                 // Generate the random number once.
-
-
                 {
                     auto rand_gen2 = local_pool.get_state();
                     flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
