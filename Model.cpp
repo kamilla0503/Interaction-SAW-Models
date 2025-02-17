@@ -868,35 +868,31 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
 
-        Kokkos::parallel_for("hierarchicalKernel", policy,
-                             KOKKOS_LAMBDA(const member_type &team_member) {
 
-            // Ensure only one thread per team drives the simulation loop.
-            Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-                for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
-                    // Generate the random number once.
-                    {
-                        auto rand_gen2 = local_pool.get_state();
-                        flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
-                        local_pool.free_state(rand_gen2);
-                    }
-
-                    // Synchronize so that all threads get the updated flag (even though they won't run the loop).
-                    team_member.team_barrier();
-
-                    // Call the hierarchical update.
-                    // Note: hierarchicalOneKernel_* functions are expected to use the full team internally.
-                    if (flip_data_local.flip_move_type() < 0.5) {
-                        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-                    } else {
-                        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-                    }
-                    // Barrier to ensure the hierarchical update is complete.
-                    team_member.team_barrier();
+        // Ensure only one thread per team drives the simulation loop.
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
+                // Generate the random number once.
+                {
+                    auto rand_gen2 = local_pool.get_state();
+                    flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
+                    local_pool.free_state(rand_gen2);
                 }
-            });
-        });
 
+                // Synchronize so that all threads get the updated flag (even though they won't run the loop).
+                team_member.team_barrier();
+
+                // Call the hierarchical update.
+                // Note: hierarchicalOneKernel_* functions are expected to use the full team internally.
+                if (flip_data_local.flip_move_type() < 0.5) {
+                    hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+                } else {
+                    hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+                }
+                // Barrier to ensure the hierarchical update is complete.
+                team_member.team_barrier();
+            }
+        });
 
 
 
