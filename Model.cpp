@@ -579,13 +579,13 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         long dir = rand_gen.urand64() % 6;
         pool.free_state(rand_gen);
         flip_data_local.direction() = dir;
-        printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+      //  printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
 
         // Check self-avoid
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
-            printf("At least once violation \n");
+         //   printf("At least once violation \n");
             accept_move = false;
             return;  // skip the rest
         }
@@ -690,12 +690,12 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         pool.free_state(rand_gen);
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
-        printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+        //printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move = 0; // Set the flag to indicate rejection
-            printf("At least once violation \n");
+         //   printf("At least once violation \n");
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
@@ -801,13 +801,13 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
                Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-                printf("step = %lld \n", step);
+             //   printf("step = %lld \n", step);
                 // Generate the random number once.
                 {
                     auto rand_gen2 = local_pool.get_state();
                     flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
                     local_pool.free_state(rand_gen2);
-                    printf("before barrier %f \n",flip_data_local.flip_move_type()  );
+                  //  printf("before barrier %f \n",flip_data_local.flip_move_type()  );
                 }
 
               });
