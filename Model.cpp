@@ -617,6 +617,8 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // barrier if you need all threads to see the updated structure
  //   team_member.team_barrier();
 
+    team_member.team_barrier();
+
     return accept_move;
 }
 
@@ -751,6 +753,8 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 
     // barrier if you need all threads to see the updated structure
     //   team_member.team_barrier();
+
+    team_member.team_barrier();
 
     return accept_move;
 }
