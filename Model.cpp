@@ -798,9 +798,19 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+
+
+        team_member.team_barrier();
+
+
         hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
 
 
+
+        team_member.team_barrier();
+
+
+        
         // Ensure only one thread per team drives the simulation loop.
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
           /*  for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
