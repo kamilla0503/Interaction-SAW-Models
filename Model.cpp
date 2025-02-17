@@ -811,13 +811,12 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    //team_policy policy(1, 1023, 1);
     team_policy policy(1, 1, 1023);
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         // Ensure only one thread per team drives the simulation loop.
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+       // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
                 printf("step = %lld \n", step);
                 // Generate the random number once.
@@ -844,7 +843,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                 // Barrier to ensure the hierarchical update is complete.
                 team_member.team_barrier();
             }
-        });
+       // });
 
 
 
