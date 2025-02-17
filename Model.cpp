@@ -636,7 +636,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
        // return;
     }
     else {
-        hierarchicalEnergy(team_policy::member_type(1,1,1023), flip_data_local);
+        hierarchicalEnergy(Kokkos::TeamPolicy<Kokkos::Cuda>::member_type(1,1,1023), flip_data_local);
 
         // team_member.team_barrier();
 
@@ -754,7 +754,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         //return;
     }
     else {
-        hierarchicalEnergy(team_policy::member_type(1,1,1023), flip_data_local);
+        hierarchicalEnergy(Kokkos::TeamPolicy<Kokkos::Cuda>::member_type(1,1,1023), flip_data_local);
 
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
