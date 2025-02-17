@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     MC_Interacting_SAW_XY mcxysaw(L, J, outFile);
     mcxysaw.run_simulation(J);
     //mcxysaw.~MC_Interacting_SAW_XY();
-    Kokkos::finalize();
+    //Kokkos::finalize();
     //auto stop = high_resolution_clock::now();
 
    // auto duration = duration_cast<seconds>(stop - start);

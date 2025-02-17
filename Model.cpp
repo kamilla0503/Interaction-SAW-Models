@@ -717,7 +717,7 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         pool.free_state(rand_gen);
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
-        printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+       // printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
