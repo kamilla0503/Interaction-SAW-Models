@@ -636,10 +636,10 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
        // return;
     }
     else {
-        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-        using member_type = team_policy::member_type;
-        team_policy policy(1, 1, 1023);
-        hierarchicalEnergy( policy, flip_data_local);
+//        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+//        using member_type = team_policy::member_type;
+//        team_policy policy(1, 1, 1023);
+        hierarchicalEnergy( team_member, flip_data_local);
 
         // team_member.team_barrier();
 
@@ -757,11 +757,11 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         //return;
     }
     else {
-        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-        using member_type = team_policy::member_type;
-         team_policy policy(1, 1, 1023);
+//        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+//        using member_type = team_policy::member_type;
+//         team_policy policy(1, 1, 1023);
 
-        hierarchicalEnergy(policy, flip_data_local);
+        hierarchicalEnergy(team_member, flip_data_local);
 
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
@@ -818,21 +818,28 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-   // team_policy policy(1, 1, 1023);
-    team_policy policy(1, 1, 1 );
+    team_policy policy(1, 1, 1023);
+    //team_policy policy(1, 1, 1 );
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         // Ensure only one thread per team drives the simulation loop.
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
+
+
+                Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                 printf("step = %lld \n", step);
                 // Generate the random number once.
+
+
                 {
                     auto rand_gen2 = local_pool.get_state();
                     flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
                     local_pool.free_state(rand_gen2);
                 }
+
+                });
 
                 printf("before barrier %f \n",flip_data_local.flip_move_type()  );
 
