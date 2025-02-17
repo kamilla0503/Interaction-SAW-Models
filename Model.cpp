@@ -723,8 +723,6 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 
     });
 
-   // team_member.team_barrier();
-
     return accept_move;
 }
 
@@ -814,11 +812,16 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                 }
 
               });
+
+                team_member.team_barrier();
+                
               if (flip_data_local.flip_move_type() < 0.5) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
                 } else {
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 }
+
+                team_member.team_barrier();
 
             }
     }
