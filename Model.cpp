@@ -823,7 +823,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
 
 
 
-                team_member.team_barrier();
+               // team_member.team_barrier();
 
             }
     }
