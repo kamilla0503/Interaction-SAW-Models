@@ -627,7 +627,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
    // printf("hierarchicalOneKernel AddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-   // team_member.team_barrier(); Do I need it?
+   team_member.team_barrier(); Do I need it?
 
     if (!accept_move) {
         return;
@@ -762,7 +762,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
-    // team_member.team_barrier(); Do I need it?
+    team_member.team_barrier(); Do I need it?
 
     if (!accept_move) {
         return;
@@ -853,6 +853,8 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                 flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
                 local_pool.free_state(rand_gen2);
             });
+
+            team_member.team_barrier();
 
             if (flip_data_local.flip_move_type() < 0.5) {
                 hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
