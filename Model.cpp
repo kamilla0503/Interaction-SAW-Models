@@ -573,14 +573,13 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // We'll store a bool `accept_move`. If it's false, we skip
     bool accept_move = true;
     // single => only 1 thread in this team does the update
-    Kokkos::single(Kokkos::PerThread(team_member), [&]() {
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
-
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
         long dir = rand_gen.urand64() % 6;
         pool.free_state(rand_gen);
         flip_data_local.direction() = dir;
-       printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+        printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
 
@@ -628,7 +627,6 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
        return;
     }
     else {
-
         hierarchicalEnergy( team_member, flip_data_local);
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
@@ -793,7 +791,8 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(1, 1, 1023);
+    //team_policy policy(1, 1, 1023);
+    team_policy policy(1, 1023, 1 );
     //team_policy policy(1, 1, 1 );
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
@@ -813,7 +812,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
 
               });
 
-                team_member.team_barrier();
+                //team_member.team_barrier();
 
               if (flip_data_local.flip_move_type() < 0.5) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
@@ -821,7 +820,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 }
 
-                team_member.team_barrier();
+                //team_member.team_barrier();
 
             }
     }
