@@ -585,7 +585,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 
         // Check self-avoid
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
-         //   printf("At least once violation \n");
+            printf("At least once violation \n");
             accept_move = false;
             return;  // skip the rest
         }
@@ -628,7 +628,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     }
     else {
         hierarchicalEnergy( team_member, flip_data_local);
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        Kokkos::single(Kokkos::PerThread(team_member), [&]() {
             //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
             printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
@@ -683,7 +683,7 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 {
     bool accept_move = true;
     // single => only 1 thread in this team does the update
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+    Kokkos::single(Kokkos::PerThread(team_member), [&]() {
         // Example random usage
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
         flip_data_local.direction()  = rand_gen.urand64() % 6;
@@ -695,7 +695,7 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move = 0; // Set the flag to indicate rejection
-         //   printf("At least once violation \n");
+            printf("At least once violation \n");
             return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
@@ -736,7 +736,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     }
     else {
         hierarchicalEnergy(team_member, flip_data_local);
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        Kokkos::single(Kokkos::PerThread(team_member), [&]() {
 
             printf("hierarchicalOneKernel Add start  Energy %f \n", flip_data_local.newE());
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
