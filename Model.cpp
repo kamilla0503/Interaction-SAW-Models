@@ -794,15 +794,13 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
     team_policy policy(1, 1, 1023);
-    //team_policy policy(1, 1023, 1 );
-    //team_policy policy(1, 1, 1 );
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         // Ensure only one thread per team drives the simulation loop.
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
-               Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+               //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
              //  printf("step = %lld \n", step);
                 // Generate the random number once.
                 {
@@ -821,7 +819,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                        printf("Finish MC Start  \n ");
                    }
 
-               });
+               //});
 
 
 
