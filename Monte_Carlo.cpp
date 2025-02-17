@@ -73,7 +73,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     auto flip_data_copy = model->flip_data; // Capture data by value
     std:: cout << "Start MC" << std:: endl;
 
-    /*for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {
+    for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {
 
         model->LaunchIterations(n_steps_to_update);
 
@@ -84,8 +84,9 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             model->out_MC_data(MCDataStream, i);
         }
 
-    }*/
+    }
 
+    /*
     for (long long i = 0; i < MC_STEPS + 20; ++i) {
         mc_step_type = distribution_urd(generator_urd) ;
         if (mc_step_type < p_for_local_update) {
@@ -110,7 +111,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
         if (i%(n_steps_out)==0) {
             model->out_MC_data(MCDataStream, i);
         }
-    }
+    }*/
 
     MCDataStream.close();
 }
