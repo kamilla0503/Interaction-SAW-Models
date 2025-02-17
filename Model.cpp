@@ -573,7 +573,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // We'll store a bool `accept_move`. If it's false, we skip
     bool accept_move = true;
     // single => only 1 thread in this team does the update
-    Kokkos::single(Kokkos::PerThread(team_member), [&]() {
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
 
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
@@ -640,7 +640,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
 
         // team_member.team_barrier();
 
-        Kokkos::single(Kokkos::PerThread(team_member), [&]() {
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
             //printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
@@ -696,14 +696,14 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 {
     bool accept_move = true;
     // single => only 1 thread in this team does the update
-    Kokkos::single(Kokkos::PerThread(team_member), [&]() {
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
         flip_data_local.direction()  = rand_gen.urand64() % 6;
         pool.free_state(rand_gen);
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
-       printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+        printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
@@ -756,7 +756,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     else {
         hierarchicalEnergy(team_member, flip_data_local);
 
-        Kokkos::single(Kokkos::PerThread(team_member), [&]() {
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
             double p_metropolis = Kokkos::min(1.0, p1);
             auto rand_gen = pool.get_state();
