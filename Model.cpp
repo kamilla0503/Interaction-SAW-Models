@@ -833,6 +833,9 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                     auto rand_gen2 = local_pool.get_state();
                     flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
                     local_pool.free_state(rand_gen2);
+
+
+                    printf("before barrier %f \n",flip_data_local.flip_move_type()  ); 
                 }
 
                 });
