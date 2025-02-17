@@ -549,7 +549,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         const FlipMoveData &flip_data)
 {
     Kokkos::parallel_reduce(
-            Kokkos::TeamVectorRange(team_member,  flip_data.N_pairs() ),
+            Kokkos::ThreadVectorRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
                 long i = flip_data.i_index(ind);
                 long j = flip_data.j_index(ind);
@@ -689,32 +689,6 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
    // team_member.team_barrier();
 }
 
-//KOKKOS_INLINE_FUNCTION
-void XY_SAW_LongInteraction::FlipMove_AddEnd() {
-    static bool pool_initialized = false;
-    static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
-    if (!pool_initialized) {
-        my_pool.init(256, 12345);
-        pool_initialized = true;
-    }
-    auto local_pool = my_pool;
-    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    using member_type = team_policy::member_type;
-    //int teamSize = 128;
-   // int numTeams = (L + teamSize - 1) / teamSize;
-    int vectorLength = 1;
-    team_policy policy(1, 1023, 1);
-    //team_policy policy(1, 32, 16); //not bad choice
-    //team_policy policy(numTeams, teamSize, vectorLength);
-
-    auto flip_data_local = flip_data;
-    Kokkos::parallel_for("hierarchicalKernel", policy,
-                         KOKKOS_LAMBDA(const member_type &team_member) {
-            hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-    }
-    );
-}
-
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                 const  FlipMoveData &flip_data_local,
@@ -759,9 +733,6 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
 
     });
-
-    // barrier if you need all threads to see the updated structure
-    //   team_member.team_barrier();
 
     team_member.team_barrier();
 
@@ -828,28 +799,6 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
             flip_data_local.newE() = 0;
         });
     }
-}
-
-void XY_SAW_LongInteraction::FlipMove_AddStart() {
-    static bool pool_initialized = false;
-    static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
-    if (!pool_initialized) {
-        my_pool.init(256, 12345);
-        pool_initialized = true;
-    }
-    auto local_pool = my_pool;
-    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    using member_type = team_policy::member_type;
-    team_policy policy(1, 1023, 1);
-    // team_policy policy(1, 32, 16); //not bad choice
-    //team_policy policy(numTeams, teamSize, vectorLength);
-
-    auto flip_data_local = flip_data;
-    Kokkos::parallel_for("hierarchicalKernel", policy,
-                         KOKKOS_LAMBDA(const member_type &team_member) {
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-    }
-    );
 }
 
 void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
@@ -949,6 +898,58 @@ void hLaunchIterations (const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     }
     //});
 }
+
+
+
+void XY_SAW_LongInteraction::FlipMove_AddStart() {
+    static bool pool_initialized = false;
+    static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
+    if (!pool_initialized) {
+        my_pool.init(256, 12345);
+        pool_initialized = true;
+    }
+    auto local_pool = my_pool;
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
+    team_policy policy(1, 1023, 1);
+    // team_policy policy(1, 32, 16); //not bad choice
+    //team_policy policy(numTeams, teamSize, vectorLength);
+
+    auto flip_data_local = flip_data;
+    Kokkos::parallel_for("hierarchicalKernel", policy,
+                         KOKKOS_LAMBDA(const member_type &team_member) {
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+    }
+    );
+}
+
+//KOKKOS_INLINE_FUNCTION
+void XY_SAW_LongInteraction::FlipMove_AddEnd() {
+    static bool pool_initialized = false;
+    static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
+    if (!pool_initialized) {
+        my_pool.init(256, 12345);
+        pool_initialized = true;
+    }
+    auto local_pool = my_pool;
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
+    //int teamSize = 128;
+    // int numTeams = (L + teamSize - 1) / teamSize;
+    int vectorLength = 1;
+    team_policy policy(1, 1023, 1);
+    //team_policy policy(1, 32, 16); //not bad choice
+    //team_policy policy(numTeams, teamSize, vectorLength);
+
+    auto flip_data_local = flip_data;
+    Kokkos::parallel_for("hierarchicalKernel", policy,
+                         KOKKOS_LAMBDA(const member_type &team_member) {
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+    }
+    );
+}
+
+
 // This is correct separated version
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd1() {
