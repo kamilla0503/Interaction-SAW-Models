@@ -76,7 +76,16 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 
     for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {
         std:: cout <<  i  << std:: endl;
-        model->LaunchIterations(n_steps_to_update);
+       // model->LaunchIterations(n_steps_to_update);
+
+
+        flipMoveType = distribution_urd(generator_urd) ;
+        if (flipMoveType<0.5) {
+            model->FlipMove_AddEnd();
+        }
+        else {
+            model->FlipMove_AddStart();
+        }
 
         if (i < n_steps_to_equlibrium) continue;
         if (i%(n_steps_to_update)==0)
