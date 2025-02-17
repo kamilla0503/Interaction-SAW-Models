@@ -712,7 +712,7 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
             accept_move = 0; // Set the flag to indicate rejection
             printf("At least once violation \n");
-            //return;
+            return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
         auto rand_gen1 = pool.get_state();
@@ -754,7 +754,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
    // team_member.team_barrier(); //Do I need it?
 
     if (!accept_move) {
-        //return;
+        return;
     }
     else {
 //        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
