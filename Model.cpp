@@ -731,6 +731,10 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
+
+    team_member.team_barrier();
+
+    
     if (!accept_move) {
         //return;
     }
