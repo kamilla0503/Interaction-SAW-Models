@@ -863,6 +863,8 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
             } else {
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
             }
+
+            team_member.team_barrier();
         }
     }
     );
