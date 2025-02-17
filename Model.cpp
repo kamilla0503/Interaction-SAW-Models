@@ -364,6 +364,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     iters_to_update_host() = L*L;
     Kokkos::deep_copy(flip_data.iters_to_update,  iters_to_update_host);
 
+
+    flip_data.flip_move_type = Kokkos::View<double, Kokkos::CudaSpace>("flip_move_type");
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -876,9 +879,33 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
+        
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            double p_for_local_update = 1.0;
+            for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
+                auto rand_gen = pool.get_state();
+                double mc_step_type = rand_gen.drand(0.0, 1.0);
+                pool.free_state(rand_gen);
+
+                if (mc_step_type < p_for_local_update) {
+                    auto rand_gen2 = pool.get_state();
+                    double flipMoveType = rand_gen2.drand(0.0, 1.0);
+                    pool.free_state(rand_gen2);
+                    if (flipMoveType < 0.5) {
+                        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, pool);
+                    } else {
+                        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, pool);
+                    }
+                }
+            }
+        });
         //hLaunchIterations (team_member, flip_data_local, local_pool );
 
-        if (team_member.league_rank() == 0 && team_member.team_rank() == 0) {
+        /* auto rand_gen2 = local_pool.get_state();
+        double flipMoveType = rand_gen2.drand(0.0, 1.0);
+        local_pool.free_state(rand_gen2); */
+
+        /*if (team_member.league_rank() == 0 && team_member.team_rank() == 0) {
             double p_for_local_update = 1.;
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
                 //printf(" step = %lld \n", step);
@@ -899,7 +926,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                     }
                 }
             }
-        }
+        }*/
 
     }
     );

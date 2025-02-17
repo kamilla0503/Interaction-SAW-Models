@@ -77,6 +77,9 @@ struct FlipMoveData {
     Kokkos::View<long, Kokkos::CudaSpace> N_pairs;
 
     Kokkos::View<long, Kokkos::CudaSpace> iters_to_update;
+
+
+    Kokkos::View<double, Kokkos::CudaSpace> flip_move_type;
 };
 
 
