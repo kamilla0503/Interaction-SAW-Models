@@ -613,12 +613,6 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
 
     });
-
-    // barrier if you need all threads to see the updated structure
- //   team_member.team_barrier();
-
-   // team_member.team_barrier();
-
     return accept_move;
 }
 
@@ -629,20 +623,13 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
-   // printf("hierarchicalOneKernel AddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-   //team_member.team_barrier(); // Do I need it?
 
     if (!accept_move) {
        return;
     }
     else {
-//        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-//        using member_type = team_policy::member_type;
-//        team_policy policy(1, 1, 1023);
+
         hierarchicalEnergy( team_member, flip_data_local);
-
-        // team_member.team_barrier();
-
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
             //printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
@@ -688,8 +675,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
             flip_data_local.newE() = 0;
         });
     }
-    // optional barrier
-   // team_member.team_barrier();
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -749,20 +735,11 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 {
     // 1) Attempt move
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
-    //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-
-   // team_member.team_barrier(); //Do I need it?
-
     if (!accept_move) {
         return;
     }
     else {
-//        using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-//        using member_type = team_policy::member_type;
-//         team_policy policy(1, 1, 1023);
-
         hierarchicalEnergy(team_member, flip_data_local);
-
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
             double p_metropolis = Kokkos::min(1.0, p1);
@@ -826,7 +803,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
         // Ensure only one thread per team drives the simulation loop.
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
-            //    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+               Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                 printf("step = %lld \n", step);
                 // Generate the random number once.
                 {
@@ -836,47 +813,14 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                     printf("before barrier %f \n",flip_data_local.flip_move_type()  );
                 }
 
-              //  });
-
-              //  printf("before barrier %f \n",flip_data_local.flip_move_type()  );
-
-                // Synchronize so that all threads get the updated flag (even though they won't run the loop).
-                //team_member.team_barrier();
-
-              //  printf("after barrier %f \n",flip_data_local.flip_move_type()  );
-
-                // Call the hierarchical update.
-                // Note: hierarchicalOneKernel_* functions are expected to use the full team internally.
-                if (flip_data_local.flip_move_type() < 0.5) {
+              });
+              if (flip_data_local.flip_move_type() < 0.5) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
                 } else {
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 }
-                // Barrier to ensure the hierarchical update is complete.
-                team_member.team_barrier();
+
             }
-       // });
-
-
-
-        /*
-        for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
-            Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-                auto rand_gen2 = local_pool.get_state();
-                flip_data_local.flip_move_type() = rand_gen2.drand(0.0, 1.0);
-                local_pool.free_state(rand_gen2);
-            });
-
-            team_member.team_barrier();
-
-            if (flip_data_local.flip_move_type() < 0.5) {
-                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-            } else {
-                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-            }
-
-            team_member.team_barrier();
-        } */
     }
     );
 }
