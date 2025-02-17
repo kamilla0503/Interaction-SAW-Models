@@ -795,8 +795,8 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(1, 1, 1023);
-    //team_policy policy(1, 1023, 1 );
+    //team_policy policy(1, 1, 1023);
+    team_policy policy(1, 1023, 1 );
     //team_policy policy(1, 1, 1 );
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
