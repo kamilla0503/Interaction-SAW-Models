@@ -71,6 +71,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 //                               .set_disable_warnings(false)
 //                               .set_num_threads(4));
     auto flip_data_copy = model->flip_data; // Capture data by value
+    n_steps_to_update = 100;
     std:: cout << "Start MC" << std:: endl;
 
     for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {

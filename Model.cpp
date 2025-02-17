@@ -361,7 +361,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     flip_data.iters_to_update = Kokkos::View<long, Kokkos::CudaSpace>("iters_to_update");
     auto iters_to_update_host = Kokkos::create_mirror_view(flip_data.iters_to_update);
-    iters_to_update_host() = L*L;
+    iters_to_update_host() = 100; //L*L;
     Kokkos::deep_copy(flip_data.iters_to_update,  iters_to_update_host);
 
 
