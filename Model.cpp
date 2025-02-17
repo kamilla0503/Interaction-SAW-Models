@@ -549,7 +549,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                         const FlipMoveData &flip_data)
 {
     Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(team_member,  flip_data.N_pairs() ),
+            Kokkos::TeamVectorRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
                 long i = flip_data.i_index(ind);
                 long j = flip_data.j_index(ind);
@@ -825,7 +825,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
 
                });
 
-                //team_member.team_barrier();
+                team_member.team_barrier();
 
             }
     }
