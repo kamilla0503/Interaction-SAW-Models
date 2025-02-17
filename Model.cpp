@@ -636,7 +636,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
        // return;
     }
     else {
-        hierarchicalEnergy(team_member, flip_data_local);
+        hierarchicalEnergy(team_policy::member_type(1,1,1023), flip_data_local);
 
         // team_member.team_barrier();
 
@@ -754,7 +754,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         //return;
     }
     else {
-        hierarchicalEnergy(team_member, flip_data_local);
+        hierarchicalEnergy(team_policy::member_type(1,1,1023), flip_data_local);
 
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
@@ -811,7 +811,8 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(1, 1, 1023);
+   // team_policy policy(1, 1, 1023);
+    team_policy policy(1, 1, 1 );
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
