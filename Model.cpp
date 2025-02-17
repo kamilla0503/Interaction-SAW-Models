@@ -633,7 +633,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
    team_member.team_barrier(); // Do I need it?
 
     if (!accept_move) {
-        return;
+       // return;
     }
     else {
         hierarchicalEnergy(team_member, flip_data_local);
@@ -751,7 +751,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     team_member.team_barrier(); //Do I need it?
 
     if (!accept_move) {
-        return;
+        //return;
     }
     else {
         hierarchicalEnergy(team_member, flip_data_local);
