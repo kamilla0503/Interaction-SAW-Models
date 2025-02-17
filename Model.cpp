@@ -840,7 +840,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
               //  printf("before barrier %f \n",flip_data_local.flip_move_type()  );
 
                 // Synchronize so that all threads get the updated flag (even though they won't run the loop).
-                team_member.team_barrier();
+                //team_member.team_barrier();
 
               //  printf("after barrier %f \n",flip_data_local.flip_move_type()  );
 
