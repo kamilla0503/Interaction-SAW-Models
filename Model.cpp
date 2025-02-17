@@ -852,7 +852,7 @@ void XY_SAW_LongInteraction::LaunchIterations (long long n_iters)  {
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 }
                 // Barrier to ensure the hierarchical update is complete.
-                team_member.team_barrier();
+                //team_member.team_barrier();
             }
        // });
 
