@@ -741,13 +741,10 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
     team_member.team_barrier();
-    // team_member.team_barrier(); Do I need it?
 
     if (accept_move) {
-        //return;
-
     hierarchicalEnergy(team_member, flip_data_local);
-    team_member.team_barrier();
+   // team_member.team_barrier();
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
         //printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
@@ -793,11 +790,9 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     }
 
     else {
-
-
     }
 
-    team_member.team_barrier();
+   // team_member.team_barrier();
 }
 
 
@@ -867,10 +862,13 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
         hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
 
         team_member.team_barrier();
-        
+
     }
     );
 }
+
+
+
 
 //KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::FlipMove_AddEnd() {
