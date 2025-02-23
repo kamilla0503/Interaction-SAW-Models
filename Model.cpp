@@ -914,23 +914,23 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        if (team_member.league_rank() == 0 && team_member.team_rank() == 0) {
+            hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+            team_member.team_barrier();
+            hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+            team_member.team_barrier();
+            hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+            team_member.team_barrier();
+            hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+            team_member.team_barrier();
+            hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+            team_member.team_barrier();
+            hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+            team_member.team_barrier();
+        }
 
-        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        team_member.team_barrier();
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        team_member.team_barrier();
-        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        team_member.team_barrier();
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        team_member.team_barrier();
-        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        team_member.team_barrier();
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        team_member.team_barrier();
-
-
-        });
+       // });
     }
     );
 }
