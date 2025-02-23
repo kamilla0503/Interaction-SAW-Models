@@ -914,6 +914,16 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+
+
+
     }
     );
 }
