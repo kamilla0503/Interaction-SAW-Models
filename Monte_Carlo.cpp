@@ -71,14 +71,14 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 //                               .set_disable_warnings(false)
 //                               .set_num_threads(4));
     auto flip_data_copy = model->flip_data; // Capture data by value
-    n_steps_to_update = 100;
+    n_steps_to_update = 1;
     std:: cout << "Start MC" << std:: endl;
 
     for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {
        // std:: cout <<  i  << std:: endl;
        // model->LaunchIterations(n_steps_to_update);
 
-       /*
+
 
         flipMoveType = distribution_urd(generator_urd) ;
         if (flipMoveType<0.5) {
@@ -86,9 +86,9 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
         }
         else {
             model->FlipMove_AddStart();
-        }*/
+        }
 
-        model->LaunchIterations(100);
+       // model->LaunchIterations(100);
 
         if (i < n_steps_to_equlibrium) continue;
         if (i%(n_steps_to_update)==0)
