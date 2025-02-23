@@ -901,7 +901,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
                          KOKKOS_LAMBDA(const member_type &team_member) {
         hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
 
-        team_member.team_barrier();
+       // team_member.team_barrier();
 
     }
     );
@@ -925,6 +925,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
         team_member.team_barrier();
         //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
