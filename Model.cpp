@@ -814,7 +814,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     else {
     }
 
-   // team_member.team_barrier();
+   team_member.team_barrier();
 }
 
 
