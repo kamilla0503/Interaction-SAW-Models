@@ -975,14 +975,16 @@ void XY_SAW_LongInteraction::LaunchIterations(long long n_iters) {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-        for (long long step = 0; step < 100; ++step) {
-        //for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
-            //printf(" step = %lld \n", step);
-           // auto rand_gen = local_pool.get_state();
-           // double mc_step_type = rand_gen.drand(0.0, 1.0);
-            //local_pool.free_state(rand_gen);
-            // Decide which type of update to perform:
-           // if (mc_step_type < p_for_local_update) {
+        if (team_member.league_rank() == 0 && team_member.team_rank() == 0) {
+
+            for (long long step = 0; step < 100; ++step) {
+                //for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
+                //printf(" step = %lld \n", step);
+                // auto rand_gen = local_pool.get_state();
+                // double mc_step_type = rand_gen.drand(0.0, 1.0);
+                //local_pool.free_state(rand_gen);
+                // Decide which type of update to perform:
+                // if (mc_step_type < p_for_local_update) {
                 auto rand_gen2 = local_pool.get_state();
                 double flipMoveType = rand_gen2.drand(0.0, 1.0);
                 local_pool.free_state(rand_gen2);
@@ -995,9 +997,9 @@ void XY_SAW_LongInteraction::LaunchIterations(long long n_iters) {
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                     team_member.team_barrier();
                 }
-           // }
+                // }
+            }
         }
-
         //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // });
     }
