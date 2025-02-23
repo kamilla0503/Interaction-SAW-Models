@@ -892,7 +892,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    team_policy policy(1, 1023, 1);
+    team_policy policy(1, 512, 1);
     // team_policy policy(1, 32, 16); //not bad choice
     //team_policy policy(numTeams, teamSize, vectorLength);
 
@@ -900,8 +900,27 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
         hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
 
-       // team_member.team_barrier();
+        // team_member.team_barrier();
 
     }
     );
@@ -925,6 +944,22 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        team_member.team_barrier();
         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
         team_member.team_barrier();
         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);

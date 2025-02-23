@@ -8,7 +8,7 @@
 
 
 #ifndef  MC_STEPS
-#define MC_STEPS 10000 //10000000000 //99000000 //10000000000
+#define MC_STEPS 10000000000 //99000000 //10000000000
 #endif
 
 #define URD_SEED 121
@@ -62,19 +62,21 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-    long long n_steps_out = 10*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 1*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_iter = 10;
+    long long n_steps_out = 10*model->number_of_spins()*model->number_of_spins() / n_steps_iter ;
+    long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins()  / n_steps_iter ;
+
     //Kokkos::Tools::InitArguments args;
     //args.num_threads = 4;
 //    Kokkos::initialize(Kokkos::InitializationSettings()
 //                               .set_disable_warnings(false)
 //                               .set_num_threads(4));
     auto flip_data_copy = model->flip_data; // Capture data by value
-    n_steps_to_update = 1;
+
     std:: cout << "Start MC" << std:: endl;
 
-    for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_to_update) {
+    for (long long i = 0; i < MC_STEPS + 20;  i+=n_steps_iter ) {
        // std:: cout <<  i  << std:: endl;
        // model->LaunchIterations(n_steps_to_update);
 
