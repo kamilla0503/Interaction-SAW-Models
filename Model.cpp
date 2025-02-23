@@ -589,9 +589,10 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         // Check self-avoid
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
             accept_move = false;
-            return;  // skip the rest
+            //return;  // skip the rest
         }
-        auto rand_gen1 = pool.get_state();
+        else {
+            auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0 * flip_data_local.PI());
         pool.free_state(rand_gen1);
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
@@ -612,6 +613,7 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         long position_new = flip_data_local.start_index_in_nodes_position(0);
 
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
+        }
     }
  //   });
 
@@ -724,30 +726,32 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
             accept_move = 0; // Set the flag to indicate rejection
-            return;
+            //return;
         }
         //coord_t flip_data_local.save_end_conformation(0);
-        auto rand_gen1 = pool.get_state();
-        flip_data_local.spinValue() = rand_gen1.drand(0, 2.0 * flip_data_local.PI());
-        pool.free_state(rand_gen1);
-        //delete end
-        flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
-        flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(flip_data_local.end_conformation(0));
-        flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = NO_SAW_NODE;
-        flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
-        flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
+        else {
+            auto rand_gen1 = pool.get_state();
+            flip_data_local.spinValue() = rand_gen1.drand(0, 2.0 * flip_data_local.PI());
+            pool.free_state(rand_gen1);
+            //delete end
+            flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
+            flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(
+                    flip_data_local.end_conformation(0));
+            flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = NO_SAW_NODE;
+            flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
+            flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
 
-        //add the new beginning
-        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = new_point;
-        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue(); //выбор спина
-        flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
-        flip_data_local.start_conformation(0) = new_point;
+            //add the new beginning
+            flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = new_point;
+            flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue(); //выбор спина
+            flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
+            flip_data_local.start_conformation(0) = new_point;
 
-        long position_new =
-                (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L();
-        //if (position_new == -1 ) position_new = flip_data_local.L - 1;
-        flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
-
+            long position_new =
+                    (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L();
+            //if (position_new == -1 ) position_new = flip_data_local.L - 1;
+            flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
+        }
         // });
     }
     // barrier if you need all threads to see the updated structure
