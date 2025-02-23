@@ -975,8 +975,8 @@ void XY_SAW_LongInteraction::LaunchIterations(long long n_iters) {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-        if (team_member.league_rank() == 0 && team_member.team_rank() == 0) {
-
+        //if (team_member.league_rank() == 0 && team_member.team_rank() == 0) {
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             for (long long step = 0; step < 100; ++step) {
                 //for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
                 //printf(" step = %lld \n", step);
@@ -999,7 +999,8 @@ void XY_SAW_LongInteraction::LaunchIterations(long long n_iters) {
                 }
                 // }
             }
-        }
+            //}
+        });
         //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // });
     }
