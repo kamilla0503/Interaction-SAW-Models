@@ -985,13 +985,15 @@ void XY_SAW_LongInteraction::LaunchIterations(long long n_iters) {
            // if (mc_step_type < p_for_local_update) {
                 auto rand_gen2 = local_pool.get_state();
                 double flipMoveType = rand_gen2.drand(0.0, 1.0);
-            local_pool.free_state(rand_gen2);
+                local_pool.free_state(rand_gen2);
                 if (flipMoveType < 0.5) {
                     // Instead of FlipMove_AddEnd(), call your hierarchical energy update for "end"
                     hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+                    team_member.team_barrier();
                 } else {
                     // Instead of FlipMove_AddStart(), call your hierarchical energy update for "start"
                     hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+                    team_member.team_barrier();
                 }
            // }
         }
