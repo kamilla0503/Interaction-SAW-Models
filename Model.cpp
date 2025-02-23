@@ -560,6 +560,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             },
             flip_data.newE()
     );
+    team_member.team_barrier();
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -629,9 +630,13 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
     // team_member.team_barrier(); Do I need it?
     team_member.team_barrier();
+
+
+
     if (!accept_move) {
         return;
     }
+
     hierarchicalEnergy(team_member, flip_data_local);
     team_member.team_barrier();
 
@@ -741,7 +746,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
-    accept_move = Kokkos::single(Kokkos::PerTeam(team_member), accept_move);
+    //accept_move = Kokkos::single(Kokkos::PerTeam(team_member), accept_move);
 
     // team_member.team_broadcast([&](bool& val) { val = accept_move; }, 0);
 
