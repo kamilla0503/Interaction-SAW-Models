@@ -632,55 +632,65 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     team_member.team_barrier();
 
 
-
+/*
     if (!accept_move) {
         return;
+    }*/
+    if (accept_move) {
+        hierarchicalEnergy(team_member, flip_data_local);
+        team_member.team_barrier();
+
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+            //printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
+            double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
+            double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
+
+            auto rand_gen = pool.get_state();
+            double q_ifaccept = rand_gen.drand(0., 1.);
+            pool.free_state(rand_gen);
+
+            if (q_ifaccept < p_metropolis) {
+                flip_data_local.E(0) = flip_data_local.newE();
+                flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
+                flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
+                flip_data_local.directions(flip_data_local.previous_monomers(
+                        flip_data_local.end_conformation(0))) = flip_data_local.direction();
+                flip_data_local.start_index_in_nodes_position(0) =
+                        (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L();
+
+            } else {
+                // reject => revert
+                // e.g. remove newly added monomer, restore old
+                // ...
+                coord_t del = flip_data_local.end_conformation(0);
+                flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(
+                        flip_data_local.end_conformation(0));
+                flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
+                flip_data_local.previous_monomers(del) = NO_SAW_NODE;
+                flip_data_local.sequence_on_lattice(del) = NO_XY_SPIN;
+
+                //add the previous beginning
+                flip_data_local.previous_monomers(
+                        flip_data_local.start_conformation(0)) = flip_data_local.save_start_conformation(0);
+                flip_data_local.next_monomers(
+                        flip_data_local.save_start_conformation(0)) = flip_data_local.start_conformation(0);
+                flip_data_local.start_conformation(0) = flip_data_local.save_start_conformation(0);
+                flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = flip_data_local.oldspin(0);
+
+                flip_data_local.lattice_nodes_positions(
+                        flip_data_local.start_index_in_nodes_position(0)) = flip_data_local.start_conformation(0);
+
+            }
+            flip_data_local.newE() = 0;
+        });
+        // optional barrier
+        // team_member.team_barrier();
     }
 
-    hierarchicalEnergy(team_member, flip_data_local);
-    team_member.team_barrier();
+    else {
 
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-        //printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
-        double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
-        double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
-
-        auto rand_gen = pool.get_state();
-        double q_ifaccept = rand_gen.drand(0., 1.);
-        pool.free_state(rand_gen);
-
-        if (q_ifaccept < p_metropolis) {
-            flip_data_local.E(0) = flip_data_local.newE();
-            flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
-            flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
-            flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = flip_data_local.direction();
-            flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L();
-
-        } else {
-            // reject => revert
-            // e.g. remove newly added monomer, restore old
-            // ...
-            coord_t del = flip_data_local.end_conformation(0);
-            flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(flip_data_local.end_conformation(0));
-            flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
-            flip_data_local.previous_monomers(del) = NO_SAW_NODE;
-            flip_data_local.sequence_on_lattice(del) = NO_XY_SPIN;
-
-            //add the previous beginning
-            flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = flip_data_local.save_start_conformation(0);
-            flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = flip_data_local.start_conformation(0);
-            flip_data_local.start_conformation(0) = flip_data_local.save_start_conformation(0);
-            flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0)) = flip_data_local.oldspin(0);
-
-            flip_data_local.lattice_nodes_positions(flip_data_local.start_index_in_nodes_position(0)) = flip_data_local.start_conformation(0);
-
-        }
-        flip_data_local.newE()= 0;
-    });
-    // optional barrier
-    // team_member.team_barrier();
-
+    }
     team_member.team_barrier();
 
 }
@@ -733,7 +743,8 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 
     // barrier if you need all threads to see the updated structure
     //   team_member.team_barrier();
-
+    team_member.team_barrier();
+    
     return accept_move;
 }
 
