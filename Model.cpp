@@ -962,6 +962,44 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
 void XY_SAW_LongInteraction::LaunchIterations(long long n_iters) {
 
+    static bool pool_initialized = false;
+    static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
+    if (!pool_initialized) {
+        my_pool.init(256, 12345);
+        pool_initialized = true;
+    }
+    auto local_pool = my_pool;
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    using member_type = team_policy::member_type;
+    team_policy policy(1, 512, 1);
+    auto flip_data_local = flip_data;
+    Kokkos::parallel_for("hierarchicalKernel", policy,
+                         KOKKOS_LAMBDA(const member_type &team_member) {
+        for (long long step = 0; step < 100; ++step) {
+        //for (long long step = 0; step < flip_data_local.iters_to_update(); ++step) {
+            //printf(" step = %lld \n", step);
+            auto rand_gen = pool.get_state();
+            double mc_step_type = rand_gen.drand(0.0, 1.0);
+            pool.free_state(rand_gen);
+            // Decide which type of update to perform:
+            if (mc_step_type < p_for_local_update) {
+                auto rand_gen2 = pool.get_state();
+                double flipMoveType = rand_gen2.drand(0.0, 1.0);
+                pool.free_state(rand_gen2);
+                if (flipMoveType < 0.5) {
+                    // Instead of FlipMove_AddEnd(), call your hierarchical energy update for "end"
+                    hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, pool);
+                } else {
+                    // Instead of FlipMove_AddStart(), call your hierarchical energy update for "start"
+                    hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, pool);
+                }
+            }
+        }
+
+        //Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        // });
+    }
+    );
 
 
 }
