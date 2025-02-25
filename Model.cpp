@@ -808,7 +808,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
-        for (long long i = 0; i < 3; ++i) {
+        for (long long i = 0; i < 2; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
             auto rand_gen = local_pool.get_state();
             double flipMoveType = rand_gen.drand(0., 1.);
@@ -855,7 +855,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
 
 
 
-        for (long long i = 0; i < 3; ++i) {
+        for (long long i = 0; i < 2; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
             auto rand_gen = local_pool.get_state();
             double flipMoveType = rand_gen.drand(0., 1.);
