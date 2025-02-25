@@ -621,7 +621,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
    // team_member.team_barrier(); Do I need it?
 
     hierarchicalEnergy(team_member, flip_data_local);
-    
+
     if (!accept_move) {
         return;
     }
@@ -692,8 +692,26 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-            hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+
+        for (long long i = 0; i < 3; ++i) {
+            //double flipMoveType = distribution_urd(generator_urd) ;
+            auto rand_gen = pool.get_state();
+            double flipMoveType = rand_gen.drand(0., 1.);
+            pool.free_state(rand_gen);
+
+
+            if (flipMoveType<0.5) {
+                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+                //model->FlipMove_AddEnd(step, spinvalue);
+                //FlipMove_AddEnd_Device(flip_data_copy, step, spinvalue);
+            }
+            else {
+                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+                // model->FlipMove_AddStart(step, spinvalue);
+            }
+        }
+            //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
@@ -828,8 +846,29 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+
+
+
+        for (long long i = 0; i < 3; ++i) {
+            //double flipMoveType = distribution_urd(generator_urd) ;
+            auto rand_gen = pool.get_state();
+            double flipMoveType = rand_gen.drand(0., 1.);
+            pool.free_state(rand_gen);
+
+
+            if (flipMoveType<0.5) {
+                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+                //model->FlipMove_AddEnd(step, spinvalue);
+                //FlipMove_AddEnd_Device(flip_data_copy, step, spinvalue);
+            }
+            else {
+                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+                // model->FlipMove_AddStart(step, spinvalue);
+            }
+        }
+
+        //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
