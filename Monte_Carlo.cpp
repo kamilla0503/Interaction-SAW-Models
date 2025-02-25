@@ -8,7 +8,7 @@
 
 
 #ifndef  MC_STEPS
-#define MC_STEPS 10000000000 //99000000 //10000000000
+#define MC_STEPS 10000 //10000000000 //99000000 //10000000000
 #endif
 
 #define URD_SEED 121
@@ -65,7 +65,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     long long n_steps_out = 10*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 1*model->number_of_spins()*model->number_of_spins();
-    long long iters = 2;
+    long long iters = 1;
     //Kokkos::Tools::InitArguments args;
     //args.num_threads = 4;
 //    Kokkos::initialize(Kokkos::InitializationSettings()

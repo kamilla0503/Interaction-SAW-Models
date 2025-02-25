@@ -675,11 +675,11 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 
     // team_member.team_barrier(); Do I need it?
 
-    hierarchicalEnergy(team_member, flip_data_local);
+    //hierarchicalEnergy(team_member, flip_data_local);
     if (!accept_move) {
         return;
     }
-    //hierarchicalEnergy(team_member, flip_data_local);
+    hierarchicalEnergy(team_member, flip_data_local);
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
@@ -735,12 +735,12 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
    // team_member.team_barrier(); Do I need it?
 
-    hierarchicalEnergy(team_member, flip_data_local);
+   // hierarchicalEnergy(team_member, flip_data_local);
 
     if (!accept_move) {
         return;
     }
-   // hierarchicalEnergy(team_member, flip_data_local);
+    hierarchicalEnergy(team_member, flip_data_local);
    // team_member.team_barrier();
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
@@ -827,7 +827,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
             }
         }*/
             hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+       // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
@@ -873,7 +873,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
         }*/
 
         hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+       // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
