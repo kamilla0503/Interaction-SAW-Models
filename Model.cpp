@@ -683,7 +683,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
-        printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
+       // printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = pool.get_state();
@@ -744,7 +744,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
    // team_member.team_barrier();
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
+       // printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
         //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
         //printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
@@ -853,8 +853,6 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-
-
 /*
         for (long long i = 0; i < 2; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
