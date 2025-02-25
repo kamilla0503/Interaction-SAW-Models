@@ -695,9 +695,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
 
         for (long long i = 0; i < 3; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
-            auto rand_gen = pool.get_state();
+            auto rand_gen = local_pool.get_state();
             double flipMoveType = rand_gen.drand(0., 1.);
-            pool.free_state(rand_gen);
+            local_pool.free_state(rand_gen);
 
 
             if (flipMoveType<0.5) {
@@ -851,9 +851,9 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
 
         for (long long i = 0; i < 3; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
-            auto rand_gen = pool.get_state();
+            auto rand_gen = local_pool.get_state();
             double flipMoveType = rand_gen.drand(0., 1.);
-            pool.free_state(rand_gen);
+            local_pool.free_state(rand_gen);
 
 
             if (flipMoveType<0.5) {
