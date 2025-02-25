@@ -611,6 +611,59 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 }
 
 
+
+KOKKOS_INLINE_FUNCTION
+bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                                  const  FlipMoveData &flip_data_local,
+                                  Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
+{
+    bool accept_move = true;
+    // single => only 1 thread in this team does the update
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        // Example random usage
+        auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
+        flip_data_local.direction()  = rand_gen.urand64() % 6;
+        pool.free_state(rand_gen);
+
+        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
+        // printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+        flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
+
+        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
+            accept_move = 0; // Set the flag to indicate rejection
+            return;
+        }
+        //coord_t flip_data_local.save_end_conformation(0);
+        auto rand_gen1 = pool.get_state();
+        flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI());
+        pool.free_state(rand_gen1);
+        //delete end
+        flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
+        flip_data_local.end_conformation(0) = flip_data_local.previous_monomers( flip_data_local.end_conformation(0));
+        flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = NO_SAW_NODE;
+        flip_data_local.next_monomers( flip_data_local.end_conformation(0)) = NO_SAW_NODE;
+        flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
+
+        //add the new beginning
+        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = new_point;
+        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue(); //выбор спина
+        flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
+        flip_data_local.start_conformation(0) = new_point;
+
+        long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
+        //if (position_new == -1 ) position_new = flip_data_local.L - 1;
+        flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
+
+    });
+
+    // barrier if you need all threads to see the updated structure
+    //   team_member.team_barrier();
+
+    return accept_move;
+}
+
+
+
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                               const  FlipMoveData &flip_data_local,
@@ -778,55 +831,6 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     );
 }
 
-KOKKOS_INLINE_FUNCTION
-bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                                const  FlipMoveData &flip_data_local,
-                                Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
-{
-    bool accept_move = true;
-    // single => only 1 thread in this team does the update
-    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        // Example random usage
-        auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
-        flip_data_local.direction()  = rand_gen.urand64() % 6;
-        pool.free_state(rand_gen);
-
-        coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
-        // printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
-        flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
-
-        if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
-            accept_move = 0; // Set the flag to indicate rejection
-            return;
-        }
-        //coord_t flip_data_local.save_end_conformation(0);
-        auto rand_gen1 = pool.get_state();
-        flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI());
-        pool.free_state(rand_gen1);
-        //delete end
-        flip_data_local.save_end_conformation(0) = flip_data_local.end_conformation(0);
-        flip_data_local.end_conformation(0) = flip_data_local.previous_monomers( flip_data_local.end_conformation(0));
-        flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = NO_SAW_NODE;
-        flip_data_local.next_monomers( flip_data_local.end_conformation(0)) = NO_SAW_NODE;
-        flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
-
-        //add the new beginning
-        flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = new_point;
-        flip_data_local.sequence_on_lattice(new_point) = flip_data_local.spinValue(); //выбор спина
-        flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
-        flip_data_local.start_conformation(0) = new_point;
-
-        long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
-        //if (position_new == -1 ) position_new = flip_data_local.L - 1;
-        flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
-
-    });
-
-    // barrier if you need all threads to see the updated structure
-    //   team_member.team_barrier();
-
-    return accept_move;
-}
 
 void XY_SAW_LongInteraction::FlipMove_AddStart() {
     static bool pool_initialized = false;
