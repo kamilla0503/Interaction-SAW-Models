@@ -808,6 +808,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
+        /*
         for (long long i = 0; i < 2; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
             auto rand_gen = local_pool.get_state();
@@ -824,9 +825,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 // model->FlipMove_AddStart(step, spinvalue);
             }
-        }
-            //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        }*/
+            hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
@@ -854,7 +855,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
 
-
+/*
         for (long long i = 0; i < 2; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
             auto rand_gen = local_pool.get_state();
@@ -871,10 +872,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 // model->FlipMove_AddStart(step, spinvalue);
             }
-        }
+        }*/
 
-        //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
