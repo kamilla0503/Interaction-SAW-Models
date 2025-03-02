@@ -358,6 +358,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     N_pairs_host() = pairs_number;
     Kokkos::deep_copy(flip_data.N_pairs,  N_pairs_host);
 
+
+    flip_data.accept_move = Kokkos::View<bool, Kokkos::CudaSpace>("accept_move"); 
+    Kokkos::deep_copy(flip_data.accept_move,  0);
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -542,15 +546,17 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
-                long i = flip_data.i_index(ind);
-                long j = flip_data.j_index(ind);
-                coord_t pos_i   = flip_data.lattice_nodes_positions(i);
-                double theta_i  = flip_data.sequence_on_lattice(pos_i);
-                coord_t pos_j  = flip_data.lattice_nodes_positions(j);
-                double theta_j = flip_data.sequence_on_lattice(pos_j);
-                double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
-                r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
-                H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
+                    if (flip_data.accept_move) {
+                    long i = flip_data.i_index(ind);
+                    long j = flip_data.j_index(ind);
+                    coord_t pos_i   = flip_data.lattice_nodes_positions(i);
+                    double theta_i  = flip_data.sequence_on_lattice(pos_i);
+                    coord_t pos_j  = flip_data.lattice_nodes_positions(j);
+                    double theta_j = flip_data.sequence_on_lattice(pos_j);
+                    double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
+                    r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
+                }
             },
             flip_data.newE()
     );
@@ -808,7 +814,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
 
-        /*
+        
         for (long long i = 0; i < 2; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
             auto rand_gen = local_pool.get_state();
@@ -825,9 +831,9 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 // model->FlipMove_AddStart(step, spinvalue);
             }
-        }*/
-            hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        }
+            //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
+        //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
@@ -853,7 +859,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     auto flip_data_local = flip_data;
     Kokkos::parallel_for("hierarchicalKernel", policy,
                          KOKKOS_LAMBDA(const member_type &team_member) {
-/*
+
         for (long long i = 0; i < 2; ++i) {
             //double flipMoveType = distribution_urd(generator_urd) ;
             auto rand_gen = local_pool.get_state();
@@ -870,10 +876,10 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
                 // model->FlipMove_AddStart(step, spinvalue);
             }
-        }*/
+        }
 
-        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-       hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+//        hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
+//       hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
