@@ -360,7 +360,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 
     flip_data.accept_move = Kokkos::View<bool, Kokkos::CudaSpace>("accept_move"); 
-    Kokkos::deep_copy(flip_data.accept_move,  0);
+    auto accept_move_host = Kokkos::create_mirror_view(flip_data.accept_move);
+    //flip_data.PI
+    accept_move_host() = pairs_number;
+    Kokkos::deep_copy(flip_data.accept_move,   accept_move_host);
 
 }
 
