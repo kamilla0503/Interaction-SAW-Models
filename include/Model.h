@@ -55,8 +55,7 @@ struct FlipMoveData {
     Kokkos::View<long, Kokkos::CudaSpace> L;
     Kokkos::View<long, Kokkos::CudaSpace> lattice_side_device;
     // Random number generator pool
-   Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
-
+    Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
 
     Kokkos::View<double*, Kokkos::CudaSpace> oldspin;
     Kokkos::View<coord_t*, Kokkos::CudaSpace> save_start_conformation;
@@ -70,11 +69,12 @@ struct FlipMoveData {
     Kokkos::View<double, Kokkos::CudaSpace> PI;
     //PI = std::atan(1.0)*4;
 
-
     Kokkos::View<long*, Kokkos::CudaSpace> i_index;
     Kokkos::View<long*, Kokkos::CudaSpace> j_index;
 
     Kokkos::View<long, Kokkos::CudaSpace> N_pairs;
+
+    Kokkos::View<bool, Kokkos::CudaSpace> accept_move; 
 };
 
 
