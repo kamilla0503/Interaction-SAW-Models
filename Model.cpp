@@ -933,6 +933,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         {
             // Decide: AddEnd vs AddStart
             double flipMoveType = rand_gen.drand(0., 1.);
+            local_pool.free_state(rand_gen);
             if (flipMoveType < 0.5) {
                 // This internally does an O(N^2) parallel_reduce for energy
                 hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
@@ -940,13 +941,12 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 // Same logic but for "AddStart"
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
-
             // Optional: team_member.team_barrier() if you need a sync each step
             // team_member.team_barrier();
         }
 
         // Hand back the random state
-        local_pool.free_state(rand_gen);
+         
     }); // end parallel_for
 
     // (F) Done! We've performed MC_STEPS sequential moves on the device,
