@@ -809,7 +809,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     auto local_pool = my_pool;
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    team_policy policy(1, 512, 1);
+    team_policy policy(1, 1023, 1);
     //team_policy policy(1, 1, 512);
     auto n_iters = MC_STEPS;
 
