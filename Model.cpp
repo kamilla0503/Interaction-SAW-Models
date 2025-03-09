@@ -915,7 +915,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 
     // (B) We'll capture a copy of flip_data (assuming it's device-accessible)
     auto flip_data_local = flip_data;
-
+    auto local_pool = my_pool;
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     team_policy policy(1, 1023, 1);
@@ -926,7 +926,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
       KOKKOS_LAMBDA(const team_policy::member_type &team_member)
     {
         // Pull one random state from the pool for this entire Markov chain:
-        auto rand_gen = my_pool.get_state();
+        auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
         for (long long step = 0; step < 10000+20; ++step)
@@ -935,10 +935,10 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             double flipMoveType = rand_gen.drand(0., 1.);
             if (flipMoveType < 0.5) {
                 // This internally does an O(N^2) parallel_reduce for energy
-                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, my_pool);
+                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
             } else {
                 // Same logic but for "AddStart"
-                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, my_pool);
+                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
 
             // Optional: team_member.team_barrier() if you need a sync each step
@@ -946,7 +946,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         }
 
         // Hand back the random state
-        my_pool.free_state(rand_gen);
+        local_pool.free_state(rand_gen);
     }); // end parallel_for
 
     // (F) Done! We've performed MC_STEPS sequential moves on the device,
