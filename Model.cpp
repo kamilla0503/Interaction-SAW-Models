@@ -692,7 +692,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
-       // printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
+        printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = pool.get_state();
@@ -755,7 +755,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
        // printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
         //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-        //printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
+        printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
@@ -900,6 +900,61 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     }
     );
 }
+
+
+// In your XY_SAW_LongInteraction class or wherever:
+void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS)
+{
+    // (A) Create (or re-use) a random pool only once
+    static bool pool_initialized = false;
+    static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
+    if (!pool_initialized) {
+        my_pool.init(/*number of states*/ 256, /*seed*/ 12345);
+        pool_initialized = true;
+    }
+
+    // (B) We'll capture a copy of flip_data (assuming it's device-accessible)
+    auto flip_data_local = flip_data;
+
+    // (C) We launch exactly one team, with 1023 threads, as you do now
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    team_policy policy(1, 1023, 1);
+
+    // (D) Single parallel_for that spawns exactly 1 team (1 block).
+    //     Inside that team, we do the entire Markov chain sequentially.
+    Kokkos::parallel_for("MCMC_on_device", policy,
+      KOKKOS_LAMBDA(const team_policy::member_type &team_member)
+    {
+        // Pull one random state from the pool for this entire Markov chain:
+        auto rand_gen = my_pool.get_state();
+
+        // (E) The MCMC loop: sequential updates, each step depends on the last
+        for (long long step = 0; step < 10000+20; ++step)
+        {
+            // Decide: AddEnd vs AddStart
+            double flipMoveType = rand_gen.drand(0., 1.);
+            if (flipMoveType < 0.5) {
+                // This internally does an O(N^2) parallel_reduce for energy
+                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, my_pool);
+            } else {
+                // Same logic but for "AddStart"
+                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, my_pool);
+            }
+
+            // Optional: team_member.team_barrier() if you need a sync each step
+            // team_member.team_barrier();
+        }
+
+        // Hand back the random state
+        my_pool.free_state(rand_gen);
+    }); // end parallel_for
+
+    // (F) Done! We've performed MC_STEPS sequential moves on the device,
+    //     with only ONE kernel launch and no host/device sync every step.
+}
+
+
+
 
 // This is correct separated version
 KOKKOS_INLINE_FUNCTION
