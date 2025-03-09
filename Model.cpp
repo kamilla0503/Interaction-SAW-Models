@@ -940,7 +940,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         //hierarchicalEnergy(team_member, flip_data_local); 
         // Pull one random state from the pool for this entire Markov chain:
        // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        auto rand_gen = local_pool.get_state();
+//        auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
         for (long long step = 0; step < 20; ++step)
@@ -966,7 +966,9 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 team_member.team_barrier();
             }); //for single block 
 
+            printf("step = %lld Before energy  \n", step);
             hierarchicalEnergy(team_member, flip_data_local);
+            printf("step = %lld After energy  \n", step);
 
             if ( flip_data_local.flipMoveType()  < 0.5) {
                 // This internally does an O(N^2) parallel_reduce for energy
@@ -984,7 +986,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 
         // Hand back the random state
         // }); // end for single block 
-        hierarchicalEnergy(team_member, flip_data_local);
+//        hierarchicalEnergy(team_member, flip_data_local);
 
     }); // end parallel_for
 
