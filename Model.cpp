@@ -954,12 +954,12 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 if ( flip_data_local.flipMoveType()  < 0.5) {
                     // This internally does an O(N^2) parallel_reduce for energy
                     printf("step = %lld AddEnd \n", step);
-                    hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
+                    hierarchicalFlipMoveAddEnd(team_member, flip_data_local, local_pool);
                     //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
                 } else {
                     // Same logic but for "AddStart"
                     printf("step = %lld AddStart \n", step);
-                    hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
+                    hierarchicalFlipMoveAddStart(team_member, flip_data_local, local_pool);
                     //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
                 }
                 // Optional: team_member.team_barrier() if you need a sync each step
