@@ -548,7 +548,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     printf("start hE; N_pairs = %ld \n", flip_data.N_pairs());
     Kokkos::parallel_reduce(
-            Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
+            //Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
+            Kokkos::ThreadVectorRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
                     if (flip_data.accept_move()) {
                     long i = flip_data.i_index(ind);
@@ -922,7 +923,9 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     auto local_pool = my_pool;
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    team_policy policy(1, 512, 1);
+    //team_policy policy(1, 512, 1);
+    team_policy policy(1, 1, 512);
+
 
     // (D) Single parallel_for that spawns exactly 1 team (1 block).
     //     Inside that team, we do the entire Markov chain sequentially.
