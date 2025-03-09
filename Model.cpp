@@ -690,7 +690,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
-        printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
+       // printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
         double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = pool.get_state();
@@ -752,7 +752,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
        // printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
         //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-        printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
+      //  printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
@@ -825,7 +825,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 //        auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
-        for (long long step = 0; step < 20; ++step)
+        for (long long step = 0; step < 10000+ 20; ++step)
         {
              //double flipMoveType; 
             // Decide: AddEnd vs AddStart
@@ -835,12 +835,12 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 local_pool.free_state(rand_gen);
                 if ( flip_data_local.flipMoveType()  < 0.5) {
                     // This internally does an O(N^2) parallel_reduce for energy
-                    printf("step = %lld AddEnd \n", step);
+                   // printf("step = %lld AddEnd \n", step);
                     hierarchicalFlipMoveAddEnd(team_member, flip_data_local, local_pool);
                     //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
                 } else {
                     // Same logic but for "AddStart"
-                    printf("step = %lld AddStart \n", step);
+                   // printf("step = %lld AddStart \n", step);
                     hierarchicalFlipMoveAddStart(team_member, flip_data_local, local_pool);
                     //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
                 }
@@ -848,18 +848,18 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 //team_member.team_barrier();
             }); //for single block 
 
-            printf("step = %lld Before energy  \n", step);
+           // printf("step = %lld Before energy  \n", step);
             hierarchicalEnergy(team_member, flip_data_local);
-            printf("step = %lld After energy  \n", step);
+           // printf("step = %lld After energy  \n", step);
 
             if ( flip_data_local.flipMoveType()  < 0.5) {
                 // This internally does an O(N^2) parallel_reduce for energy
-                printf("step = %lld AddEnd \n", step);
+               // printf("step = %lld AddEnd \n", step);
                 //hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
                 hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
             } else {
                 // Same logic but for "AddStart"
-                printf("step = %lld AddStart \n", step);
+              //  printf("step = %lld AddStart \n", step);
                 //hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
