@@ -755,7 +755,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
 
     hierarchicalEnergy(team_member, flip_data_local);
 
-    if (!accept_move.flip_data_local()) {
+    if (!flip_data_local.accept_move()) {
         return;
     }
     //hierarchicalEnergy(team_member, flip_data_local);
