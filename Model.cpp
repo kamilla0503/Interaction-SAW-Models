@@ -546,6 +546,7 @@ KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
 {
+    printf("start hE \n");
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
@@ -563,7 +564,10 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             },
             flip_data.newE()
     );
+    printf("Finish hE \n");
 }
+
+
 
 KOKKOS_INLINE_FUNCTION
 bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
@@ -936,9 +940,11 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             local_pool.free_state(rand_gen);
             if (flipMoveType < 0.5) {
                 // This internally does an O(N^2) parallel_reduce for energy
+                printf("step = %lld AddEnd \n", step);
                 hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
             } else {
                 // Same logic but for "AddStart"
+                printf("step = %lld AddStart \n", step);
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
             // Optional: team_member.team_barrier() if you need a sync each step
