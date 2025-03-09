@@ -926,10 +926,11 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 
     // (D) Single parallel_for that spawns exactly 1 team (1 block).
     //     Inside that team, we do the entire Markov chain sequentially.
-    Kokkos::parallel_for("MCMC_on_device", policy,
+    Kokkos::parallel_for("MCMC_on_device",  policy,
       KOKKOS_LAMBDA(const team_policy::member_type &team_member)
     {
         // Pull one random state from the pool for this entire Markov chain:
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
@@ -952,7 +953,8 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         }
 
         // Hand back the random state
-         
+        }); // end for single block 
+
     }); // end parallel_for
 
     // (F) Done! We've performed MC_STEPS sequential moves on the device,
