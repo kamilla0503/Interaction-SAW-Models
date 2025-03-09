@@ -546,7 +546,7 @@ KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
 {
-    //printf("start hE \n");
+    printf("start hE; N_pairs = %ld \n", flip_data.N_pairs());
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
