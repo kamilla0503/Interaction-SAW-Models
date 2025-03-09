@@ -955,7 +955,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
             // Optional: team_member.team_barrier() if you need a sync each step
-            // team_member.team_barrier();
+             team_member.team_barrier();
         }
 
         // Hand back the random state
