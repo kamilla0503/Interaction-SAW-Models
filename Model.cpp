@@ -572,12 +572,12 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
 
 KOKKOS_INLINE_FUNCTION
-bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                 const  FlipMoveData &flip_data_local,
                                 Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // We'll store a bool `accept_move`. If it's false, we skip
-    bool accept_move = true;
+    //bool accept_move = true;
     // single => only 1 thread in this team does the update
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
@@ -592,9 +592,11 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 
         // Check self-avoid
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN) {
-            accept_move = false;
+            //accept_move = false;
+            flip_data_local.accept_move() = 0;
             return;  // skip the rest
         }
+        flip_data_local.accept_move() = 1;
         auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
         pool.free_state(rand_gen1);
@@ -622,17 +624,17 @@ bool hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
     // barrier if you need all threads to see the updated structure
  //   team_member.team_barrier();
 
-    return accept_move;
+    //return accept_move;
 }
 
 
 
 KOKKOS_INLINE_FUNCTION
-bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                   const  FlipMoveData &flip_data_local,
                                   Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
-    bool accept_move = true;
+    //bool accept_move = true;
     // single => only 1 thread in this team does the update
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
@@ -645,9 +647,10 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
-            accept_move = 0; // Set the flag to indicate rejection
+            flip_data_local.accept_move() = 0; // Set the flag to indicate rejection
             return;
         }
+        flip_data_local.accept_move() = 1;
         //coord_t flip_data_local.save_end_conformation(0);
         auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI());
@@ -674,7 +677,7 @@ bool hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
     // barrier if you need all threads to see the updated structure
     //   team_member.team_barrier();
 
-    return accept_move;
+   // return accept_move;
 }
 
 
@@ -685,13 +688,13 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
                                               Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // 1) Attempt move
-    bool accept_move = hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
+    hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
     // team_member.team_barrier(); Do I need it?
 
     hierarchicalEnergy(team_member, flip_data_local);
-    if (!accept_move) {
+    if (!flip_data_local.accept_move() ) {
         return;
     }
    // hierarchicalEnergy(team_member, flip_data_local);
@@ -746,13 +749,13 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
                            Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // 1) Attempt move
-    bool accept_move = hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
+    hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
    // team_member.team_barrier(); Do I need it?
 
-   hierarchicalEnergy(team_member, flip_data_local);
+    hierarchicalEnergy(team_member, flip_data_local);
 
-    if (!accept_move) {
+    if (!accept_move.flip_data_local()) {
         return;
     }
     //hierarchicalEnergy(team_member, flip_data_local);
