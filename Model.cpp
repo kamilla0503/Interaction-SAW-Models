@@ -546,7 +546,7 @@ KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
 {
-    printf("start hE \n");
+    //printf("start hE \n");
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
@@ -564,7 +564,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
             },
             flip_data.newE()
     );
-    printf("Finish hE \n");
+    //printf("Finish hE \n");
 }
 
 
@@ -934,7 +934,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
-        for (long long step = 0; step < 10000+20; ++step)
+        for (long long step = 0; step < 100+20; ++step)
         {
             // Decide: AddEnd vs AddStart
             double flipMoveType = rand_gen.drand(0., 1.);
