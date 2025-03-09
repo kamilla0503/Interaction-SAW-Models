@@ -354,16 +354,16 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.N_pairs = Kokkos::View<long, Kokkos::CudaSpace>("N_pairs");
 
     auto N_pairs_host = Kokkos::create_mirror_view(flip_data.N_pairs);
-    //flip_data.PI
     N_pairs_host() = pairs_number;
     Kokkos::deep_copy(flip_data.N_pairs,  N_pairs_host);
 
 
     flip_data.accept_move = Kokkos::View<bool, Kokkos::CudaSpace>("accept_move"); 
     auto accept_move_host = Kokkos::create_mirror_view(flip_data.accept_move);
-    //flip_data.PI
     accept_move_host() = pairs_number;
     Kokkos::deep_copy(flip_data.accept_move,   accept_move_host);
+
+    flip_data.flipMoveType = Kokkos::View<double, Kokkos::CudaSpace>("flipMoveType");
 
 }
 
@@ -688,12 +688,12 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
                                               Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // 1) Attempt move
-    hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
+    //hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
 
     // team_member.team_barrier(); Do I need it?
 
-    hierarchicalEnergy(team_member, flip_data_local);
+    //hierarchicalEnergy(team_member, flip_data_local);
     if (!flip_data_local.accept_move() ) {
         return;
     }
@@ -749,11 +749,11 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
                            Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // 1) Attempt move
-    hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
+    //hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
     //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
    // team_member.team_barrier(); Do I need it?
 
-    hierarchicalEnergy(team_member, flip_data_local);
+    //hierarchicalEnergy(team_member, flip_data_local);
 
     if (!flip_data_local.accept_move()) {
         return;
@@ -937,32 +937,53 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
       KOKKOS_LAMBDA(const team_policy::member_type &team_member)
     {
 
-        hierarchicalEnergy(team_member, flip_data_local); 
+        //hierarchicalEnergy(team_member, flip_data_local); 
         // Pull one random state from the pool for this entire Markov chain:
-        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+       // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
         for (long long step = 0; step < 20; ++step)
         {
+             //double flipMoveType; 
             // Decide: AddEnd vs AddStart
-            double flipMoveType = rand_gen.drand(0., 1.);
-            local_pool.free_state(rand_gen);
-            if (flipMoveType < 0.5) {
+            Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+                auto rand_gen = local_pool.get_state();
+                flip_data_local.flipMoveType() = rand_gen.drand(0., 1.);
+                local_pool.free_state(rand_gen);
+                if ( flip_data_local.flipMoveType()  < 0.5) {
+                    // This internally does an O(N^2) parallel_reduce for energy
+                    printf("step = %lld AddEnd \n", step);
+                    hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
+                    //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
+                } else {
+                    // Same logic but for "AddStart"
+                    printf("step = %lld AddStart \n", step);
+                    hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
+                    //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
+                }
+                // Optional: team_member.team_barrier() if you need a sync each step
+                team_member.team_barrier();
+            }); //for single block 
+
+            hierarchicalEnergy(team_member, flip_data_local);
+
+            if ( flip_data_local.flipMoveType()  < 0.5) {
                 // This internally does an O(N^2) parallel_reduce for energy
                 printf("step = %lld AddEnd \n", step);
+                //hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
                 hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
             } else {
                 // Same logic but for "AddStart"
                 printf("step = %lld AddStart \n", step);
+                //hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
-            // Optional: team_member.team_barrier() if you need a sync each step
-             team_member.team_barrier();
+
         }
 
         // Hand back the random state
-        }); // end for single block 
+        // }); // end for single block 
         hierarchicalEnergy(team_member, flip_data_local);
 
     }); // end parallel_for
