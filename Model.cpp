@@ -811,7 +811,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     team_policy policy(1, 512, 1);
     //team_policy policy(1, 1, 512);
-
+    auto n_iters = MC_STEPS;
 
     // (D) Single parallel_for that spawns exactly 1 team (1 block).
     //     Inside that team, we do the entire Markov chain sequentially.
@@ -825,7 +825,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 //        auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
-        for (long long step = 0; step < 10000+ 20; ++step)
+        for (long long step = 0; step < n_iters ; ++step)
         {
              //double flipMoveType; 
             // Decide: AddEnd vs AddStart
