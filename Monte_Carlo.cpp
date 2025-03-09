@@ -62,10 +62,10 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-    long long n_steps_out = 100*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_out = 10*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 10*model->number_of_spins()*model->number_of_spins();
-    long long iters = 1;
+    long long iters = n_steps_to_update;
     //Kokkos::Tools::InitArguments args;
     //args.num_threads = 4;
 //    Kokkos::initialize(Kokkos::InitializationSettings()
@@ -74,16 +74,11 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     auto flip_data_copy = model->flip_data; // Capture data by value
     std:: cout << "Start MC" << std:: endl;
 
-
-
-
-
-    model->runMCMCOnDevice(MC_STEPS);
-
-
-/*
     for (long long i = 0; i < MC_STEPS + 20; i+=iters) {
-        mc_step_type = distribution_urd(generator_urd) ; 
+        model->runMCMCOnDevice(n_steps_to_update);
+
+
+    /*    mc_step_type = distribution_urd(generator_urd) ; 
         if (mc_step_type < p_for_local_update) {
             flipMoveType = distribution_urd(generator_urd) ; 
             if (flipMoveType<0.5) {
@@ -101,7 +96,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             spinvalue =  distribution_theta(generators_theta);
             //model->ClusterStep(spinvalue);
         }
-
+*/
  
 
         if (i < n_steps_to_equlibrium) continue;
@@ -114,7 +109,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
         }
     }
 
-*/
+
 
 
 
