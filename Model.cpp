@@ -548,8 +548,8 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     printf("start hE; N_pairs = %ld \n", flip_data.N_pairs());
     Kokkos::parallel_reduce(
-            //Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
-            Kokkos::ThreadVectorRange(team_member,  flip_data.N_pairs() ),
+            Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
+            //Kokkos::ThreadVectorRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
                     if (flip_data.accept_move()) {
                     long i = flip_data.i_index(ind);
