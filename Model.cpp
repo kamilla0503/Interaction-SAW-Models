@@ -561,12 +561,12 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
                     r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
-                    printf("i = %ld; j = %ld ; contrib = %f \n", i, j, Kokkos::cos(theta_i - theta_j) / r_val);
+                   // printf("i = %ld; j = %ld ; contrib = %f \n", i, j, Kokkos::cos(theta_i - theta_j) / r_val);
                 }
             },
             flip_data.newE()
     );
-    //printf("Finish hE \n");
+    printf("Finish hE = %f \n", flip_data.newE());
 }
 
 
@@ -933,12 +933,14 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     Kokkos::parallel_for("MCMC_on_device",  policy,
       KOKKOS_LAMBDA(const team_policy::member_type &team_member)
     {
+
+        hierarchicalEnergy(team_member, flip_data_local); 
         // Pull one random state from the pool for this entire Markov chain:
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         auto rand_gen = local_pool.get_state();
 
         // (E) The MCMC loop: sequential updates, each step depends on the last
-        for (long long step = 0; step < 100+20; ++step)
+        for (long long step = 0; step < 20; ++step)
         {
             // Decide: AddEnd vs AddStart
             double flipMoveType = rand_gen.drand(0., 1.);
@@ -958,6 +960,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 
         // Hand back the random state
         }); // end for single block 
+        hierarchicalEnergy(team_member, flip_data_local);
 
     }); // end parallel_for
 
