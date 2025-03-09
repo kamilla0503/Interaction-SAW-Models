@@ -903,7 +903,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
 
 
 // In your XY_SAW_LongInteraction class or wherever:
-void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS)
+void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 {
     // (A) Create (or re-use) a random pool only once
     static bool pool_initialized = false;

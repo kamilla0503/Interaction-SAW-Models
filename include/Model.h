@@ -125,6 +125,7 @@ public:
     //KOKKOS_INLINE_FUNCTION
     virtual void FlipMove_AddEnd () = 0; //depends on spin variables
     virtual void FlipMove_AddStart () = 0;
+    virtual void runMCMCOnDevice(long long MC_STEPS) = 0;
     KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd1 () = 0; //depends on spin variables
     KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart1 () = 0; //depends on spin variables
 
@@ -181,6 +182,7 @@ public:
     //KOKKOS_INLINE_FUNCTION
     void FlipMove_AddEnd () override;
     void FlipMove_AddStart () override;
+    void runMCMCOnDevice(long long MC_STEPS) override;
     KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;
