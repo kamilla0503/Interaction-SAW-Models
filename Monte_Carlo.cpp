@@ -62,6 +62,8 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
+
+
     long long n_steps_out = 10*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 10*model->number_of_spins()*model->number_of_spins();
