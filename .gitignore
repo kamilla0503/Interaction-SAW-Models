@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# reports nsys 
+*.nsys-rep
+*.sqlite

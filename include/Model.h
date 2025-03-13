@@ -5,6 +5,8 @@
 #ifndef INTERACTION_SAW_MODELS_MODEL_H
 #define INTERACTION_SAW_MODELS_MODEL_H
 
+#include <eigen3/Eigen/Dense>
+
 #include "Lattice.h"
 #include "observable.h"
 #include<Kokkos_Core.hpp>
@@ -195,8 +197,9 @@ public:
     void StartConfiguration();
 
 
+    void gyration(); 
     void out_MC_data(std::fstream& out, long long n_steps);
-    void  updateData();
+    void updateData();
 
 //protected:
     std::valarray<bool> used_coords;
@@ -219,5 +222,58 @@ public:
 
 
 };
+
+
+struct Vector3 {
+    double x, y, z;
+  
+    KOKKOS_INLINE_FUNCTION
+    Vector3() : x(0.0), y(0.0), z(0.0) {}
+  
+    // Overload the += operator for accumulation.
+    KOKKOS_INLINE_FUNCTION
+    Vector3& operator+=(const Vector3& rhs) {
+      x += rhs.x;
+      y += rhs.y;
+      z += rhs.z;
+      return *this;
+    }
+  };
+
+// Structure to hold the gyration tensor
+
+
+
+
+// Custom struct to accumulate the independent components of a symmetric 3x3 gyration tensor.
+struct GyrationTensor {
+    double q00, q01, q02, q11, q12, q22;
+  
+    KOKKOS_INLINE_FUNCTION
+    GyrationTensor() : q00(0.0), q01(0.0), q02(0.0),
+                       q11(0.0), q12(0.0), q22(0.0) {}
+  
+    // Overload the += operator for reduction.
+    KOKKOS_INLINE_FUNCTION
+    GyrationTensor& operator+=(const GyrationTensor& rhs) {
+      q00 += rhs.q00;
+      q01 += rhs.q01;
+      q02 += rhs.q02;
+      q11 += rhs.q11;
+      q12 += rhs.q12;
+      q22 += rhs.q22;
+      return *this;
+    }
+  };
+  
+  // Specialize Kokkos::reduction_identity for GyrationTensor so that it can be used with Kokkos::Sum.
+  namespace Kokkos {
+  template <>
+  struct reduction_identity<GyrationTensor> {
+    KOKKOS_INLINE_FUNCTION
+    static GyrationTensor max() { return GyrationTensor(); }
+  };
+  } // namespace Kokkos
+  
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H

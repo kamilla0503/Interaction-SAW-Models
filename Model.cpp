@@ -375,7 +375,6 @@ double radius(const coord_t& start, const coord_t& end, long lattice_side) {
     long end_x = end % lattice_side;
     long end_y = (end % (lattice_side * lattice_side)) /lattice_side;
     long end_z = end / (lattice_side * lattice_side);
-
     //torus distance;
     double xdiff = abs(end_x - start_x);
     if (xdiff > (lattice_side/2))
@@ -1256,6 +1255,92 @@ void XY_SAW_LongInteraction::Reconnect(short direction) {
 
 }
 
+
+void XY_SAW_LongInteraction::gyration() {
+
+    auto flip_data_local = flip_data; 
+
+    auto L_local = L; 
+    
+    // Compute the center of mass R
+    //double R[3] = {0.0, 0.0, 0.0};
+    Vector3 R;
+    Kokkos::parallel_reduce("compute_center", L_local,
+      KOKKOS_LAMBDA(const int i, Vector3& local_sum) {
+        long pos = flip_data_local.lattice_nodes_positions(i);
+        long x = pos % flip_data_local.lattice_side_device();
+        long y = (pos % (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device())) /flip_data_local.lattice_side_device();
+        long z = pos / (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device());
+        local_sum.x += x;
+        local_sum.y += y;
+        local_sum.z += z;
+      },
+      Kokkos::Sum<Vector3>(R)
+    );
+    R.x /= L_local; R.y /= L_local; R.z /= L_local;
+    
+    // Compute the gyration tensor Q = (1/N) * sum_i (r_i - R)(r_i - R)^T
+    GyrationTensor tensor;
+    Kokkos::parallel_reduce("compute_gyration_tensor", L_local,
+      KOKKOS_LAMBDA (const int i, GyrationTensor& local_tensor) {
+        long pos = flip_data_local.lattice_nodes_positions(i);
+        long x = pos % flip_data_local.lattice_side_device();
+        long y = (pos % (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device())) /flip_data_local.lattice_side_device();
+        long z = pos / (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device());
+        double dx = x - R.x;
+        double dy = y - R.y;
+        double dz = z - R.z;
+        local_tensor.q00 += dx * dx;
+        local_tensor.q01 += dx * dy;
+        local_tensor.q02 += dx * dz;
+        local_tensor.q11 += dy * dy;
+        local_tensor.q12 += dy * dz;
+        local_tensor.q22 += dz * dz;
+      },
+      Kokkos::Sum<GyrationTensor>(tensor)
+    );
+    
+    tensor.q00 /= L;
+    tensor.q01 /= L;
+    tensor.q02 /= L;
+    tensor.q11 /= L;
+    tensor.q12 /= L;
+    tensor.q22 /= L;
+    
+ // Transfer the gyration tensor to an Eigen 3x3 matrix.
+ Eigen::Matrix3d Q;
+ Q << tensor.q00, tensor.q01, tensor.q02,
+      tensor.q01, tensor.q11, tensor.q12,
+      tensor.q02, tensor.q12, tensor.q22;
+
+ // Compute eigenvalues using Eigen's SelfAdjointEigenSolver.
+ Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(Q);
+ if (solver.info() != Eigen::Success) {
+   std::cerr << "Eigenvalue computation failed!" << std::endl;
+   //return -1;
+ }
+ Eigen::Vector3d eigenvalues = solver.eigenvalues();
+
+ // Compute asphericity:
+ // A = [ (λ1-λ2)² + (λ2-λ3)² + (λ3-λ1)² ] / [ 2*(λ1+λ2+λ3)² ]
+ double lambda1 = eigenvalues(0);
+ double lambda2 = eigenvalues(1);
+ double lambda3 = eigenvalues(2);
+ double numerator = (lambda1 - lambda2) * (lambda1 - lambda2) +
+                    (lambda2 - lambda3) * (lambda2 - lambda3) +
+                    (lambda3 - lambda1) * (lambda3 - lambda1);
+ double trace = lambda1 + lambda2 + lambda3;
+ double asphericity = numerator / (2.0 * trace * trace);
+
+// std::cout << "Center-of-mass: (" << center.x << ", " << center.y << ", " << center.z << ")\n";
+ std::cout << "Eigenvalues: " << eigenvalues.transpose() << std::endl;
+ std::cout << "Asphericity: " << asphericity << std::endl;
+
+  
+ 
+}
+
+
 void XY_SAW_LongInteraction::updateData() {
 
     auto start_host = Kokkos::create_mirror_view(flip_data.start_conformation);
@@ -1303,7 +1388,13 @@ void XY_SAW_LongInteraction::updateData() {
     magnetization_4
             << (sum_sin_1 * sum_sin_1 + sum_cos_1 * sum_cos_1) * (sum_sin_1 * sum_sin_1 + sum_cos_1 * sum_cos_1);
 
+
+    gyration();
 }
+
+
+
+
 
 
 void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
