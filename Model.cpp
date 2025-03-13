@@ -1297,6 +1297,8 @@ void XY_SAW_LongInteraction::updateData() {
     mags_sin << sum_sin_1;
     mags_cos << sum_cos_1;
 
+
+    magnetization_1 <<  std::sqrt(sum_sin_1 * sum_sin_1 + sum_cos_1 * sum_cos_1);
     magnetization_2 << sum_sin_1 * sum_sin_1 + sum_cos_1 * sum_cos_1;
     magnetization_4
             << (sum_sin_1 * sum_sin_1 + sum_cos_1 * sum_cos_1) * (sum_sin_1 * sum_sin_1 + sum_cos_1 * sum_cos_1);
@@ -1318,6 +1320,7 @@ void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
 
     out << magnetization_2.mean() << " " << magnetization_2.errorbar() << " ";
     out << magnetization_4.mean() << " " << magnetization_4.errorbar() << " ";
+    out << magnetization_1.mean() << " " << magnetization_1.errorbar() << " ";
 
     out << std::endl;
 }

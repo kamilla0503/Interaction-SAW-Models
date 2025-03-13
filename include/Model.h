@@ -212,6 +212,7 @@ public:
 
     mc_stats::ScalarObservable<double> mags_sin;
     mc_stats::ScalarObservable<double> mags_cos;
+    mc_stats::ScalarObservable<double> magnetization_1;
     mc_stats::ScalarObservable<double> magnetization_2;
     mc_stats::ScalarObservable<double> magnetization_4;
 
