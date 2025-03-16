@@ -8,7 +8,7 @@
 
 
 #ifndef  MC_STEPS
-#define MC_STEPS 100 // 10000000000 //99000000 //10000000000
+#define MC_STEPS 10000000000 //99000000 //10000000000
 #endif
 
 #define URD_SEED 121
@@ -70,10 +70,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     }
    }
    defect_DataStream << "step" << std::endl;
-
-
-
-
+   
     double mc_step_type = 0;
     short step = 0;
     double flipMoveType = 0;
@@ -102,47 +99,18 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 10*model->number_of_spins()*model->number_of_spins();
 
-
-    n_steps_to_update = 1;
-    n_steps_out = 1; 
-    n_steps_to_equlibrium = 1; 
+    // n_steps_to_update = 1;
+    // n_steps_out = 1; 
+    // n_steps_to_equlibrium = 1; 
 
     long long iters = n_steps_to_update;
-    //Kokkos::Tools::InitArguments args;
-    //args.num_threads = 4;
-//    Kokkos::initialize(Kokkos::InitializationSettings()
-//                               .set_disable_warnings(false)
-//                               .set_num_threads(4));
+
     auto flip_data_copy = model->flip_data; // Capture data by value
     std:: cout << "Start MC" << std:: endl;
 
-    for (long long i = 1; i < MC_STEPS + 20; i+=iters) {
+    for (long long i = 0; i < MC_STEPS + 20; i+=iters) {
         model->runMCMCOnDevice(n_steps_to_update);
-
-
-    /*    mc_step_type = distribution_urd(generator_urd) ; 
-        if (mc_step_type < p_for_local_update) {
-            flipMoveType = distribution_urd(generator_urd) ; 
-            if (flipMoveType<0.5) {
-                model->FlipMove_AddEnd(); 
-            }
-            else {
-                model->FlipMove_AddStart(); 
-            }
-        }
-        else if (mc_step_type < p_for_reconnect) {
-            step = distribution_uid_steps(generators_steps);
-            model->Reconnect(step);
-        }
-        else {
-            spinvalue =  distribution_theta(generators_theta);
-            //model->ClusterStep(spinvalue);
-        }
-*/
- 
-
-       // if (i < n_steps_to_equlibrium) continue;
-        //std::cout << "EQ achieved" << std::endl;
+        if (i < n_steps_to_equlibrium) continue;
         if (i%(n_steps_to_update)==0) 
         model->updateData();
 
@@ -153,12 +121,6 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             model->out_dir_data(dirs_DataStream, i);
         }
     }
-
-
-
-
-
-    //Kokkos::finalize();
 
     MCDataStream.close();
 }

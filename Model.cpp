@@ -489,15 +489,6 @@ void XY_SAW_LongInteraction::Energy() {
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             H_total -= energy_i;
         });
-
-
-        /*
-        H_total -= energy_i;
-        // (Optionally, if you want to print only once per team you might do:)
-        if (team_member.team_rank() == 0) {
-            printf(" i = %ld    e_i = %f \n", i, energy_i);
-        }*/
-
     }, flip_data_local.newE );
 }
 
@@ -541,8 +532,6 @@ void hierarchicalEnergy1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &te
     );
 }
 
-
-
 //Try new loop
 KOKKOS_INLINE_FUNCTION
 void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
@@ -583,8 +572,8 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         long dir = rand_gen.urand64() % 6;
         pool.free_state(rand_gen);
         flip_data_local.direction() = dir;
-        printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;  index = %ld; \n ",   
-            flip_data_local.direction(),flip_data_local.end_conformation(0),flip_data_local.start_index_in_nodes_position(0));
+      //  printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;  index = %ld; \n ",   
+       //     flip_data_local.direction(),flip_data_local.end_conformation(0),flip_data_local.start_index_in_nodes_position(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
 
@@ -616,11 +605,8 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         long position_new = flip_data_local.start_index_in_nodes_position(0) ;
 
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
-
     });
-
 }
-
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
@@ -634,8 +620,8 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         pool.free_state(rand_gen);
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
-        printf("FlipMove_AddStart new_point = %ld; start = %ld ; index = %ld \n ",  
-            new_point,flip_data_local.start_conformation(0),flip_data_local.start_index_in_nodes_position(0));
+       // printf("FlipMove_AddStart new_point = %ld; start = %ld ; index = %ld \n ",  
+        //    new_point,flip_data_local.start_conformation(0),flip_data_local.start_index_in_nodes_position(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
@@ -736,7 +722,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
         pool.free_state(rand_gen);
 
         if (q_ifaccept < p_metropolis) {
-            printf("Accept new state \n "); 
+           // printf("Accept new state \n "); 
             flip_data_local.E(0) = flip_data_local.newE();
             flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
@@ -868,10 +854,6 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     }
     );
 }
-
-
-
-
 
 // This is correct separated version
 KOKKOS_INLINE_FUNCTION
