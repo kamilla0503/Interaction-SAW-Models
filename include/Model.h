@@ -203,6 +203,8 @@ public:
     void defect(std::fstream &out, long long n_steps);
     void out_MC_data(std::fstream& out, long long n_steps);
     void updateData();
+    void out_angle_data(std::fstream& out, long long n_steps);
+    void out_dir_data(std::fstream& out, long long n_steps);
 
 //protected:
     std::valarray<bool> used_coords;

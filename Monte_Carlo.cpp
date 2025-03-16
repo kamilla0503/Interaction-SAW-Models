@@ -48,6 +48,18 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     defect_DataStream.open(filename_defect,std::fstream::out);
 
 
+
+    std::fstream angles_DataStream;
+    std::string filename_angles = LogFile + "/angles_" + std::to_string(model->number_of_spins()) +
+    "_" + std::to_string(J) + ".out";
+    angles_DataStream.open(filename_angles,std::fstream::out);
+
+
+    std::fstream dirs_DataStream;
+    std::string filename_dirs = LogFile + "/dirs_" + std::to_string(model->number_of_spins()) +
+    "_" + std::to_string(J) + ".out";
+    dirs_DataStream.open(filename_dirs,std::fstream::out);
+
     // Define several window sizes (number of consecutive spins to examine)
    std::vector<int> windowSizes = {10, 15, 20, 25, 30};
    // Define several threshold values (in winding number units).
@@ -133,6 +145,8 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
         if (i%(n_steps_out)==0) {
             model->out_MC_data(MCDataStream, i);
             model->defect(defect_DataStream, i);
+            model->out_angle_data(angles_DataStream, i);
+            model->out_dir_data(angles_DataStream, i);
         }
     }
 

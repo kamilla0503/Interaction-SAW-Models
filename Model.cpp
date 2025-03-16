@@ -1474,8 +1474,37 @@ void XY_SAW_LongInteraction::updateData() {
 }
 
 
+void XY_SAW_LongInteraction::out_angle_data(std::fstream &out, long long n_steps) {
+// Called after update; sequence is already got on host 
 
+    out << n_steps << " ";
 
+    for (int e = 0; e < L; e++) {
+        out <<  h_sequence_on_lattice_h[h_lattice_nodes_positions_h[e]] << " " ;
+    }
+
+    out  << std::endl;   
+
+}
+
+void XY_SAW_LongInteraction::out_dir_data(std::fstream &out, long long n_steps) {
+    // Called after update; sequence is already got on host and positions 
+ 
+    auto ind_start = Kokkos::create_mirror_view(flip_data.start_index_in_nodes_position);
+    Kokkos::deep_copy(ind_start, flip_data.start_index_in_nodes_position);
+
+    out << n_steps << " " <<  ind_start(0) << " ";
+    auto ls =  lattice->lattice_size();
+    for (int i = 0; i < L; i++) {
+        long pos = h_lattice_nodes_positions_h[i];
+        long x = pos % ls;
+        long y = (pos % (ls * ls )) / ls;
+        long z = pos / ( ls * ls );
+        out << " " << x << " " << y << " " << z << " "; 
+    }
+    out  << std::endl;    
+
+}
 
 
 void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
@@ -1506,4 +1535,9 @@ void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
     out << asphericity_collect.mean() << " " << asphericity_collect.errorbar() << " ";
 
     out << std::endl;
+
+
+
+
+    
 }
