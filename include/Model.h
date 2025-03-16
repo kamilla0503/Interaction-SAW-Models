@@ -267,13 +267,28 @@ struct GyrationTensor {
   };
   
   // Specialize Kokkos::reduction_identity for GyrationTensor so that it can be used with Kokkos::Sum.
-  namespace Kokkos {
+  /*namespace Kokkos {
   template <>
   struct reduction_identity<GyrationTensor> {
     KOKKOS_INLINE_FUNCTION
     static GyrationTensor max() { return GyrationTensor(); }
   };
-  } // namespace Kokkos
+  }*/ // namespace Kokkos
   
+
+
+  namespace Kokkos {
+    template <>
+    struct reduction_identity<Vector3> {
+      KOKKOS_INLINE_FUNCTION
+      static Vector3 sum() { return Vector3(); }
+    };
+  
+    template <>
+    struct reduction_identity<GyrationTensor> {
+      KOKKOS_INLINE_FUNCTION
+      static GyrationTensor sum() { return GyrationTensor(); }
+    };
+  }
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H
