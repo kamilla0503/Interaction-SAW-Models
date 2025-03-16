@@ -330,6 +330,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     start_index_in_nodes_position_host(0) = 0;
     Kokkos::deep_copy(flip_data.start_index_in_nodes_position, start_index_in_nodes_position_host);
 
+    Kokkos::deep_copy(flip_data.start_index_in_nodes_position, 0);
 
     // Try add i and j pairs
     long pairs_number = L*(L-1)/2;
@@ -364,6 +365,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(flip_data.accept_move,   accept_move_host);
 
     flip_data.flipMoveType = Kokkos::View<double, Kokkos::CudaSpace>("flipMoveType");
+
+
+
+    Kokkos::deep_copy(flip_data.start_index_in_nodes_position, 0);
 
 }
 
@@ -565,7 +570,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                                const  FlipMoveData &flip_data_local,
+                               const  FlipMoveData &flip_data_local,
                                 Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     // We'll store a bool `accept_move`. If it's false, we skip
@@ -578,7 +583,8 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         long dir = rand_gen.urand64() % 6;
         pool.free_state(rand_gen);
         flip_data_local.direction() = dir;
-       // printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
+        printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;  index = %ld; \n ",   
+            flip_data_local.direction(),flip_data_local.end_conformation(0),flip_data_local.start_index_in_nodes_position(0));
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + dir);
 
@@ -613,16 +619,12 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 
     });
 
-    // barrier if you need all threads to see the updated structure
- //   team_member.team_barrier();
-
-    //return accept_move;
 }
 
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                                  const  FlipMoveData &flip_data_local,
+                                  const FlipMoveData &flip_data_local,
                                   Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
@@ -632,7 +634,8 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         pool.free_state(rand_gen);
 
         coord_t new_point = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.start_conformation(0) + flip_data_local.direction() );
-        // printf("FlipMove_AddStart new_point = %ld; start = %ld \n ",  new_point,flip_data_local.start_conformation(0));
+        printf("FlipMove_AddStart new_point = %ld; start = %ld ; index = %ld \n ",  
+            new_point,flip_data_local.start_conformation(0),flip_data_local.start_index_in_nodes_position(0));
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0));
 
         if (flip_data_local.sequence_on_lattice(new_point) != NO_XY_SPIN)  {
@@ -662,31 +665,17 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
 
     });
-
-    // barrier if you need all threads to see the updated structure
-    //   team_member.team_barrier();
-
-   // return accept_move;
 }
 
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                                              const  FlipMoveData &flip_data_local,
+                                             const  FlipMoveData &flip_data_local,
                                               Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
-    // 1) Attempt move
-    //hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
-    //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-
-    // team_member.team_barrier(); Do I need it?
-
-    //hierarchicalEnergy(team_member, flip_data_local);
     if (!flip_data_local.accept_move() ) {
         return;
     }
-   // hierarchicalEnergy(team_member, flip_data_local);
-
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
        // printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
@@ -732,26 +721,13 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                           const  FlipMoveData &flip_data_local,
+                        const FlipMoveData &flip_data_local,
                            Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
 {
-    // 1) Attempt move
-    //hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
-    //printf("hierarchicalOneKernel dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-   // team_member.team_barrier(); Do I need it?
-
-    //hierarchicalEnergy(team_member, flip_data_local);
-
     if (!flip_data_local.accept_move()) {
         return;
     }
-    //hierarchicalEnergy(team_member, flip_data_local);
-   // team_member.team_barrier();
-
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-       // printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
-        //printf("single dir  = %ld; end = %ld;   \n ",   flip_data_local.direction(),flip_data_local.end_conformation(0));
-      //  printf("hierarchicalOneKernel Energy %f \n", flip_data_local.newE());
         double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
@@ -760,6 +736,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
         pool.free_state(rand_gen);
 
         if (q_ifaccept < p_metropolis) {
+            printf("Accept new state \n "); 
             flip_data_local.E(0) = flip_data_local.newE();
             flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
             flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
@@ -768,8 +745,6 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
 
         } else {
             // reject => revert
-            // e.g. remove newly added monomer, restore old
-            // ...
             coord_t del = flip_data_local.end_conformation(0);
             flip_data_local.end_conformation(0) = flip_data_local.previous_monomers(flip_data_local.end_conformation(0));
             flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
@@ -787,8 +762,6 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
         }
         flip_data_local.newE()= 0;
     });
-    // optional barrier
-   // team_member.team_barrier();
 }
 
 
@@ -802,77 +775,48 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         my_pool.init(/*number of states*/ 256, /*seed*/ 12345);
         pool_initialized = true;
     }
-
     // (B) We'll capture a copy of flip_data (assuming it's device-accessible)
     auto flip_data_local = flip_data;
+  // FlipMoveData flip_data_local(flip_data);
     auto local_pool = my_pool;
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     team_policy policy(1, 1023, 1);
-    //team_policy policy(1, 1, 512);
     auto n_iters = MC_STEPS;
 
     // (D) Single parallel_for that spawns exactly 1 team (1 block).
     //     Inside that team, we do the entire Markov chain sequentially.
     Kokkos::parallel_for("MCMC_on_device",  policy,
-      KOKKOS_LAMBDA(const team_policy::member_type &team_member)
+      KOKKOS_LAMBDA(const team_policy::member_type &team_member) 
     {
-
-        //hierarchicalEnergy(team_member, flip_data_local); 
-        // Pull one random state from the pool for this entire Markov chain:
-       // Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-//        auto rand_gen = local_pool.get_state();
-
-        // (E) The MCMC loop: sequential updates, each step depends on the last
         for (long long step = 0; step < n_iters ; ++step)
         {
-             //double flipMoveType; 
-            // Decide: AddEnd vs AddStart
             Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                 auto rand_gen = local_pool.get_state();
                 flip_data_local.flipMoveType() = rand_gen.drand(0., 1.);
                 local_pool.free_state(rand_gen);
                 if ( flip_data_local.flipMoveType()  < 0.5) {
-                    // This internally does an O(N^2) parallel_reduce for energy
-                   // printf("step = %lld AddEnd \n", step);
                     hierarchicalFlipMoveAddEnd(team_member, flip_data_local, local_pool);
-                    //hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
-                } else {
-                    // Same logic but for "AddStart"
-                   // printf("step = %lld AddStart \n", step);
+                } 
+                else {
                     hierarchicalFlipMoveAddStart(team_member, flip_data_local, local_pool);
-                    //hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
                 }
-                // Optional: team_member.team_barrier() if you need a sync each step
-                //team_member.team_barrier();
+
             }); //for single block 
 
-           // printf("step = %lld Before energy  \n", step);
+            team_member.team_barrier();
             hierarchicalEnergy(team_member, flip_data_local);
-           // printf("step = %lld After energy  \n", step);
-
+            team_member.team_barrier();
             if ( flip_data_local.flipMoveType()  < 0.5) {
-                // This internally does an O(N^2) parallel_reduce for energy
-               // printf("step = %lld AddEnd \n", step);
-                //hierarchicalFlipMoveAddEnd(team_member, flip_data_local, pool);
                 hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
             } else {
-                // Same logic but for "AddStart"
-              //  printf("step = %lld AddStart \n", step);
-                //hierarchicalFlipMoveAddStart(team_member, flip_data_local, pool);
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
+            team_member.team_barrier();
 
         }
 
-        // Hand back the random state
-        // }); // end for single block 
-//        hierarchicalEnergy(team_member, flip_data_local);
-
     }); // end parallel_for
-
-    // (F) Done! We've performed MC_STEPS sequential moves on the device,
-    //     with only ONE kernel launch and no host/device sync every step.
 }
 
 
@@ -888,42 +832,15 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    //int teamSize = 128;
-   // int numTeams = (L + teamSize - 1) / teamSize;
+
     int vectorLength = 1;
     team_policy policy(1, 1023, 1);
-    //team_policy policy(1, 32, 16); //not bad choice
-    //team_policy policy(numTeams, teamSize, vectorLength);
 
     auto flip_data_local = flip_data;
+ // FlipMoveData flip_data_local(flip_data);
     Kokkos::parallel_for("hierarchicalKernel", policy,
-                         KOKKOS_LAMBDA(const member_type &team_member) {
-
-        /*for (long long i = 0; i < 2; ++i) {
-            //double flipMoveType = distribution_urd(generator_urd) ;
-            auto rand_gen = local_pool.get_state();
-            double flipMoveType = rand_gen.drand(0., 1.);
-            local_pool.free_state(rand_gen);
-            if (flipMoveType<0.5) {
-                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-                //model->FlipMove_AddEnd(step, spinvalue);
-                //FlipMove_AddEnd_Device(flip_data_copy, step, spinvalue);
-            }
-            else {
-                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-                // model->FlipMove_AddStart(step, spinvalue);
-            }
-        } */
+                         KOKKOS_LAMBDA(const member_type &team_member)  {
         hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
@@ -939,46 +856,15 @@ void XY_SAW_LongInteraction::FlipMove_AddStart() {
     auto local_pool = my_pool;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     using member_type = team_policy::member_type;
-    //int teamSize = 128;
-    // int numTeams = (L + teamSize - 1) / teamSize;
     int vectorLength = 1;
     team_policy policy(1, 1023, 1);
-    // team_policy policy(1, 32, 16); //not bad choice
-    //team_policy policy(numTeams, teamSize, vectorLength);
 
     auto flip_data_local = flip_data;
+    //FlipMoveData flip_data_local(flip_data);
     Kokkos::parallel_for("hierarchicalKernel", policy,
-                         KOKKOS_LAMBDA(const member_type &team_member) {
-
-                            /*
-        for (long long i = 0; i < 2; ++i) {
-            //double flipMoveType = distribution_urd(generator_urd) ;
-            auto rand_gen = local_pool.get_state();
-            double flipMoveType = rand_gen.drand(0., 1.);
-            local_pool.free_state(rand_gen);
-
-
-            if (flipMoveType<0.5) {
-                hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool);
-                //model->FlipMove_AddEnd(step, spinvalue);
-                //FlipMove_AddEnd_Device(flip_data_copy, step, spinvalue);
-            }
-            else {
-                hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-                // model->FlipMove_AddStart(step, spinvalue);
-            }
-        } */
+                         KOKKOS_LAMBDA(const member_type &team_member)  {
 
         hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
-        // hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool);
     }
     );
 }
@@ -1315,10 +1201,10 @@ void XY_SAW_LongInteraction::gyration() {
 
  // Compute eigenvalues using Eigen's SelfAdjointEigenSolver.
  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(Q);
- if (solver.info() != Eigen::Success) {
-   std::cerr << "Eigenvalue computation failed!" << std::endl;
-   //return -1;
- }
+//  if (solver.info() != Eigen::Success) {
+//    std::cerr << "Eigenvalue computation failed!" << std::endl;
+//    //return -1;
+//  }
  Eigen::Vector3d eigenvalues = solver.eigenvalues();
 
  // Compute asphericity:
@@ -1333,8 +1219,8 @@ void XY_SAW_LongInteraction::gyration() {
  double asphericity = numerator / (2.0 * trace * trace);
 
 // std::cout << "Center-of-mass: (" << center.x << ", " << center.y << ", " << center.z << ")\n";
- std::cout << "Eigenvalues: " << eigenvalues.transpose() << std::endl;
- std::cout << "Asphericity: " << asphericity << std::endl;
+//  std::cout << "Eigenvalues: " << eigenvalues.transpose() << std::endl;
+//  std::cout << "Asphericity: " << asphericity << std::endl;
  
  eigen1 << lambda1;
  eigen2 << lambda2;
@@ -1360,7 +1246,7 @@ void XY_SAW_LongInteraction::defect(std::fstream &out_, long long n_steps){
    // Define several threshold values (in winding number units).
    std::vector<double> thresholds = {0.7, 0.8, 0.9, 1.0, 1.1};
    
-   std::cout << "WindowSize, Threshold, DefectCount\n";
+  // std::cout << "WindowSize, Threshold, DefectCount\n";
    // Loop over each combination of window size and threshold.
    for (int ws : windowSizes) {
      if (L - ws + 1 <= 0) continue; // Skip if the window is too large.
@@ -1377,7 +1263,7 @@ void XY_SAW_LongInteraction::defect(std::fstream &out_, long long n_steps){
              
             long shift = flip_data_local.start_index_in_nodes_position(0);
 
-            flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + j) % flip_data_local.L();
+          //  flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + j) % flip_data_local.L();
 
 
             long pos_i_index = (flip_data_local.start_index_in_nodes_position(0) + j - 1) % flip_data_local.L();
@@ -1500,7 +1386,7 @@ void XY_SAW_LongInteraction::out_dir_data(std::fstream &out, long long n_steps) 
         long x = pos % ls;
         long y = (pos % (ls * ls )) / ls;
         long z = pos / ( ls * ls );
-        out << " " << x << " " << y << " " << z << " "; 
+        out << x << " " << y << " " << z << " "; 
     }
     out  << std::endl;    
 
@@ -1535,9 +1421,6 @@ void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
     out << asphericity_collect.mean() << " " << asphericity_collect.errorbar() << " ";
 
     out << std::endl;
-
-
-
 
     
 }
