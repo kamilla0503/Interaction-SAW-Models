@@ -146,7 +146,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
             model->out_MC_data(MCDataStream, i);
             model->defect(defect_DataStream, i);
             model->out_angle_data(angles_DataStream, i);
-            model->out_dir_data(angles_DataStream, i);
+            model->out_dir_data(dirs_DataStream, i);
         }
     }
 
