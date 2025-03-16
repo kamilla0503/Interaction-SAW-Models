@@ -35,7 +35,9 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     MCDataStream.open(filename,std::fstream::out);
 
     MCDataStream << "L J MC_steps R2 R2_std E E_std E2 E2_std E4 E4_std ";
-    MCDataStream << "Sin1 Sin1_std Cos1 Cos1_std Mag2 Mag2_std Mag4 Mag4_std Mag1 Mag1_std";
+    MCDataStream << "Sin1 Sin1_std Cos1 Cos1_std Mag2 Mag2_std Mag4 Mag4_std Mag1 Mag1_std ";
+    MCDataStream << "eig1 eig1_std eig2 eig2_std eig3 eig3_std ";
+    MCDataStream << "R_g_2_trace R_g_2_trace_std R_g_2_direct R_g_2_direct_std asphericity asphericity_std";
     MCDataStream << std::endl;
 
     double mc_step_type = 0;

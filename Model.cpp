@@ -1335,7 +1335,16 @@ void XY_SAW_LongInteraction::gyration() {
 // std::cout << "Center-of-mass: (" << center.x << ", " << center.y << ", " << center.z << ")\n";
  std::cout << "Eigenvalues: " << eigenvalues.transpose() << std::endl;
  std::cout << "Asphericity: " << asphericity << std::endl;
+ 
+ eigen1 << lambda1;
+ eigen2 << lambda2;
+ eigen3 << lambda3;
 
+ asphericity_collect << asphericity; 
+
+ gyration_2_trace << trace; 
+ gyration_2_direct <<  tensor.q00 + tensor.q11 + tensor.q22;; 
+ 
   
  
 }
@@ -1412,6 +1421,17 @@ void XY_SAW_LongInteraction::out_MC_data(std::fstream &out, long long n_steps) {
     out << magnetization_2.mean() << " " << magnetization_2.errorbar() << " ";
     out << magnetization_4.mean() << " " << magnetization_4.errorbar() << " ";
     out << magnetization_1.mean() << " " << magnetization_1.errorbar() << " ";
+
+
+    out << eigen1.mean() << " " << eigen1.errorbar() << " ";
+    out << eigen2.mean() << " " << eigen2.errorbar() << " ";
+    out << eigen3.mean() << " " << eigen3.errorbar() << " ";
+
+
+    out << gyration_2_trace.mean() << " " << gyration_2_trace.errorbar() << " ";
+    out << gyration_2_direct.mean() << " " << gyration_2_direct.errorbar() << " ";
+
+    out << asphericity_collect.mean() << " " << asphericity_collect.errorbar() << " ";
 
     out << std::endl;
 }

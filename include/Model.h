@@ -156,6 +156,8 @@ public:
     Kokkos::View<short*, Kokkos::CudaSpace>  directions;
 
     mc_stats::ScalarObservable<double> e2e_distance_2;
+    mc_stats::ScalarObservable<double> gyration_2_trace;
+    mc_stats::ScalarObservable<double> gyration_2_direct;
 
     long* lattice_nodes_positions_h;
     Kokkos::View<long*, Kokkos::HostSpace>::HostMirror h_lattice_nodes_positions_h;
@@ -219,7 +221,11 @@ public:
     mc_stats::ScalarObservable<double> magnetization_2;
     mc_stats::ScalarObservable<double> magnetization_4;
 
+    mc_stats::ScalarObservable<double> eigen1;
+    mc_stats::ScalarObservable<double> eigen2;
+    mc_stats::ScalarObservable<double> eigen3;
 
+    mc_stats::ScalarObservable<double> asphericity_collect;
 
 };
 
