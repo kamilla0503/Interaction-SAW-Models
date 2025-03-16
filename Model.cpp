@@ -1350,6 +1350,77 @@ void XY_SAW_LongInteraction::gyration() {
 }
 
 
+void XY_SAW_LongInteraction::defect(std::fstream &out_, long long n_steps){
+
+    auto L_local = L; 
+    auto flip_data_local = flip_data; 
+
+   // Define several window sizes (number of consecutive spins to examine)
+   std::vector<int> windowSizes = {10, 15, 20, 25, 30};
+   // Define several threshold values (in winding number units).
+   std::vector<double> thresholds = {0.7, 0.8, 0.9, 1.0, 1.1};
+   
+   std::cout << "WindowSize, Threshold, DefectCount\n";
+   // Loop over each combination of window size and threshold.
+   for (int ws : windowSizes) {
+     if (L - ws + 1 <= 0) continue; // Skip if the window is too large.
+     int numWindows = L - ws + 1;
+     for (double th : thresholds) {
+       int defectCount = 0;
+       // For each starting index of the sliding window, compute the local winding.
+       // Capture ws and th by value.
+       Kokkos::parallel_reduce("compute_defects", numWindows,
+         KOKKOS_LAMBDA(const int start, int& localCount) {
+           double winding = 0.0;
+           // Sum angular differences between consecutive spins.
+           for (int j = start + 1; j < start + ws; j++) {
+             
+            long shift = flip_data_local.start_index_in_nodes_position(0);
+
+            flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + j) % flip_data_local.L();
+
+
+            long pos_i_index = (flip_data_local.start_index_in_nodes_position(0) + j - 1) % flip_data_local.L();
+            long pos_j_index = (flip_data_local.start_index_in_nodes_position(0) + j) % flip_data_local.L();
+            
+            long pos_i = flip_data_local.lattice_nodes_positions (pos_i_index) ;
+            long pos_j = flip_data_local.lattice_nodes_positions (pos_j_index) ;
+
+            winding += angleDiff(flip_data_local.sequence_on_lattice(pos_j), 
+            flip_data_local.sequence_on_lattice(pos_i));
+           
+            }
+           // "Close" the window by adding the difference between the last and first spin.
+           //long start = flip_data_local.lattice_nodes_positions (flip_data_local.start_index_in_nodes_position(0));
+           long start_index = (flip_data_local.start_index_in_nodes_position(0) + start) % flip_data_local.L();
+           long start_ws_index = (flip_data_local.start_index_in_nodes_position(0) + start + ws - 1) % flip_data_local.L();
+           long pos_start = flip_data_local.lattice_nodes_positions (start_index);
+           long pos_start_ws = flip_data_local.lattice_nodes_positions (start_ws_index);;
+           winding += angleDiff(flip_data_local.sequence_on_lattice(pos_start), 
+           flip_data_local.sequence_on_lattice(pos_start_ws));
+            
+           double windingNumber = winding / (2.0 * M_PI);
+           // If the absolute winding number exceeds the threshold, count a defect.
+           if (fabs(windingNumber) > th) {
+             localCount++;
+           }
+         }, defectCount);
+
+      // std::cout << ws << ", " << th << ", " << defectCount << "\n";
+
+       out_ << defectCount << " ";
+     }
+   }
+
+
+   out_ << n_steps << std::endl; 
+ }
+ 
+
+
+
+
+
 void XY_SAW_LongInteraction::updateData() {
 
     auto start_host = Kokkos::create_mirror_view(flip_data.start_conformation);
@@ -1399,6 +1470,7 @@ void XY_SAW_LongInteraction::updateData() {
 
 
     gyration();
+    //defect();
 }
 
 

@@ -40,6 +40,28 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     MCDataStream << "R_g_2_trace R_g_2_trace_std R_g_2_direct R_g_2_direct_std asphericity asphericity_std";
     MCDataStream << std::endl;
 
+
+
+    std::fstream defect_DataStream;
+    std::string filename_defect = LogFile + "/defects_" + std::to_string(model->number_of_spins()) +
+    "_" + std::to_string(J) + ".out";
+    defect_DataStream.open(filename_defect,std::fstream::out);
+
+
+    // Define several window sizes (number of consecutive spins to examine)
+   std::vector<int> windowSizes = {10, 15, 20, 25, 30};
+   // Define several threshold values (in winding number units).
+   std::vector<double> thresholds = {0.7, 0.8, 0.9, 1.0, 1.1};
+   for (auto w : windowSizes) {
+    for (auto t : thresholds) {
+        defect_DataStream << w << "_" << t << " ";
+    }
+   }
+   defect_DataStream << "step" << std::endl;
+
+
+
+
     double mc_step_type = 0;
     short step = 0;
     double flipMoveType = 0;
@@ -105,11 +127,12 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
 
         if (i < n_steps_to_equlibrium) continue;
         //std::cout << "EQ achieved" << std::endl;
-        if (i%(n_steps_to_update)==0)
+        if (i%(n_steps_to_update)==0) 
         model->updateData();
 
         if (i%(n_steps_out)==0) {
             model->out_MC_data(MCDataStream, i);
+            model->defect(defect_DataStream, i);
         }
     }
 

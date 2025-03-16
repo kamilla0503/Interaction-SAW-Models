@@ -200,6 +200,7 @@ public:
 
 
     void gyration(); 
+    void defect(std::fstream &out, long long n_steps);
     void out_MC_data(std::fstream& out, long long n_steps);
     void updateData();
 
@@ -226,6 +227,9 @@ public:
     mc_stats::ScalarObservable<double> eigen3;
 
     mc_stats::ScalarObservable<double> asphericity_collect;
+ 
+
+
 
 };
 
@@ -296,5 +300,15 @@ struct GyrationTensor {
       static GyrationTensor sum() { return GyrationTensor(); }
     };
   }
+
+
+  KOKKOS_INLINE_FUNCTION
+double angleDiff(double a, double b) {
+  double diff = a - b;
+  while(diff > M_PI)  diff -= 2.0 * M_PI;
+  while(diff < -M_PI) diff += 2.0 * M_PI;
+  return diff;
+}
+
 
 #endif //INTERACTION_SAW_MODELS_MODEL_H
