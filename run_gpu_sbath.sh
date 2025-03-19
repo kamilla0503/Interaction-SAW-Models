@@ -9,15 +9,32 @@ resultFolder=data/XY_MC/GPU_Results/R_3/long_view_short
 #rm slurm*.out
 
 
-
-
 for L in 400
 do
-  for J in 0.28 0.275
+  for J in 0.277 0.279
   do
   sbatch --time=2-0:0 --gpus=1 --wrap="./finite_element.cuda $L $J $resultFolder"
   done
 done
+
+
+for L in 500
+do
+  for J in 0.268, 0.272, 0.276, 0.28 
+  do
+  sbatch --time=4-0:0 --gpus=1 --wrap="./finite_element.cuda $L $J $resultFolder"
+  done
+done
+
+
+
+# for L in 400
+# do
+#   for J in 0.28 0.275
+#   do
+#   sbatch --time=2-0:0 --gpus=1 --wrap="./finite_element.cuda $L $J $resultFolder"
+#   done
+# done
 
 # for L in 300
 # do
