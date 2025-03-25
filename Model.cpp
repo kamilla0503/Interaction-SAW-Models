@@ -788,27 +788,27 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
     while (c != new_end) {
         new_c = flip_data_local.previous_monomers(c);
         flip_data_local.next_monomers(c) = flip_data_local.previous_monomers(c);
-        flip_data_local.directions(c) = flip_data_local.inverse_steps(lip_data_local.directions(new_c) );
+        flip_data_local.directions(c) = flip_data_local.inverse_steps(flip_data_local.directions(new_c) );
         c = new_c;
     }
-    long int temp_prev_next = next_monomers[new_end];
-    previous_monomers[end_conformation] = step_coord;
-    c = end_conformation;
+    long int temp_prev_next = flip_data_local.next_monomers(new_end);
+    flip_data_local.previous_monomers( flip_data_local.end_conformation(0)) = step_coord;
+    c = flip_data_local.end_conformation(0);
     while (c != new_end) {
-        new_c = next_monomers[c];
-        previous_monomers[new_c] = c;
+        new_c = flip_data_local.next_monomers(c);
+        flip_data_local.previous_monomers(new_c) = c;
         c = new_c;
     }
-    end_conformation = new_end;
-    previous_monomers[new_end] = temp_prev_next;
-    next_monomers[new_end] = NO_SAW_NODE;
-    directions[new_end] = NO_SAW_NODE;
+    flip_data_local.end_conformation(0) = new_end;
+    flip_data_local.previous_monomers(new_end) = temp_prev_next;
+    flip_data_local.next_monomers(new_end) = NO_SAW_NODE;
+    flip_data_local.directions(new_end) = NO_SAW_NODE;
 
-    lattice_nodes_positions[0] = start_conformation;
-    c = next_monomers[start_conformation];
-    for (int i = 1; i < number_of_spins(); i++) {
-        lattice_nodes_positions[i] = c;
-        c = next_monomers[c];
+    flip_data_local.lattice_nodes_positions(0) = flip_data_local.start_conformation(0);
+    c = flip_data_local.next_monomers(flip_data_local.start_conformation(0));
+    for (int i = 1; i < flip_data_local.L(); i++) {
+        flip_data_local.lattice_nodes_positions(i) = c;
+        c = flip_data_local.next_monomers(c);
     }
 
     //Redefine positions in array now 
