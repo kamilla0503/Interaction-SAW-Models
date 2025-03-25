@@ -774,7 +774,7 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
  
         // test self avoidance condition
         if (flip_data_local.sequence_on_lattice(step_coord) == NO_XY_SPIN ||
-            flip_data_local.next_monomers(step_coord) == NO_XY_SPIN ||
+            flip_data_local.next_monomers(step_coord) == NO_SAW_NODE ||
             step_coord == flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) {
             return;
         }
