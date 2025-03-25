@@ -763,7 +763,55 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
                         const FlipMoveData &flip_data_local,
                            Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool) 
 {
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+        auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
+        flip_data_local.direction()  = rand_gen.urand64() % 6;
+        pool.free_state(rand_gen);
 
+        long  step_coord = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + flip_data_local.direction() );
+
+        long c = 0; //
+ 
+        // test self avoidance condition
+        if (flip_data_local.sequence_on_lattice(step_coord) == NO_XY_SPIN ||
+            flip_data_local.next_monomers(step_coord) == NO_XY_SPIN ||
+            step_coord == flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) {
+            return;
+        }
+
+    long new_end = flip_data_local.next_monomers(step_coord);
+    flip_data_local.next_monomers(step_coord) = flip_data_local.end_conformation(0);
+    flip_data_local.directions(step_coord) = lattice->inverse_steps[flip_data_local.direction()];
+    c = flip_data_local.end_conformation(0);
+    long int new_c;
+    while (c != new_end) {
+        new_c = flip_data_local.previous_monomers(c);
+        flip_data_local.next_monomers(c) = flip_data_local.previous_monomers(c);
+        directions[c] = lattice->inverse_steps[directions[new_c]];
+        c = new_c;
+    }
+    long int temp_prev_next = next_monomers[new_end];
+    previous_monomers[end_conformation] = step_coord;
+    c = end_conformation;
+    while (c != new_end) {
+        new_c = next_monomers[c];
+        previous_monomers[new_c] = c;
+        c = new_c;
+    }
+    end_conformation = new_end;
+    previous_monomers[new_end] = temp_prev_next;
+    next_monomers[new_end] = NO_SAW_NODE;
+    directions[new_end] = NO_SAW_NODE;
+
+    lattice_nodes_positions[0] = start_conformation;
+    c = next_monomers[start_conformation];
+    for (int i = 1; i < number_of_spins(); i++) {
+        lattice_nodes_positions[i] = c;
+        c = next_monomers[c];
+    }
+
+
+    });
 
 }
 
@@ -913,11 +961,12 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
            // }
 
         }
-
-
         team_member.team_barrier();
         hierarchicalOneKernel_sweep(team_member, flip_data_local, local_pool );
         team_member.team_barrier();
+
+
+        hierarchicalOneKernel_Reconnect(team_member, flip_data_local, local_pool );
 
     }); // end parallel_for
 }
