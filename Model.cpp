@@ -781,13 +781,14 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
 
     long new_end = flip_data_local.next_monomers(step_coord);
     flip_data_local.next_monomers(step_coord) = flip_data_local.end_conformation(0);
-    flip_data_local.directions(step_coord) = lattice->inverse_steps[flip_data_local.direction()];
+    //need to check inverse steps 
+    flip_data_local.directions(step_coord) = flip_data_local.inverse_steps(flip_data_local.direction());
     c = flip_data_local.end_conformation(0);
     long int new_c;
     while (c != new_end) {
         new_c = flip_data_local.previous_monomers(c);
         flip_data_local.next_monomers(c) = flip_data_local.previous_monomers(c);
-        directions[c] = lattice->inverse_steps[directions[new_c]];
+        flip_data_local.directions(c) = flip_data_local.inverse_steps(lip_data_local.directions(new_c) );
         c = new_c;
     }
     long int temp_prev_next = next_monomers[new_end];
@@ -809,6 +810,8 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
         lattice_nodes_positions[i] = c;
         c = next_monomers[c];
     }
+
+    //Redefine positions in array now 
 
 
     });
