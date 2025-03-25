@@ -370,6 +370,13 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     Kokkos::deep_copy(flip_data.start_index_in_nodes_position, 0);
 
+
+
+  //  flip_data.positions = Kokkos::View<double**>("positions", N, 3);
+  //  flip_data.spins     = Kokkos::View<double**>("spins",     N, 2);
+  flip_data.localField = Kokkos::View<double**>("localField", L, 2);
+  flip_data.fieldNorm = Kokkos::View<double*>("fieldNorm",  L);
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -751,6 +758,89 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
 }
 
 
+KOKKOS_INLINE_FUNCTION
+void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        const FlipMoveData &flip_data_local,
+                           Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool) 
+{
+
+
+}
+
+KOKKOS_INLINE_FUNCTION
+void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        const FlipMoveData &flip_data_local,
+                           Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool) 
+{
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member,  flip_data_local.L()),
+        [&](const int i) {
+            double hx = 0.0;
+            double hy = 0.0;
+            for(int j=0; j<flip_data_local.L(); j++){
+                if(j == i) continue;   
+                auto pos_j = flip_data_local.lattice_nodes_positions(j); 
+                auto pos_i = flip_data_local.lattice_nodes_positions(i); 
+                double r2 = radius(pos_i, pos_j, flip_data_local.lattice_side_device());
+                if(r2 < 1e-14) {
+                    continue;
+                  }
+                  double r = Kokkos::sqrt(r2);
+          
+                  // Example:  J_ij = J0 / (r^alpha)
+                  // Need to check minus sign 
+                  //Or not minus
+                  double Jij = flip_data_local.J  * Kokkos::pow(r, -3);
+                  hx -= Jij * Kokkos::cos(flip_data_local.sequence_on_lattice(pos_j) );
+                  hy -= Jij * Kokkos::sin(flip_data_local.sequence_on_lattice(pos_j) );
+            }
+                  // Save the local field
+        flip_data_local.localField(i,0) = hx;
+        flip_data_local.localField(i,1) = hy;
+
+        double norm = Kokkos::sqrt(hx*hx + hy*hy);
+        flip_data_local.fieldNorm(i) = norm;
+    });
+    Kokkos::parallel_for( Kokkos::TeamThreadRange(team_member,  flip_data_local.L()),
+        [&](const int i) { 
+           // auto pos_j = flip_data_local.lattice_nodes_positions(j); 
+            auto pos_i = flip_data_local.lattice_nodes_positions(i); 
+            double s_ix =  Kokkos::cos(flip_data_local.sequence_on_lattice(pos_i) );
+            double s_iy = Kokkos::sin(flip_data_local.sequence_on_lattice(pos_i) );
+      
+            double hx = flip_data_local.localField(i,0);
+            double hy = flip_data_local.localField(i,1);
+            double norm_h = flip_data_local.fieldNorm(i);
+            if(norm_h > 1e-14) {
+                // Dot product S_i . h_i
+                double dot = s_ix * hx + s_iy * hy;
+                // Factor = 2 * (dot / |h_i|^2 )
+                double factor = 2.0 * dot / (norm_h * norm_h);
+        
+                // Reflect S_i about h_i
+                auto new_cos = s_ix - factor * hx;
+                auto new_sin = s_iy - factor * hy;
+
+                 if (new_sin<-1.) new_sin=-1;
+                 if (new_sin>1.) new_sin=1;
+                 if (new_cos<-1.) new_cos=-1;
+                 if (new_cos>1.) new_cos=1;
+                flip_data_local.sequence_on_lattice(pos_i) = (new_sin> 0) ? acos(new_cos) : -acos(new_cos);
+
+              } else {
+                // If local field is nearly zero, leave spin as-is
+                // newSpins(i,0) = s_ix;
+                // newSpins(i,1) = s_iy;
+              }
+
+        });   
+}
+
+
+
+
+
+
+
  // In your XY_SAW_LongInteraction class or wherever:
 void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 {
@@ -758,7 +848,8 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     static bool pool_initialized = false;
     static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool;
     if (!pool_initialized) {
-        my_pool.init(/*number of states*/ 256, /*seed*/ 12345);
+        my_pool.init(/*number of states*/ 256, /*seed*/ 42);
+        //my_pool.init(42);
         pool_initialized = true;
     }
     // (B) We'll capture a copy of flip_data (assuming it's device-accessible)
@@ -800,7 +891,33 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             }
             team_member.team_barrier();
 
+            //if (  step%10==0) {
+/*
+                Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+                    printf("Energy in start : %f \n ", flip_data_local.E(0));
+
+                    for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+                        printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
+                    }
+                    printf("\n");
+
+                });*/
+                /*Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+                    printf("Energy in after sweep : %f \n ", flip_data_local.E(0));
+                    for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+                        printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
+                    }
+                    printf("\n");
+                });*/
+
+           // }
+
         }
+
+
+        team_member.team_barrier();
+        hierarchicalOneKernel_sweep(team_member, flip_data_local, local_pool );
+        team_member.team_barrier();
 
     }); // end parallel_for
 }

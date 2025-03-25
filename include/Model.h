@@ -79,6 +79,9 @@ struct FlipMoveData {
     Kokkos::View<bool, Kokkos::CudaSpace> accept_move; 
 
     Kokkos::View<double, Kokkos::CudaSpace> flipMoveType;
+
+    Kokkos::View<double**> localField;  // shape: (N,2)
+    Kokkos::View<double*>  fieldNorm;   // shape: (N)
 };
 
 
