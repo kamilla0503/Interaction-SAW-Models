@@ -810,6 +810,7 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
         flip_data_local.lattice_nodes_positions(i) = c;
         c = flip_data_local.next_monomers(c);
     }
+    flip_data_local.start_index_in_nodes_position(0) = 0;
 
     //Redefine positions in array now 
 
