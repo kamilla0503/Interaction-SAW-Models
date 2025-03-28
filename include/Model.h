@@ -82,6 +82,10 @@ struct FlipMoveData {
 
     Kokkos::View<double**> localField;  // shape: (N,2)
     Kokkos::View<double*>  fieldNorm;   // shape: (N)
+
+
+    Kokkos::View<long, Kokkos::CudaSpace> spin_relax  ;
+    Kokkos::View<long*, Kokkos::CudaSpace> chosenIndices_relax  ;
 };
 
 

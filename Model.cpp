@@ -377,6 +377,13 @@ void XY_SAW_LongInteraction::StartConfiguration() {
   flip_data.localField = Kokkos::View<double**>("localField", L, 2);
   flip_data.fieldNorm = Kokkos::View<double*>("fieldNorm",  L);
 
+
+
+  long relax_spins =  L / 10;
+  flip_data.spin_relax = Kokkos::View<long, Kokkos::CudaSpace>("spin_relax");
+  flip_data.chosenIndices_relax = Kokkos::View<long*, Kokkos::CudaSpace>("chosenIndices_relax", relax_spins);
+  Kokkos::deep_copy(flip_data.spin_relax, relax_spins);
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -824,8 +831,24 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
                         const FlipMoveData &flip_data_local,
                            Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool) 
 {
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member,  flip_data_local.L()),
-        [&](const int i) {
+    // Single block picks random indices
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+      //auto rand_gen = pool.get_state();
+  
+      // Fill chosenIndices with random draws in [0, L)
+      for(int m=0; m< flip_data_local.spin_relax(); m++){
+        auto rand_gen = pool.get_state();
+        flip_data_local.chosenIndices_relax(m) = rand_gen.urand64() % flip_data_local.L();
+        pool.free_state(rand_gen);
+      }
+  
+      //pool.free_state(rand_gen);
+    });
+    //team_member.team_barrier();
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member,  flip_data_local.spin_relax()),
+        [&](const int m) {
+            auto i = flip_data_local.chosenIndices_relax(m);
             double hx = 0.0;
             double hy = 0.0;
             for(int j=0; j<flip_data_local.L(); j++){
@@ -852,8 +875,12 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
         double norm = Kokkos::sqrt(hx*hx + hy*hy);
         flip_data_local.fieldNorm(i) = norm;
     });
-    Kokkos::parallel_for( Kokkos::TeamThreadRange(team_member,  flip_data_local.L()),
-        [&](const int i) { 
+
+//    team_member.team_barrier();
+
+    Kokkos::parallel_for( Kokkos::TeamThreadRange(team_member,  flip_data_local.spin_relax()),
+        [&](const int m) { 
+            auto i = flip_data_local.chosenIndices_relax(m);
            // auto pos_j = flip_data_local.lattice_nodes_positions(j); 
             auto pos_i = flip_data_local.lattice_nodes_positions(i); 
             double s_ix =  Kokkos::cos(flip_data_local.sequence_on_lattice(pos_i) );
@@ -878,6 +905,11 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
                  if (new_cos>1.) new_cos=1;
                 flip_data_local.sequence_on_lattice(pos_i) = (new_sin> 0) ? acos(new_cos) : -acos(new_cos);
 
+                if (flip_data_local.sequence_on_lattice(pos_i)<0) {
+                    flip_data_local.sequence_on_lattice(pos_i) =  2.0*flip_data_local.PI() + flip_data_local.sequence_on_lattice(pos_i);
+                }
+
+
               } else {
                 // If local field is nearly zero, leave spin as-is
                 // newSpins(i,0) = s_ix;
@@ -886,11 +918,6 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
 
         });   
 }
-
-
-
-
-
 
 
  // In your XY_SAW_LongInteraction class or wherever:
@@ -943,8 +970,10 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             }
             team_member.team_barrier();
 
-            //if (  step%10==0) {
-/*
+
+            /*
+            if (  step%100==0) {
+
                 Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                     printf("Energy in start : %f \n ", flip_data_local.E(0));
 
@@ -953,23 +982,48 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                     }
                     printf("\n");
 
-                });*/
-                /*Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+                });
+
+                team_member.team_barrier();
+                hierarchicalOneKernel_sweep(team_member, flip_data_local, local_pool );
+                team_member.team_barrier();
+                hierarchicalEnergy(team_member, flip_data_local);
+                team_member.team_barrier();
+                
+                Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                     printf("Energy in after sweep : %f \n ", flip_data_local.E(0));
                     for (long int  i = 0; i < flip_data_local.L(); i++ ) {
                         printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
                     }
                     printf("\n");
-                });*/
+                });
 
-           // }
+            }*/
 
         }
+
+        /*Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            printf("Energy in start : %f \n ", flip_data_local.E(0));
+            for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+                printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
+            }
+            printf("\n");
+        });
         team_member.team_barrier();
         hierarchicalOneKernel_sweep(team_member, flip_data_local, local_pool );
         team_member.team_barrier();
+        hierarchicalEnergy(team_member, flip_data_local);
+        team_member.team_barrier();
+        Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+            printf("Energy in after sweep : %f \n ", flip_data_local.E(0));
+            for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+                printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
+            }
+            printf("\n");
+        });*/
 
-
+        hierarchicalOneKernel_sweep(team_member, flip_data_local, local_pool );
+        team_member.team_barrier();
         hierarchicalOneKernel_Reconnect(team_member, flip_data_local, local_pool );
 
     }); // end parallel_for

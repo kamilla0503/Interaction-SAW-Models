@@ -99,10 +99,10 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_update = 10*model->number_of_spins()*model->number_of_spins();
 
-    // n_steps_to_update = 1;
+    // n_steps_to_update = 10;
     // n_steps_out = 1; 
     // n_steps_to_equlibrium = 1; 
-
+ 
     long long iters = n_steps_to_update;
 
     auto flip_data_copy = model->flip_data; // Capture data by value
