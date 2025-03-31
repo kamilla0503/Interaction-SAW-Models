@@ -2,16 +2,16 @@ mkdir data/XY_MC/GPU_Results
 
 mkdir data/XY_MC/GPU_Results/R_3/
 
-mkdir data/XY_MC/GPU_Results/R_3/long_view_addsweep1
+mkdir data/XY_MC/GPU_Results/R_3/long_view_addsweep9
 
-resultFolder=data/XY_MC/GPU_Results/R_3/long_view_addsweep1
+resultFolder=data/XY_MC/GPU_Results/R_3/long_view_addsweep9
 
 #rm slurm*.out
 
 
 for L in 200
 do
-  for J in 0.31 0.305
+  for J in 0.31 0.305 #0.307 0.309   #0.31 0.305
   do
   sbatch --time=2-0:0 --gpus=1 --wrap="./finite_element.cuda $L $J $resultFolder"
   done

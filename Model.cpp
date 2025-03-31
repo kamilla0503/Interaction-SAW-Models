@@ -277,7 +277,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
   //  printf("Finish nodes positions = %f \n", E);
 
 // Scalars
-    flip_data.J = J;
+   // flip_data.J = J;
   //  printf("Finish J = %f \n", flip_data.J);
     //flip_data.E = E;
     //printf("Finish E= %f \n", E);
@@ -379,10 +379,14 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 
 
-  long relax_spins =  L / 10;
+  long relax_spins =  L ; // L / 10;
   flip_data.spin_relax = Kokkos::View<long, Kokkos::CudaSpace>("spin_relax");
   flip_data.chosenIndices_relax = Kokkos::View<long*, Kokkos::CudaSpace>("chosenIndices_relax", relax_spins);
   Kokkos::deep_copy(flip_data.spin_relax, relax_spins);
+
+
+  flip_data.J = Kokkos::View<double, Kokkos::CudaSpace>("J");
+  Kokkos::deep_copy(  flip_data.J, J);
 
 }
 
@@ -679,7 +683,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
 
        // printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
-        double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
+        double p1 = exp(-(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
@@ -728,7 +732,7 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
         return;
     }
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        double p1 = exp( -(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))) );
+        double p1 = exp( -(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0))) );
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
         auto rand_gen = pool.get_state();
@@ -828,8 +832,9 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
 
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-                        const FlipMoveData &flip_data_local,
-                           Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool) 
+                        const FlipMoveData &flip_data_local
+                         //  Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool
+                        ) 
 {
     // Single block picks random indices
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
@@ -837,18 +842,19 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
   
       // Fill chosenIndices with random draws in [0, L)
       for(int m=0; m< flip_data_local.spin_relax(); m++){
-        auto rand_gen = pool.get_state();
-        flip_data_local.chosenIndices_relax(m) = rand_gen.urand64() % flip_data_local.L();
-        pool.free_state(rand_gen);
+       // auto rand_gen = pool.get_state();
+        flip_data_local.chosenIndices_relax(m) = m; // rand_gen.urand64() % flip_data_local.L();
+      //  pool.free_state(rand_gen);
       }
   
       //pool.free_state(rand_gen);
     });
-    //team_member.team_barrier();
-
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member,  flip_data_local.spin_relax()),
-        [&](const int m) {
-            auto i = flip_data_local.chosenIndices_relax(m);
+    team_member.team_barrier();
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+    for(int i=0; i<flip_data_local.L(); i++){
+ //   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member,  flip_data_local.spin_relax()),
+ //       [&](const int m) {
+         //   auto i = flip_data_local.chosenIndices_relax(m);
             double hx = 0.0;
             double hy = 0.0;
             for(int j=0; j<flip_data_local.L(); j++){
@@ -864,7 +870,7 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
                   // Example:  J_ij = J0 / (r^alpha)
                   // Need to check minus sign 
                   //Or not minus
-                  double Jij = flip_data_local.J  * Kokkos::pow(r, -3);
+                  double Jij = flip_data_local.J () * Kokkos::pow(r, -3);
                   hx -= Jij * Kokkos::cos(flip_data_local.sequence_on_lattice(pos_j) );
                   hy -= Jij * Kokkos::sin(flip_data_local.sequence_on_lattice(pos_j) );
             }
@@ -874,13 +880,15 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
 
         double norm = Kokkos::sqrt(hx*hx + hy*hy);
         flip_data_local.fieldNorm(i) = norm;
+    //});
+    }
     });
-
-//    team_member.team_barrier();
-
-    Kokkos::parallel_for( Kokkos::TeamThreadRange(team_member,  flip_data_local.spin_relax()),
-        [&](const int m) { 
-            auto i = flip_data_local.chosenIndices_relax(m);
+    team_member.team_barrier();
+ //   Kokkos::parallel_for( Kokkos::TeamThreadRange(team_member,  flip_data_local.spin_relax()),
+ //       [&](const int m) { 
+    Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
+    for(int i=0; i<flip_data_local.L(); i++){
+           // auto i = flip_data_local.chosenIndices_relax(m);
            // auto pos_j = flip_data_local.lattice_nodes_positions(j); 
             auto pos_i = flip_data_local.lattice_nodes_positions(i); 
             double s_ix =  Kokkos::cos(flip_data_local.sequence_on_lattice(pos_i) );
@@ -899,11 +907,16 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
                 auto new_cos = s_ix - factor * hx;
                 auto new_sin = s_iy - factor * hy;
 
-                 if (new_sin<-1.) new_sin=-1;
-                 if (new_sin>1.) new_sin=1;
-                 if (new_cos<-1.) new_cos=-1;
-                 if (new_cos>1.) new_cos=1;
-                flip_data_local.sequence_on_lattice(pos_i) = (new_sin> 0) ? acos(new_cos) : -acos(new_cos);
+                // Replace clamping with normalization
+                double norm_new = Kokkos::sqrt(new_cos * new_cos + new_sin * new_sin);
+                new_cos /= norm_new;
+                new_sin /= norm_new;
+                flip_data_local.sequence_on_lattice(pos_i) = atan2(new_sin, new_cos);
+                //  if (new_sin<-1.) new_sin=-1;
+                //  if (new_sin>1.) new_sin=1;
+                //  if (new_cos<-1.) new_cos=-1;
+                //  if (new_cos>1.) new_cos=1;
+                // flip_data_local.sequence_on_lattice(pos_i) = (new_sin> 0) ? acos(new_cos) : -acos(new_cos);
 
                 if (flip_data_local.sequence_on_lattice(pos_i)<0) {
                     flip_data_local.sequence_on_lattice(pos_i) =  2.0*flip_data_local.PI() + flip_data_local.sequence_on_lattice(pos_i);
@@ -915,8 +928,9 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
                 // newSpins(i,0) = s_ix;
                 // newSpins(i,1) = s_iy;
               }
-
-        });   
+            }
+    //    });   
+    });
 }
 
 
@@ -938,6 +952,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
     team_policy policy(1, 1023, 1);
+  //team_policy policy(1, 100, 9);
     auto n_iters = MC_STEPS;
 
     // (D) Single parallel_for that spawns exactly 1 team (1 block).
@@ -1022,9 +1037,10 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             printf("\n");
         });*/
 
-        hierarchicalOneKernel_sweep(team_member, flip_data_local, local_pool );
+        hierarchicalOneKernel_sweep(team_member, flip_data_local );
         team_member.team_barrier();
         hierarchicalOneKernel_Reconnect(team_member, flip_data_local, local_pool );
+        team_member.team_barrier();
 
     }); // end parallel_for
 }
@@ -1044,8 +1060,8 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd() {
     using member_type = team_policy::member_type;
 
     int vectorLength = 1;
-    team_policy policy(1, 1023, 1);
-
+   // team_policy policy(1, 1023, 1);
+   team_policy policy(1, 100, 90);
     auto flip_data_local = flip_data;
  // FlipMoveData flip_data_local(flip_data);
     Kokkos::parallel_for("hierarchicalKernel", policy,
@@ -1146,7 +1162,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd1() {
 
     Kokkos::parallel_for("FlipMove_AddEnd", 1, KOKKOS_LAMBDA(const int idx) {
 
-        double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0)   )));
+        double p1 = exp(-(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0)   )));
         double p_metropolis = Kokkos::min(1.0, p1);
     
         auto rand_gen = flip_data_local.rand_pool.get_state();
@@ -1259,7 +1275,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart1() {
   //  Kokkos::fence();
     Kokkos::parallel_for("FlipMove_AddStart", 1, KOKKOS_LAMBDA(const int idx) {
        //printf("finish Energy Add Start %f \n", flip_data_local.newE());
-        double p1 = exp(-(flip_data_local.J * (flip_data_local.newE() - flip_data_local.E(0))));
+        double p1 = exp(-(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = flip_data_local.rand_pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
@@ -1585,7 +1601,7 @@ void XY_SAW_LongInteraction::out_dir_data(std::fstream &out, long long n_steps) 
     auto ind_start = Kokkos::create_mirror_view(flip_data.start_index_in_nodes_position);
     Kokkos::deep_copy(ind_start, flip_data.start_index_in_nodes_position);
 
-    out << n_steps << " " <<  ind_start(0) << " ";
+    out << n_steps << " " <<  ind_start(0) << " " << E << " ";
     auto ls =  lattice->lattice_size();
     for (int i = 0; i < L; i++) {
         long pos = h_lattice_nodes_positions_h[i];
