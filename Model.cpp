@@ -897,16 +897,18 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
             double hx = flip_data_local.localField(i,0);
             double hy = flip_data_local.localField(i,1);
             double norm_h = flip_data_local.fieldNorm(i);
-            if(norm_h > 1e-14) {
+            //if(norm_h > 1e-14) {
+            if(norm_h > 1e-14) {  //Is it legal 
                 // Dot product S_i . h_i
                 double dot = s_ix * hx + s_iy * hy;
                 // Factor = 2 * (dot / |h_i|^2 )
                 double factor = 2.0 * dot / (norm_h * norm_h);
         
                 // Reflect S_i about h_i
-                auto new_cos = s_ix - factor * hx;
-                auto new_sin = s_iy - factor * hy;
-
+               // auto new_cos = s_ix - factor * hx;
+               // auto new_sin = s_iy - factor * hy;
+               auto new_cos = -s_ix + factor * hx;
+               auto new_sin = -s_iy + factor * hy;
                 // Replace clamping with normalization
                 double norm_new = Kokkos::sqrt(new_cos * new_cos + new_sin * new_sin);
                 new_cos /= norm_new;

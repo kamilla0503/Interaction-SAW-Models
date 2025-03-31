@@ -2,9 +2,9 @@ mkdir data/XY_MC/GPU_Results
 
 mkdir data/XY_MC/GPU_Results/R_3/
 
-mkdir data/XY_MC/GPU_Results/R_3/long_view_addsweep9
+mkdir data/XY_MC/GPU_Results/R_3/long_view_addsweep10
 
-resultFolder=data/XY_MC/GPU_Results/R_3/long_view_addsweep9
+resultFolder=data/XY_MC/GPU_Results/R_3/long_view_addsweep10
 
 #rm slurm*.out
 
