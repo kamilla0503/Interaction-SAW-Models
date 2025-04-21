@@ -558,7 +558,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
             [&](const long ind, double &H_total) {
-                    if (flip_data.accept_move()) {
+                 //   if (flip_data.accept_move()) {
                     long i = flip_data.i_index(ind);
                     long j = flip_data.j_index(ind);
                     coord_t pos_i   = flip_data.lattice_nodes_positions(i);
@@ -568,7 +568,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
                     r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
-                }
+                //}
             },
             flip_data.newE()
     );
@@ -898,7 +898,7 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
             double hy = flip_data_local.localField(i,1);
             double norm_h = flip_data_local.fieldNorm(i);
             //if(norm_h > 1e-14) {
-            if(norm_h > 1e-14) {  //Is it legal 
+            if(norm_h > 1e-1) {  //Is it legal 
                 // Dot product S_i . h_i
                 double dot = s_ix * hx + s_iy * hy;
                 // Factor = 2 * (dot / |h_i|^2 )
@@ -978,6 +978,9 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             }); //for single block 
 
             team_member.team_barrier();
+
+            if (flip_data_local.accept_move()) {            
+
             hierarchicalEnergy(team_member, flip_data_local);
             team_member.team_barrier();
             if ( flip_data_local.flipMoveType()  < 0.5) {
@@ -985,7 +988,9 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             } else {
                 hierarchicalOneKernel_AddStart_FirstPart(team_member, flip_data_local, local_pool );
             }
-            team_member.team_barrier();
+
+            }
+           // team_member.team_barrier();
 
 
             /*
@@ -1039,7 +1044,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             printf("\n");
         });*/
 
-        hierarchicalOneKernel_sweep(team_member, flip_data_local );
+      //  hierarchicalOneKernel_sweep(team_member, flip_data_local );
         team_member.team_barrier();
         hierarchicalOneKernel_Reconnect(team_member, flip_data_local, local_pool );
         team_member.team_barrier();
