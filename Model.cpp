@@ -601,7 +601,7 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
                    // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
                     double theta_i  = flip_data.sequence_on_lattice(pos_i);
                     coord_t pos_j  = flip_data.lattice_nodes_positions(flip_data.oldIndex());
-                    double theta_j = flip_data.sequence_on_lattice(pos_j);
+                    double theta_j = flip_data.oldspin(0);
                     double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
                     r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
@@ -1020,7 +1020,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     auto local_pool = my_pool;
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    team_policy policy(1, 1023, 1);
+    team_policy policy(1, 512, 1);
   //team_policy policy(1, 100, 9);
     auto n_iters = MC_STEPS;
 
