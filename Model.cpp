@@ -1022,7 +1022,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     auto local_pool = my_pool;
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    team_policy policy(1, 512, 1);
+    team_policy policy(1, 900, 1);
   //team_policy policy(1, 100, 9);
     auto n_iters = MC_STEPS;
 
@@ -1125,6 +1125,8 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         });*/
 
       //  hierarchicalOneKernel_sweep(team_member, flip_data_local );
+        team_member.team_barrier();
+        hierarchicalEnergy(team_member, flip_data_local);
         team_member.team_barrier();
         hierarchicalOneKernel_Reconnect(team_member, flip_data_local, local_pool );
         team_member.team_barrier();
