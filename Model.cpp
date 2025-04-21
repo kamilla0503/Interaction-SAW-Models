@@ -609,6 +609,7 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
             },
            flip_data.d_E_1()
     );
+    team_member.team_barrier();
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
         [&](const long i, double &H_total) {
@@ -1049,10 +1050,10 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 
             hierarchicalEnergy(team_member, flip_data_local);
 
-
+            team_member.team_barrier();
             hierarchicalDeltaE_1(team_member, flip_data_local); 
 
-
+            team_member.team_barrier();
             printf("Traditional %lf  ;   new   %lf   \n ",
                 flip_data_local.newE() - flip_data_local.E(0),
                 flip_data_local.d_E_2() - flip_data_local.d_E_1());
