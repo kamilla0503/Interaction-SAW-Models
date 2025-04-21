@@ -61,6 +61,8 @@ struct FlipMoveData {
     Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
 
     Kokkos::View<double*, Kokkos::CudaSpace> oldspin;
+    Kokkos::View<long, Kokkos::CudaSpace> oldIndex; // not index --- it is really coord 
+    Kokkos::View<long, Kokkos::CudaSpace> newIndex; // not index --- it is really coord 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> save_start_conformation;
     Kokkos::View<coord_t*, Kokkos::CudaSpace> save_end_conformation;
 
@@ -84,9 +86,11 @@ struct FlipMoveData {
     Kokkos::View<double**> localField;  // shape: (N,2)
     Kokkos::View<double*>  fieldNorm;   // shape: (N)
 
-
     Kokkos::View<long, Kokkos::CudaSpace> spin_relax  ;
     Kokkos::View<long*, Kokkos::CudaSpace> chosenIndices_relax  ;
+
+    Kokkos::View<double, Kokkos::CudaSpace> d_E_1; 
+    Kokkos::View<double, Kokkos::CudaSpace> d_E_2; 
 };
 
 

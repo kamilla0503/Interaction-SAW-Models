@@ -239,6 +239,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.spinValue = Kokkos::View<double, Kokkos::CudaSpace>("spinValue");
     flip_data.direction = Kokkos::View<long, Kokkos::CudaSpace>("direction");
 
+    flip_data.oldIndex = Kokkos::View<long, Kokkos::CudaSpace>("oldIndex");
+    flip_data.newIndex = Kokkos::View<long, Kokkos::CudaSpace>("newIndex");
+
     std::cout << "Model creation start two scalars" << std::endl;
 
     flip_data.PI = Kokkos::View<double, Kokkos::CudaSpace>("PI");
@@ -387,6 +390,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
   flip_data.J = Kokkos::View<double, Kokkos::CudaSpace>("J");
   Kokkos::deep_copy(  flip_data.J, J);
+
+
+  flip_data.d_E_1 = Kokkos::View<double, Kokkos::CudaSpace>("d_E_1");
+  flip_data.d_E_2 = Kokkos::View<double, Kokkos::CudaSpace>("d_E_2");
 
 }
 
@@ -575,6 +582,56 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 }
 
 
+
+
+//Try O(N)
+//This is for old spin 
+KOKKOS_INLINE_FUNCTION
+void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        const FlipMoveData &flip_data)
+{
+    Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
+            [&](const long i, double &H_total) {
+                 //   if (flip_data.accept_move()) {
+                //if (ind ! = )
+                //}
+                coord_t pos_i = flip_data.lattice_nodes_positions(i);
+                if ((pos_i !=  flip_data.oldIndex()) && (pos_i != flip_data.newIndex()) ) {
+                   // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
+                    double theta_i  = flip_data.sequence_on_lattice(pos_i);
+                    coord_t pos_j  = flip_data.lattice_nodes_positions(flip_data.oldIndex());
+                    double theta_j = flip_data.sequence_on_lattice(pos_j);
+                    double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
+                    r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
+                }
+            },
+           flip_data.d_E_1()
+    );
+    Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
+        [&](const long i, double &H_total) {
+             //   if (flip_data.accept_move()) {
+            //if (ind ! = )
+            //}
+            coord_t pos_i = flip_data.lattice_nodes_positions(i);
+            if ((pos_i !=  flip_data.oldIndex()) && (pos_i != flip_data.newIndex()) ) {
+               // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
+               double theta_i  = flip_data.sequence_on_lattice(pos_i);
+                coord_t pos_j  = flip_data.lattice_nodes_positions(flip_data.newIndex());
+                double theta_j = flip_data.sequence_on_lattice(pos_j);
+                double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
+                r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
+            }
+        },
+       flip_data.d_E_2()
+    );
+}
+
+
+
 KOKKOS_INLINE_FUNCTION
 void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                const  FlipMoveData &flip_data_local,
@@ -606,6 +663,7 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         flip_data_local.spinValue() = rand_gen1.drand(0, 2.0*flip_data_local.PI() );
         pool.free_state(rand_gen1);
         flip_data_local.oldspin(0) = flip_data_local.sequence_on_lattice(flip_data_local.start_conformation(0));
+         
 
         // delete the beginning of SAW
         flip_data_local.save_start_conformation(0) = flip_data_local.start_conformation(0);
@@ -613,6 +671,10 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         flip_data_local.next_monomers(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
         flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = NO_SAW_NODE;
         flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
+
+
+        flip_data_local.oldIndex() = flip_data_local.save_start_conformation(0);
+        flip_data_local.newIndex() = new_point;
 
         //add the new monomer at the end of SAW
         flip_data_local.next_monomers(flip_data_local.end_conformation(0)) = new_point;
@@ -657,6 +719,10 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         flip_data_local.previous_monomers(flip_data_local.save_end_conformation(0)) = NO_SAW_NODE;
         flip_data_local.next_monomers( flip_data_local.end_conformation(0)) = NO_SAW_NODE;
         flip_data_local.sequence_on_lattice(flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
+
+
+        flip_data_local.oldIndex() = flip_data_local.save_end_conformation(0);
+        flip_data_local.newIndex() =  new_point;
 
         //add the new beginning
         flip_data_local.previous_monomers(flip_data_local.start_conformation(0)) = new_point;
@@ -982,6 +1048,17 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             if (flip_data_local.accept_move()) {            
 
             hierarchicalEnergy(team_member, flip_data_local);
+
+
+            hierarchicalDeltaE_1(team_member, flip_data_local); 
+
+
+            printf("Traditional %lf  ;   new   %lf   \n ",
+                flip_data_local.newE() - flip_data_local.E(0),
+                flip_data_local.d_E_2() - flip_data_local.d_E_1());
+
+            
+
             team_member.team_barrier();
             if ( flip_data_local.flipMoveType()  < 0.5) {
                 hierarchicalOneKernel_AddEnd_FirstPart(team_member, flip_data_local, local_pool );
