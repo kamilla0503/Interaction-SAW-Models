@@ -748,9 +748,9 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         return;
     }
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-
+        double p1 = exp(-(flip_data_local.J() * ( flip_data_local.d_E_2() - flip_data_local.d_E_1()   )));
        // printf("hierarchicalOneKernel Add Start Energy %f \n", flip_data_local.newE());
-        double p1 = exp(-(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0))));
+        //double p1 = exp(-(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0))));
         double p_metropolis = Kokkos::min(1.0, p1);
         auto rand_gen = pool.get_state();
         double q_ifaccept = rand_gen.drand(0., 1.);
@@ -799,7 +799,9 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
         return;
     }
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        double p1 = exp( -(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0))) );
+       // double p1 = exp( -(flip_data_local.J() * (flip_data_local.newE() - flip_data_local.E(0))) );
+        double p1 = exp( -(flip_data_local.J() * ( flip_data_local.d_E_2() - flip_data_local.d_E_1()       )) );
+      
         double p_metropolis = (p1 < 1.0) ? p1 : 1.0;
 
         auto rand_gen = pool.get_state();
@@ -1048,15 +1050,15 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 
             if (flip_data_local.accept_move()) {            
 
-            hierarchicalEnergy(team_member, flip_data_local);
+         //   hierarchicalEnergy(team_member, flip_data_local);
 
-            team_member.team_barrier();
+          //  team_member.team_barrier();
             hierarchicalDeltaE_1(team_member, flip_data_local); 
 
-            team_member.team_barrier();
-            printf("Traditional %lf  ;   new   %lf   \n ",
-                flip_data_local.newE() - flip_data_local.E(0),
-                flip_data_local.d_E_2() - flip_data_local.d_E_1());
+         //   team_member.team_barrier();
+            // printf("Traditional %lf  ;   new   %lf   \n ",
+            //     flip_data_local.newE() - flip_data_local.E(0),
+            //     flip_data_local.d_E_2() - flip_data_local.d_E_1());
 
             
 
