@@ -590,6 +590,10 @@ KOKKOS_INLINE_FUNCTION
 void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data)
 {
+    coord_t pos_j  = flip_data.oldIndex();
+    double theta_j = flip_data.oldspin(0);
+    coord_t pos_k  = flip_data.newIndex();
+    double theta_k = flip_data.sequence_on_lattice(pos_k);
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
             [&](const long i, double &H_total) {
@@ -600,16 +604,12 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
                 if ((pos_i !=  flip_data.oldIndex()) && (pos_i != flip_data.newIndex()) ) {
                    // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
                     double theta_i  = flip_data.sequence_on_lattice(pos_i);
-                    coord_t pos_j  = flip_data.oldIndex();
-                    double theta_j = flip_data.oldspin(0);
                     double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
-                    r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    r_val = Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total += Kokkos::cos(theta_i - theta_j) / r_val;
 
-                    coord_t pos_k  = flip_data.newIndex();
-                    double theta_k = flip_data.sequence_on_lattice(pos_k);
                     r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device());
-                    r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    r_val = Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
 
                 }
@@ -617,25 +617,7 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
            flip_data.d_E_1()
     );
    // team_member.team_barrier();
-   /* Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
-        [&](const long i, double &H_total) {
-             //   if (flip_data.accept_move()) {
-            //if (ind ! = )
-            //}
-            coord_t pos_i = flip_data.lattice_nodes_positions(i);
-            if ((pos_i !=  flip_data.oldIndex()) && (pos_i != flip_data.newIndex()) ) {
-               // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
-               double theta_i  = flip_data.sequence_on_lattice(pos_i);
-                coord_t pos_j  = flip_data.newIndex();
-                double theta_j = flip_data.sequence_on_lattice(pos_j);
-                double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
-                r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
-                H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
-            }
-        },
-       flip_data.d_E_2()
-    ); */
+
 }
 
 
@@ -1035,7 +1017,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
     auto local_pool = my_pool;
     // (C) We launch exactly one team, with 1023 threads, as you do now
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
-    team_policy policy(1, 500, 1);
+    team_policy policy(1, 1000, 1);
   //team_policy policy(1, 100, 9);
     auto n_iters = MC_STEPS;
 
