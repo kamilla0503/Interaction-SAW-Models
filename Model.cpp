@@ -601,18 +601,19 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
                 //if (ind ! = )
                 //}
                 coord_t pos_i = flip_data.lattice_nodes_positions(i);
-                if ((pos_i !=  flip_data.oldIndex()) && (pos_i != flip_data.newIndex()) ) {
+                if ((pos_i ==  flip_data.oldIndex()) || (pos_i == flip_data.newIndex()) ) return; 
+                //{
                    // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
                     double theta_i  = flip_data.sequence_on_lattice(pos_i);
                     double r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
-                    r_val = Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total += Kokkos::cos(theta_i - theta_j) / r_val;
 
                     r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device());
-                    r_val = Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
 
-                }
+                //  }
             },
            flip_data.d_E_1()
     );

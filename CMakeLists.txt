@@ -75,7 +75,7 @@ set_property(TARGET finite_element PROPERTY CUDA_STANDARD 14)
 
 # Example: replicating your -O3 -DREGIME_3D -DSTARTHALF -use_fast_math
 target_compile_options(finite_element PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+        $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math -maxrregcount=64>
         $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
 )
 
