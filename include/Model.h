@@ -24,7 +24,7 @@
 #define NO_XY_SPIN -5
 #endif
 
-const double PI = std::atan(1.0)*4;
+const float PI = std::atan(1.0)*4;
 
 struct FlipMoveData {
     // Device-accessible data from Lattice
@@ -33,19 +33,19 @@ struct FlipMoveData {
     long ndim2;
 
     // Device-accessible data from Model
-    Kokkos::View<double *, Kokkos::CudaSpace> sequence_on_lattice;
+    Kokkos::View<float *, Kokkos::CudaSpace> sequence_on_lattice;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> next_monomers;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> previous_monomers;
     Kokkos::View<short *, Kokkos::CudaSpace> directions;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> lattice_nodes_positions;
 
     // Scalars
-    //double J;
-    Kokkos::View<double, Kokkos::CudaSpace> J;
-    //double E;
+    //float J;
+    Kokkos::View<float, Kokkos::CudaSpace> J;
+    //float E;
 
-    Kokkos::View<double*, Kokkos::CudaSpace> E;
-    Kokkos::View<double, Kokkos::CudaSpace> newE;
+    Kokkos::View<float*, Kokkos::CudaSpace> E;
+    Kokkos::View<float, Kokkos::CudaSpace> newE;
 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> start_conformation;
     Kokkos::View<coord_t*, Kokkos::CudaSpace> end_conformation;
@@ -60,7 +60,7 @@ struct FlipMoveData {
     // Random number generator pool
     Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
 
-    Kokkos::View<double*, Kokkos::CudaSpace> oldspin;
+    Kokkos::View<float*, Kokkos::CudaSpace> oldspin;
     Kokkos::View<long, Kokkos::CudaSpace> oldIndex; // not index --- it is really coord 
     Kokkos::View<long, Kokkos::CudaSpace> newIndex; // not index --- it is really coord 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> save_start_conformation;
@@ -69,9 +69,9 @@ struct FlipMoveData {
     Kokkos::View<coord_t*, Kokkos::CudaSpace> start_index_in_nodes_position;
 
     Kokkos::View<long, Kokkos::CudaSpace> direction;
-    Kokkos::View<double, Kokkos::CudaSpace> spinValue;
+    Kokkos::View<float, Kokkos::CudaSpace> spinValue;
 
-    Kokkos::View<double, Kokkos::CudaSpace> PI;
+    Kokkos::View<float, Kokkos::CudaSpace> PI;
     //PI = std::atan(1.0)*4;
 
     Kokkos::View<long*, Kokkos::CudaSpace> i_index;
@@ -81,16 +81,16 @@ struct FlipMoveData {
 
     Kokkos::View<bool, Kokkos::CudaSpace> accept_move; 
 
-    Kokkos::View<double, Kokkos::CudaSpace> flipMoveType;
+    Kokkos::View<float, Kokkos::CudaSpace> flipMoveType;
 
-    Kokkos::View<double**> localField;  // shape: (N,2)
-    Kokkos::View<double*>  fieldNorm;   // shape: (N)
+    Kokkos::View<float**> localField;  // shape: (N,2)
+    Kokkos::View<float*>  fieldNorm;   // shape: (N)
 
     Kokkos::View<long, Kokkos::CudaSpace> spin_relax  ;
     Kokkos::View<long*, Kokkos::CudaSpace> chosenIndices_relax  ;
 
-    Kokkos::View<double, Kokkos::CudaSpace> d_E_1; 
-    Kokkos::View<double, Kokkos::CudaSpace> d_E_2; 
+    Kokkos::View<float, Kokkos::CudaSpace> d_E_1; 
+    Kokkos::View<float, Kokkos::CudaSpace> d_E_2; 
 };
 
 
@@ -105,16 +105,16 @@ public:
         return lattice->ndim2();
     }
     Lattice *lattice = nullptr;
-    void set_J (double J_) {J = J_;}
+    void set_J (float J_) {J = J_;}
 //protected:
-    //Model-specific Energy function; returns double as J is expected to be double also
+    //Model-specific Energy function; returns float as J is expected to be float also
     KOKKOS_FUNCTION virtual void Energy () = 0;
-    //KOKKOS_FUNCTION virtual double Energy_Add_Start () = 0;
-    //KOKKOS_FUNCTION virtual double Energy_Add_End () = 0;
+    //KOKKOS_FUNCTION virtual float Energy_Add_Start () = 0;
+    //KOKKOS_FUNCTION virtual float Energy_Add_End () = 0;
 
     long L; //Length of the model chain
-    double E; //current value for energy; double as J
-    double J; //Interaction Energy
+    float E; //current value for energy; float as J
+    float J; //Interaction Energy
     Kokkos::View<long*, Kokkos::CudaSpace> lattice_side; //("lattice_side", 1);
     Kokkos::View<long*, Kokkos::HostSpace>::HostMirror lattice_side_host;
 
@@ -147,7 +147,7 @@ public:
 
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (long direction, SpinType spinvalue) = 0; //depends on spin variables
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart (long direction, SpinType spinvalue) = 0; //depends on spin variables
-   // virtual void ClusterStep (double flipdirection) = 0; //depends on spin variables
+   // virtual void ClusterStep (float flipdirection) = 0; //depends on spin variables
 
     void LatticeInitialization();
 
@@ -167,9 +167,9 @@ public:
     std::valarray<short> directions_h; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
     Kokkos::View<short*, Kokkos::CudaSpace>  directions;
 
-    mc_stats::ScalarObservable<double> e2e_distance_2;
-    mc_stats::ScalarObservable<double> gyration_2_trace;
-    mc_stats::ScalarObservable<double> gyration_2_direct;
+    mc_stats::ScalarObservable<float> e2e_distance_2;
+    mc_stats::ScalarObservable<float> gyration_2_trace;
+    mc_stats::ScalarObservable<float> gyration_2_direct;
 
     long* lattice_nodes_positions_h;
     Kokkos::View<long*, Kokkos::HostSpace>::HostMirror h_lattice_nodes_positions_h;
@@ -187,10 +187,10 @@ public:
 };
 
 //Class for XY long-interacting Model on SAWs
-class XY_SAW_LongInteraction : public  SAW_model<double> {
+class XY_SAW_LongInteraction : public  SAW_model<float> {
 public:
     XY_SAW_LongInteraction() {};
-    XY_SAW_LongInteraction(long length, double J);
+    XY_SAW_LongInteraction(long length, float J);
 
     KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
@@ -203,9 +203,9 @@ public:
     void runMCMCOnDevice(long long MC_STEPS) override;
     KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
-//    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, double spinValue) override;
-//    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, double spinValue) override;
-   // KOKKOS_INLINE_FUNCTION void ClusterStep (double flipdirection);
+//    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (long direction, float spinValue) override;
+//    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(long direction, float spinValue) override;
+   // KOKKOS_INLINE_FUNCTION void ClusterStep (float flipdirection);
 
     void SequenceOnLatticeInitialization();
     void StartConfiguration();
@@ -222,25 +222,25 @@ public:
     std::valarray<bool> used_coords;
 
     KOKKOS_FUNCTION void Energy ();
-    //KOKKOS_FUNCTION double Energy_Add_Start () ;
-    //KOKKOS_FUNCTION double Energy_Add_End () ;
+    //KOKKOS_FUNCTION float Energy_Add_Start () ;
+    //KOKKOS_FUNCTION float Energy_Add_End () ;
 
 
-    mc_stats::ScalarObservable<double> energy;
-    mc_stats::ScalarObservable<double> energy_2;
-    mc_stats::ScalarObservable<double> energy_4;
+    mc_stats::ScalarObservable<float> energy;
+    mc_stats::ScalarObservable<float> energy_2;
+    mc_stats::ScalarObservable<float> energy_4;
 
-    mc_stats::ScalarObservable<double> mags_sin;
-    mc_stats::ScalarObservable<double> mags_cos;
-    mc_stats::ScalarObservable<double> magnetization_1;
-    mc_stats::ScalarObservable<double> magnetization_2;
-    mc_stats::ScalarObservable<double> magnetization_4;
+    mc_stats::ScalarObservable<float> mags_sin;
+    mc_stats::ScalarObservable<float> mags_cos;
+    mc_stats::ScalarObservable<float> magnetization_1;
+    mc_stats::ScalarObservable<float> magnetization_2;
+    mc_stats::ScalarObservable<float> magnetization_4;
 
-    mc_stats::ScalarObservable<double> eigen1;
-    mc_stats::ScalarObservable<double> eigen2;
-    mc_stats::ScalarObservable<double> eigen3;
+    mc_stats::ScalarObservable<float> eigen1;
+    mc_stats::ScalarObservable<float> eigen2;
+    mc_stats::ScalarObservable<float> eigen3;
 
-    mc_stats::ScalarObservable<double> asphericity_collect;
+    mc_stats::ScalarObservable<float> asphericity_collect;
  
 
 
@@ -249,7 +249,7 @@ public:
 
 
 struct Vector3 {
-    double x, y, z;
+    float x, y, z;
   
     KOKKOS_INLINE_FUNCTION
     Vector3() : x(0.0), y(0.0), z(0.0) {}
@@ -271,7 +271,7 @@ struct Vector3 {
 
 // Custom struct to accumulate the independent components of a symmetric 3x3 gyration tensor.
 struct GyrationTensor {
-    double q00, q01, q02, q11, q12, q22;
+    float q00, q01, q02, q11, q12, q22;
   
     KOKKOS_INLINE_FUNCTION
     GyrationTensor() : q00(0.0), q01(0.0), q02(0.0),
@@ -317,8 +317,8 @@ struct GyrationTensor {
 
 
   KOKKOS_INLINE_FUNCTION
-double angleDiff(double a, double b) {
-  double diff = a - b;
+float angleDiff(float a, float b) {
+  float diff = a - b;
   while(diff > M_PI)  diff -= 2.0 * M_PI;
   while(diff < -M_PI) diff += 2.0 * M_PI;
   return diff;

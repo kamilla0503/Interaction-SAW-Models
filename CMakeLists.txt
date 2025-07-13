@@ -74,9 +74,18 @@ set_property(TARGET finite_element PROPERTY CXX_STANDARD 14)
 set_property(TARGET finite_element PROPERTY CUDA_STANDARD 14)
 
 # Example: replicating your -O3 -DREGIME_3D -DSTARTHALF -use_fast_math
+#target_compile_options(finite_element PRIVATE
+#        $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math> #-maxrregcount=64>
+#        $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+#)
+
+#target_compile_options(finite_element PRIVATE -use_fast_math)
 target_compile_options(finite_element PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math -maxrregcount=64>
-        $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+        -O3
+        -use_fast_math            # fast FP32 SFU
+       # -gencode arch=compute_80,code=sm_80   # match your GPU
+        --expt-extended-lambda    # safer with CUDA ≥11
+        -DREGIME_3D -DSTARTHALF
 )
 
 # ------------------------------------------------------------------------------
