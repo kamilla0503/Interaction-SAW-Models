@@ -395,16 +395,41 @@ void XY_SAW_LongInteraction::StartConfiguration() {
   flip_data.d_E_1 = Kokkos::View<float, Kokkos::CudaSpace>("d_E_1");
   flip_data.d_E_2 = Kokkos::View<float, Kokkos::CudaSpace>("d_E_2");
 
+  flip_data.x_coords = Kokkos::View<long *, Kokkos::CudaSpace>("x_coords", Nnodes);
+  auto x_coords_h = Kokkos::create_mirror_view(flip_data.x_coords);
+  for (coord_t i = 0; i < Nnodes; i++) {
+    x_coords_h[i] = i % lattice_side_h;
+  }
+  Kokkos::deep_copy(flip_data.x_coords, x_coords_h);
+
+
+
+  flip_data.y_coords = Kokkos::View<long *, Kokkos::CudaSpace>("y_coords", Nnodes);
+  auto y_coords_h = Kokkos::create_mirror_view(flip_data.y_coords);
+  for (coord_t i = 0; i < Nnodes; i++) {
+    y_coords_h[i] =  (i % (lattice_side_h * lattice_side_h)) /lattice_side_h;
+  }
+  Kokkos::deep_copy(flip_data.y_coords, y_coords_h);
+
+  flip_data.z_coords = Kokkos::View<long *, Kokkos::CudaSpace>("z_coords", Nnodes);
+  auto z_coords_h = Kokkos::create_mirror_view(flip_data.z_coords);
+  for (coord_t i = 0; i < Nnodes; i++) {
+    z_coords_h[i] = i / (lattice_side_h * lattice_side_h);
+  }
+  Kokkos::deep_copy(flip_data.z_coords, z_coords_h);
+
+
 }
 
 KOKKOS_INLINE_FUNCTION
-float radius(const coord_t& start, const coord_t& end, long lattice_side) {
-    long start_x = start % lattice_side;
-    long start_y = (start % (lattice_side * lattice_side)) /lattice_side;
-    long start_z = start / (lattice_side * lattice_side);
-    long end_x = end % lattice_side;
-    long end_y = (end % (lattice_side * lattice_side)) /lattice_side;
-    long end_z = end / (lattice_side * lattice_side);
+float radius(const coord_t& start, const coord_t& end, long lattice_side,
+    const FlipMoveData &flip_data) {
+    long start_x = flip_data.x_coords[start];
+    long start_y = flip_data.y_coords[start];
+    long start_z = flip_data.z_coords[start];
+    long end_x = flip_data.x_coords[end];
+    long end_y = flip_data.y_coords[end];
+    long end_z = flip_data.z_coords[end];
     //torus distance;
     float xdiff = abs(end_x - start_x);
     if (xdiff > (lattice_side/2))
@@ -474,6 +499,33 @@ float XY_SAW_LongInteraction::Energy() {
 }*/
 
 
+KOKKOS_INLINE_FUNCTION
+float radius1(const coord_t& start, const coord_t& end, long lattice_side) {
+    long start_x = start % lattice_side;
+    long start_y = (start % (lattice_side * lattice_side)) /lattice_side;
+    long start_z = start / (lattice_side * lattice_side);
+    long end_x = end % lattice_side;
+    long end_y = (end % (lattice_side * lattice_side)) /lattice_side;
+    long end_z = end / (lattice_side * lattice_side);
+    //torus distance;
+    float xdiff = abs(end_x - start_x);
+    if (xdiff > (lattice_side/2))
+        xdiff = lattice_side - xdiff;
+
+    float ydiff = abs(end_y - start_y);
+    if (ydiff > (lattice_side / 2))
+        ydiff = lattice_side - ydiff;
+
+    float zdiff = abs(end_z - start_z);
+    if (zdiff > (lattice_side / 2))
+        zdiff = lattice_side - zdiff;
+
+    float r = xdiff *xdiff  + ydiff*ydiff + zdiff*zdiff;
+
+    return r;
+}
+
+
 KOKKOS_FUNCTION
 void XY_SAW_LongInteraction::Energy() {
     float H = 0.0;  // Total energy
@@ -502,7 +554,7 @@ void XY_SAW_LongInteraction::Energy() {
                 [=](const long j, float& inner_energy) {
                     const auto pos_j = lattice_nodes_positions_local(j);
                     const float theta_j = sequence_on_lattice_local(pos_j);
-                    float r_val = radius(pos_i, pos_j, lattice_side_local);
+                    float r_val = radius1(pos_i, pos_j, lattice_side_local);
                     // is it faster? is it correct?
                     r_val = Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val)*Kokkos::sqrt(r_val); //Kokkos::pow(r_val, exponent); // replace exp(log()) chain with pow()
                     inner_energy += Kokkos::cos(theta_i - theta_j) / r_val;
@@ -544,7 +596,7 @@ void hierarchicalEnergy1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &te
                             const long j = i + jj + 1;
                             coord_t pos_j  = flip_data.lattice_nodes_positions(j);
                             float theta_j = flip_data.sequence_on_lattice(pos_j);
-                            float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
+                            float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(),flip_data);
                             // Compute r_val^1.5 as before.
                             r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                             innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
@@ -572,7 +624,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     float theta_i  = flip_data.sequence_on_lattice(pos_i);
                     coord_t pos_j  = flip_data.lattice_nodes_positions(j);
                     float theta_j = flip_data.sequence_on_lattice(pos_j);
-                    float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
+                    float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(),flip_data);
                     r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
                 //}
@@ -605,11 +657,11 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
                 //{
                    // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
                     float theta_i  = flip_data.sequence_on_lattice(pos_i);
-                    float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device());
+                    float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(), flip_data);
                     r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total += Kokkos::cos(theta_i - theta_j) / r_val;
 
-                    r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device());
+                    r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device(), flip_data);
                     r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
 
@@ -926,7 +978,7 @@ void hierarchicalOneKernel_sweep(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_
                 if(j == i) continue;   
                 auto pos_j = flip_data_local.lattice_nodes_positions(j); 
                 auto pos_i = flip_data_local.lattice_nodes_positions(i); 
-                float r2 = radius(pos_i, pos_j, flip_data_local.lattice_side_device());
+                float r2 = radius(pos_i, pos_j, flip_data_local.lattice_side_device(), flip_data_local);
                 if(r2 < 1e-14) {
                     continue;
                   }

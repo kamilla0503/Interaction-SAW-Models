@@ -39,6 +39,11 @@ struct FlipMoveData {
     Kokkos::View<short *, Kokkos::CudaSpace> directions;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> lattice_nodes_positions;
 
+    Kokkos::View<coord_t *, Kokkos::CudaSpace> x_coords;
+    Kokkos::View<coord_t *, Kokkos::CudaSpace> y_coords;
+    Kokkos::View<coord_t *, Kokkos::CudaSpace> z_coords;
+
+
     // Scalars
     //float J;
     Kokkos::View<float, Kokkos::CudaSpace> J;
