@@ -5,39 +5,39 @@
 #include <vector>
 #include<Kokkos_Core.hpp>
 
-typedef long coord_t;
+typedef int coord_t;
 
 class Lattice {
 public:
     Lattice() {};
-    Lattice(long max_seq_size = 10) { lattice_side = max_seq_size; };
+    Lattice(int max_seq_size = 10) { lattice_side = max_seq_size; };
 
     KOKKOS_INLINE_FUNCTION virtual short int ndim() = 0 ;
     KOKKOS_INLINE_FUNCTION virtual short int ndim2() = 0;
 
-    KOKKOS_INLINE_FUNCTION long int lattice_size() {return lattice_side;};
-    KOKKOS_INLINE_FUNCTION long int NumberOfNodes () {return number_of_nodes;};
+    KOKKOS_INLINE_FUNCTION int lattice_size() {return lattice_side;};
+    KOKKOS_INLINE_FUNCTION int NumberOfNodes () {return number_of_nodes;};
 
     KOKKOS_INLINE_FUNCTION virtual float radius(const coord_t& start, const coord_t& end) = 0;
 
     std::valarray<coord_t> map_of_contacts_int_h;
     std::valarray<int> inverse_steps_h;
-    Kokkos::View<long*, Kokkos::CudaSpace> map_of_contacts_int;
-    Kokkos::View<long*, Kokkos::HostSpace>::HostMirror h_map_of_contacts_int_h;
+    Kokkos::View<int*, Kokkos::CudaSpace> map_of_contacts_int;
+    Kokkos::View<int*, Kokkos::HostSpace>::HostMirror h_map_of_contacts_int_h;
     Kokkos::View<int*, Kokkos::CudaSpace> inverse_steps;
     Kokkos::View<int*, Kokkos::HostSpace>::HostMirror h_inverse_steps_h;
 
 //protected:
     virtual void create_lattice() = 0;
 
-    long lattice_side = 0;
+    int lattice_side = 0;
     int number_of_nodes = 0;
     std::vector<std::vector<int> > steps;
 };
 
 class Lattice_3D : public Lattice {
 public:
-    Lattice_3D(long max_seq_size = 10);
+    Lattice_3D(int max_seq_size = 10);
     KOKKOS_INLINE_FUNCTION short int ndim() { return 3; }
     KOKKOS_INLINE_FUNCTION short int ndim2() {return 6;}
 
@@ -49,7 +49,7 @@ private:
 
 class Lattice_2D : public Lattice {
 public:
-    Lattice_2D(long max_seq_size = 10);
+    Lattice_2D(int max_seq_size = 10);
     KOKKOS_INLINE_FUNCTION short int ndim() { return 2; }
     KOKKOS_INLINE_FUNCTION short int ndim2() {return 4;}
 

@@ -34,7 +34,7 @@
 #define exponent 1.5
 
 template<class SpinType>
-SAW_model<SpinType>::SAW_model(long length) {
+SAW_model<SpinType>::SAW_model(int length) {
     L = length;
 }
 
@@ -44,11 +44,11 @@ void SAW_model<SpinType>::LatticeInitialization() {
     next_monomers_h.resize(lattice->NumberOfNodes(), NO_SAW_NODE);
     previous_monomers_h.resize(lattice->NumberOfNodes(), NO_SAW_NODE);
     directions_h.resize(lattice->NumberOfNodes(), NO_SAW_NODE); //directions enumerated from o to dim2()
-    lattice_nodes_positions_h = new long[number_of_spins()]{NO_SAW_NODE};
+    lattice_nodes_positions_h = new int[number_of_spins()]{NO_SAW_NODE};
     //lattice_nodes_positions_h.resize(number_of_spins(),NO_SAW_NODE);
 }
 
-XY_SAW_LongInteraction::XY_SAW_LongInteraction(long length, float J_) : SAW_model<float>(length) {
+XY_SAW_LongInteraction::XY_SAW_LongInteraction(int length, float J_) : SAW_model<float>(length) {
 #ifdef REGIME_2D
     lattice = new Lattice_2D(2 * L + OUT_Length);
 #else
@@ -91,18 +91,18 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     //initializePool(12345);
     //Kokkos::View<float*> sequence_on_lattice("sequence_on_lattice", this->lattice->NumberOfNodes());
-    //Kokkos::View<long*> A("A", N);
-    long lattice_side_h = lattice->lattice_side ; // Assign the actual value you need here
+    //Kokkos::View<int*> A("A", N);
+    int lattice_side_h = lattice->lattice_side ; // Assign the actual value you need here
     auto Nnodes = lattice_side_h*lattice_side_h*lattice_side_h;
     
-    lattice_nodes_positions = Kokkos::View<long *, Kokkos::CudaSpace>("lattice_nodes_positions", L);
+    lattice_nodes_positions = Kokkos::View<int *, Kokkos::CudaSpace>("lattice_nodes_positions", L);
     sequence_on_lattice = Kokkos::View<float *, Kokkos::CudaSpace>("sequence_on_lattice", Nnodes);
     //Kokkos::View<float*>::HostMirror
     h_sequence_on_lattice_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),sequence_on_lattice);
     h_lattice_nodes_positions_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),lattice_nodes_positions);
     //Kokkos::View<float *[4][4], LayoutType, MemSpace>::HostMirror h_A = Kokkos::create_mirror_view(A);
-    next_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("next_monomers", Nnodes);
-    previous_monomers = Kokkos::View<long *, Kokkos::CudaSpace>("previous_monomers", Nnodes);
+    next_monomers = Kokkos::View<int *, Kokkos::CudaSpace>("next_monomers", Nnodes);
+    previous_monomers = Kokkos::View<int *, Kokkos::CudaSpace>("previous_monomers", Nnodes);
     h_next_monomers_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),next_monomers);
     h_previous_monomers_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),previous_monomers);
 
@@ -177,38 +177,38 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     std::fstream myStream;
     std::string filename = "For_Debug_AStart.out";
     myStream.open(filename,std::fstream::out);
-    for (long j =0; j < this->number_of_spins() ; j++){
+    for (int j =0; j < this->number_of_spins() ; j++){
        myStream << lattice_nodes_positions_h[j] << " ";
     }
     myStream << std::endl;
-    for (long j =0; j< this->lattice->NumberOfNodes() ; j++){
+    for (int j =0; j< this->lattice->NumberOfNodes() ; j++){
         myStream << j << " " << next_monomers_h[j] << " " << previous_monomers_h[j] << " " <<  sequence_on_lattice_h[j];
         myStream << std::endl;
     }
     myStream << std::endl;
     myStream.close();
 #endif
-    for (long i = 0; i < L; ++i) {
-        h_lattice_nodes_positions_h(i) = lattice_nodes_positions_h[i];  // Assuming 'raw_host_data' is a long* array
+    for (int i = 0; i < L; ++i) {
+        h_lattice_nodes_positions_h(i) = lattice_nodes_positions_h[i];  // Assuming 'raw_host_data' is a int* array
     }
-    for (long i = 0; i < Nnodes; ++i) {
-        h_sequence_on_lattice_h(i) = sequence_on_lattice_h[i];  // Assuming 'raw_host_data' is a long* array
+    for (int i = 0; i < Nnodes; ++i) {
+        h_sequence_on_lattice_h(i) = sequence_on_lattice_h[i];  // Assuming 'raw_host_data' is a int* array
     }
-    for (long i = 0; i <  Nnodes; ++i) {
-        h_next_monomers_h(i) = next_monomers_h[i];  // Assuming 'raw_host_data' is a long* array
+    for (int i = 0; i <  Nnodes; ++i) {
+        h_next_monomers_h(i) = next_monomers_h[i];  // Assuming 'raw_host_data' is a int* array
     }
-    for (long i = 0; i <  Nnodes; ++i) {
-        h_previous_monomers_h(i) = previous_monomers_h[i];  // Assuming 'raw_host_data' is a long* array
+    for (int i = 0; i <  Nnodes; ++i) {
+        h_previous_monomers_h(i) = previous_monomers_h[i];  // Assuming 'raw_host_data' is a int* array
     }
-    for (long i = 0; i <  Nnodes; ++i) {
-        h_directions_h(i) = directions_h[i];  // Assuming 'raw_host_data' is a long* array
+    for (int i = 0; i <  Nnodes; ++i) {
+        h_directions_h(i) = directions_h[i];  // Assuming 'raw_host_data' is a int* array
     }
     Kokkos::deep_copy(lattice_nodes_positions, h_lattice_nodes_positions_h);
     Kokkos::deep_copy(sequence_on_lattice, h_sequence_on_lattice_h);
     Kokkos::deep_copy(previous_monomers, h_previous_monomers_h);
     Kokkos::deep_copy(next_monomers, h_next_monomers_h);
     Kokkos::deep_copy(directions, h_directions_h);
-    lattice_side = Kokkos::View<long*, Kokkos::CudaSpace>("lattice_side", 1);
+    lattice_side = Kokkos::View<int*, Kokkos::CudaSpace>("lattice_side", 1);
     lattice_side_host = Kokkos::create_mirror_view(Kokkos::HostSpace(),lattice_side);
     lattice_side_host(0) = lattice_side_h;
     Kokkos::deep_copy(lattice_side, lattice_side_host);
@@ -237,10 +237,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     //printf("Energy after all = %f \n", E);
 
     flip_data.spinValue = Kokkos::View<float, Kokkos::CudaSpace>("spinValue");
-    flip_data.direction = Kokkos::View<long, Kokkos::CudaSpace>("direction");
+    flip_data.direction = Kokkos::View<int, Kokkos::CudaSpace>("direction");
 
-    flip_data.oldIndex = Kokkos::View<long, Kokkos::CudaSpace>("oldIndex");
-    flip_data.newIndex = Kokkos::View<long, Kokkos::CudaSpace>("newIndex");
+    flip_data.oldIndex = Kokkos::View<int, Kokkos::CudaSpace>("oldIndex");
+    flip_data.newIndex = Kokkos::View<int, Kokkos::CudaSpace>("newIndex");
 
     std::cout << "Model creation start two scalars" << std::endl;
 
@@ -252,8 +252,8 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
     std::cout << "Pi preparation" << std::endl;
 
-    flip_data.L = Kokkos::View<long, Kokkos::CudaSpace>("L");
-    flip_data.lattice_side_device = Kokkos::View<long, Kokkos::CudaSpace>("lattice_side_device");
+    flip_data.L = Kokkos::View<int, Kokkos::CudaSpace>("L");
+    flip_data.lattice_side_device = Kokkos::View<int, Kokkos::CudaSpace>("lattice_side_device");
     auto L_host =  Kokkos::create_mirror_view(flip_data.L);
     auto lattice_side_host =  Kokkos::create_mirror_view(flip_data.lattice_side_device);
     L_host() = L;
@@ -336,10 +336,10 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(flip_data.start_index_in_nodes_position, 0);
 
     // Try add i and j pairs
-    long pairs_number = L*(L-1)/2;
+    int pairs_number = L*(L-1)/2;
 
-    flip_data.i_index = Kokkos::View<long*, Kokkos::CudaSpace>("i_index", pairs_number);
-    flip_data.j_index = Kokkos::View<long*, Kokkos::CudaSpace>("j_index", pairs_number);
+    flip_data.i_index = Kokkos::View<int*, Kokkos::CudaSpace>("i_index", pairs_number);
+    flip_data.j_index = Kokkos::View<int*, Kokkos::CudaSpace>("j_index", pairs_number);
     auto i_index_host = Kokkos::create_mirror_view(flip_data.i_index);
     auto j_index_host = Kokkos::create_mirror_view(flip_data.j_index);
 
@@ -355,7 +355,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(flip_data.i_index, i_index_host);
     Kokkos::deep_copy(flip_data.j_index, j_index_host);
 
-    flip_data.N_pairs = Kokkos::View<long, Kokkos::CudaSpace>("N_pairs");
+    flip_data.N_pairs = Kokkos::View<int, Kokkos::CudaSpace>("N_pairs");
 
     auto N_pairs_host = Kokkos::create_mirror_view(flip_data.N_pairs);
     N_pairs_host() = pairs_number;
@@ -382,9 +382,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 
 
-  long relax_spins =  L ; // L / 10;
-  flip_data.spin_relax = Kokkos::View<long, Kokkos::CudaSpace>("spin_relax");
-  flip_data.chosenIndices_relax = Kokkos::View<long*, Kokkos::CudaSpace>("chosenIndices_relax", relax_spins);
+  int relax_spins =  L ; // L / 10;
+  flip_data.spin_relax = Kokkos::View<int, Kokkos::CudaSpace>("spin_relax");
+  flip_data.chosenIndices_relax = Kokkos::View<int*, Kokkos::CudaSpace>("chosenIndices_relax", relax_spins);
   Kokkos::deep_copy(flip_data.spin_relax, relax_spins);
 
 
@@ -395,7 +395,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
   flip_data.d_E_1 = Kokkos::View<float, Kokkos::CudaSpace>("d_E_1");
   flip_data.d_E_2 = Kokkos::View<float, Kokkos::CudaSpace>("d_E_2");
 
-  flip_data.x_coords = Kokkos::View<long *, Kokkos::CudaSpace>("x_coords", Nnodes);
+  flip_data.x_coords = Kokkos::View<int *, Kokkos::CudaSpace>("x_coords", Nnodes);
   auto x_coords_h = Kokkos::create_mirror_view(flip_data.x_coords);
   for (coord_t i = 0; i < Nnodes; i++) {
     x_coords_h[i] = i % lattice_side_h;
@@ -404,14 +404,14 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 
 
 
-  flip_data.y_coords = Kokkos::View<long *, Kokkos::CudaSpace>("y_coords", Nnodes);
+  flip_data.y_coords = Kokkos::View<int *, Kokkos::CudaSpace>("y_coords", Nnodes);
   auto y_coords_h = Kokkos::create_mirror_view(flip_data.y_coords);
   for (coord_t i = 0; i < Nnodes; i++) {
     y_coords_h[i] =  (i % (lattice_side_h * lattice_side_h)) /lattice_side_h;
   }
   Kokkos::deep_copy(flip_data.y_coords, y_coords_h);
 
-  flip_data.z_coords = Kokkos::View<long *, Kokkos::CudaSpace>("z_coords", Nnodes);
+  flip_data.z_coords = Kokkos::View<int *, Kokkos::CudaSpace>("z_coords", Nnodes);
   auto z_coords_h = Kokkos::create_mirror_view(flip_data.z_coords);
   for (coord_t i = 0; i < Nnodes; i++) {
     z_coords_h[i] = i / (lattice_side_h * lattice_side_h);
@@ -422,14 +422,14 @@ void XY_SAW_LongInteraction::StartConfiguration() {
 }
 
 KOKKOS_INLINE_FUNCTION
-float radius(const coord_t& start, const coord_t& end, long lattice_side,
+float radius(const coord_t& start, const coord_t& end, int lattice_side,
     const FlipMoveData &flip_data) {
-    long start_x = flip_data.x_coords[start];
-    long start_y = flip_data.y_coords[start];
-    long start_z = flip_data.z_coords[start];
-    long end_x = flip_data.x_coords[end];
-    long end_y = flip_data.y_coords[end];
-    long end_z = flip_data.z_coords[end];
+    int start_x = flip_data.x_coords[start];
+    int start_y = flip_data.y_coords[start];
+    int start_z = flip_data.z_coords[start];
+    int end_x = flip_data.x_coords[end];
+    int end_y = flip_data.y_coords[end];
+    int end_z = flip_data.z_coords[end];
     //torus distance;
     float xdiff = abs(end_x - start_x);
     if (xdiff > (lattice_side/2))
@@ -453,7 +453,7 @@ float radius(const coord_t& start, const coord_t& end, long lattice_side,
 KOKKOS_FUNCTION
 float XY_SAW_LongInteraction::Energy() {
     float H = 0.0;  // Total energy
-    const long local_L = L;
+    const int local_L = L;
     const float lattice_side_local = lattice_side_host(0);
     auto lattice_nodes_positions_local = lattice_nodes_positions;
     auto sequence_on_lattice_local = sequence_on_lattice;
@@ -468,14 +468,14 @@ float XY_SAW_LongInteraction::Energy() {
     Kokkos::parallel_reduce(
             team_policy(local_L, team_size),
             KOKKOS_LAMBDA(const member_type& team_member, float& H_total) {
-        const long i = team_member.league_rank();  // Get the 'i' index
+        const int i = team_member.league_rank();  // Get the 'i' index
 
         float energy_i = 0.0;
 
         // Parallelize the inner loop over 'j' within the team
         Kokkos::parallel_reduce(
                 Kokkos::TeamThreadRange(team_member, i + 1, local_L),
-                [=](const long j, float& inner_energy) {
+                [=](const int j, float& inner_energy) {
                     float r = radius(
                             lattice_nodes_positions_local(i),
                             lattice_nodes_positions_local(j),
@@ -500,13 +500,13 @@ float XY_SAW_LongInteraction::Energy() {
 
 
 KOKKOS_INLINE_FUNCTION
-float radius1(const coord_t& start, const coord_t& end, long lattice_side) {
-    long start_x = start % lattice_side;
-    long start_y = (start % (lattice_side * lattice_side)) /lattice_side;
-    long start_z = start / (lattice_side * lattice_side);
-    long end_x = end % lattice_side;
-    long end_y = (end % (lattice_side * lattice_side)) /lattice_side;
-    long end_z = end / (lattice_side * lattice_side);
+float radius1(const coord_t& start, const coord_t& end, int lattice_side) {
+    int start_x = start % lattice_side;
+    int start_y = (start % (lattice_side * lattice_side)) /lattice_side;
+    int start_z = start / (lattice_side * lattice_side);
+    int end_x = end % lattice_side;
+    int end_y = (end % (lattice_side * lattice_side)) /lattice_side;
+    int end_z = end / (lattice_side * lattice_side);
     //torus distance;
     float xdiff = abs(end_x - start_x);
     if (xdiff > (lattice_side/2))
@@ -529,7 +529,7 @@ float radius1(const coord_t& start, const coord_t& end, long lattice_side) {
 KOKKOS_FUNCTION
 void XY_SAW_LongInteraction::Energy() {
     float H = 0.0;  // Total energy
-    const long local_L = L;
+    const int local_L = L;
     const float lattice_side_local = lattice_side_host(0);
     auto lattice_nodes_positions_local = lattice_nodes_positions;
     auto sequence_on_lattice_local = sequence_on_lattice;
@@ -544,14 +544,14 @@ void XY_SAW_LongInteraction::Energy() {
     Kokkos::parallel_reduce(
             team_policy(local_L, team_size),
             KOKKOS_LAMBDA(const member_type& team_member, float& H_total) {
-        const long i = team_member.league_rank();  // Get the 'i' index
+        const int i = team_member.league_rank();  // Get the 'i' index
         float energy_i = 0.0;
         const auto pos_i = lattice_nodes_positions_local(i);
         const float theta_i = sequence_on_lattice_local(pos_i);
         // Parallelize the inner loop over 'j' within the team
         Kokkos::parallel_reduce(
                 Kokkos::TeamVectorRange(team_member, i + 1, local_L),
-                [=](const long j, float& inner_energy) {
+                [=](const int j, float& inner_energy) {
                     const auto pos_j = lattice_nodes_positions_local(j);
                     const float theta_j = sequence_on_lattice_local(pos_j);
                     float r_val = radius1(pos_i, pos_j, lattice_side_local);
@@ -585,15 +585,15 @@ void hierarchicalEnergy1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &te
 {
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
-            [&](const long i, float &H_total) {
+            [&](const int i, float &H_total) {
                 float energy_i = 0.0;
                 coord_t pos_i   = flip_data.lattice_nodes_positions(i);
                 float theta_i  = flip_data.sequence_on_lattice(pos_i);
-                const long num_j = flip_data.L() - (i + 1);
+                const int num_j = flip_data.L() - (i + 1);
                 Kokkos::parallel_reduce(
                         Kokkos::ThreadVectorRange(team_member, num_j),
-                        [=](const long jj, float &innerSum) {
-                            const long j = i + jj + 1;
+                        [=](const int jj, float &innerSum) {
+                            const int j = i + jj + 1;
                             coord_t pos_j  = flip_data.lattice_nodes_positions(j);
                             float theta_j = flip_data.sequence_on_lattice(pos_j);
                             float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(),flip_data);
@@ -616,10 +616,10 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
 {
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.N_pairs() ),
-            [&](const long ind, float &H_total) {
+            [&](const int ind, float &H_total) {
                  //   if (flip_data.accept_move()) {
-                    long i = flip_data.i_index(ind);
-                    long j = flip_data.j_index(ind);
+                    int i = flip_data.i_index(ind);
+                    int j = flip_data.j_index(ind);
                     coord_t pos_i   = flip_data.lattice_nodes_positions(i);
                     float theta_i  = flip_data.sequence_on_lattice(pos_i);
                     coord_t pos_j  = flip_data.lattice_nodes_positions(j);
@@ -648,7 +648,7 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
     float theta_k = flip_data.sequence_on_lattice(pos_k);
     Kokkos::parallel_reduce(
             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
-            [&](const long i, float &H_total) {
+            [&](const int i, float &H_total) {
                  //   if (flip_data.accept_move()) {
                 //if (ind ! = )
                 //}
@@ -687,7 +687,7 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         // Example random usage
 
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
-        long dir = rand_gen.urand64() % 6;
+        int dir = rand_gen.urand64() % 6;
         pool.free_state(rand_gen);
         flip_data_local.direction() = dir;
       //  printf("hierarchicalFlipMoveAddEnd dir  = %ld; end = %ld;  index = %ld; \n ",   
@@ -725,7 +725,7 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
         flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
         flip_data_local.end_conformation(0) = new_point;
 
-        long position_new = flip_data_local.start_index_in_nodes_position(0) ;
+        int position_new = flip_data_local.start_index_in_nodes_position(0) ;
 
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
     });
@@ -773,7 +773,7 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
         flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = new_point;
 
-        long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
+        int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
         //if (position_new == -1 ) position_new = flip_data_local.L - 1;
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
 
@@ -805,7 +805,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(flip_data_local.direction());
             // new start is the new added value
-            long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L () - 1) % flip_data_local.L() ;
+            int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L () - 1) % flip_data_local.L() ;
             flip_data_local.start_index_in_nodes_position(0) = position_new;
 
         }
@@ -824,7 +824,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
             flip_data_local.end_conformation(0) = flip_data_local.save_end_conformation(0);
             flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0)) = flip_data_local.oldspin(0);
 
-            long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
+            int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
 
             flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
         }
@@ -896,9 +896,9 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
         flip_data_local.direction()  = rand_gen.urand64() % 6;
         pool.free_state(rand_gen);
 
-        long  step_coord = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + flip_data_local.direction() );
+        int  step_coord = flip_data_local.map_of_contacts_int(flip_data_local.ndim2 * flip_data_local.end_conformation(0) + flip_data_local.direction() );
 
-        long c = 0; //
+        int c = 0; //
  
         // test self avoidance condition
         if (flip_data_local.sequence_on_lattice(step_coord) == NO_XY_SPIN ||
@@ -907,19 +907,19 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
             return;
         }
 
-    long new_end = flip_data_local.next_monomers(step_coord);
+    int new_end = flip_data_local.next_monomers(step_coord);
     flip_data_local.next_monomers(step_coord) = flip_data_local.end_conformation(0);
     //need to check inverse steps 
     flip_data_local.directions(step_coord) = flip_data_local.inverse_steps(flip_data_local.direction());
     c = flip_data_local.end_conformation(0);
-    long int new_c;
+    int new_c;
     while (c != new_end) {
         new_c = flip_data_local.previous_monomers(c);
         flip_data_local.next_monomers(c) = flip_data_local.previous_monomers(c);
         flip_data_local.directions(c) = flip_data_local.inverse_steps(flip_data_local.directions(new_c) );
         c = new_c;
     }
-    long int temp_prev_next = flip_data_local.next_monomers(new_end);
+    int temp_prev_next = flip_data_local.next_monomers(new_end);
     flip_data_local.previous_monomers( flip_data_local.end_conformation(0)) = step_coord;
     c = flip_data_local.end_conformation(0);
     while (c != new_end) {
@@ -1130,7 +1130,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                     printf("Energy in start : %f \n ", flip_data_local.E(0));
 
-                    for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+                    for (long long  i = 0; i < flip_data_local.L(); i++ ) {
                         printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
                     }
                     printf("\n");
@@ -1145,7 +1145,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
                 
                 Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
                     printf("Energy in after sweep : %f \n ", flip_data_local.E(0));
-                    for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+                    for (long long  i = 0; i < flip_data_local.L(); i++ ) {
                         printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
                     }
                     printf("\n");
@@ -1157,7 +1157,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
 
         /*Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             printf("Energy in start : %f \n ", flip_data_local.E(0));
-            for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+            for (long long  i = 0; i < flip_data_local.L(); i++ ) {
                 printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
             }
             printf("\n");
@@ -1169,7 +1169,7 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
         team_member.team_barrier();
         Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
             printf("Energy in after sweep : %f \n ", flip_data_local.E(0));
-            for (long int  i = 0; i < flip_data_local.L(); i++ ) {
+            for (long long  i = 0; i < flip_data_local.L(); i++ ) {
                 printf("%lf ", flip_data_local.sequence_on_lattice(flip_data_local.lattice_nodes_positions(i))    );
             }
             printf("\n");
@@ -1282,7 +1282,7 @@ void XY_SAW_LongInteraction::FlipMove_AddEnd1() {
         //flip_data_local.lattice_nodes_positions(0) = flip_data_local.end_conformation(0);
 
         //write new end to the beginning
-        long position_new = flip_data_local.start_index_in_nodes_position(0) ;
+        int position_new = flip_data_local.start_index_in_nodes_position(0) ;
         //if (position_new == -1 ) position_new = flip_data_local.L - 1;
         //flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L;
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
@@ -1394,7 +1394,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart1() {
         flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
         flip_data_local.start_conformation(0) = new_point;
 
-        long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
+        int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
         //if (position_new == -1 ) position_new = flip_data_local.L - 1;
         flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
     });
@@ -1426,7 +1426,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart1() {
             flip_data_local.directions(flip_data_local.end_conformation(0)) = NO_SAW_NODE;
             flip_data_local.directions(flip_data_local.start_conformation(0)) = flip_data_local.inverse_steps(flip_data_local.direction());
             // new start is the new added value
-            long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L () - 1) % flip_data_local.L() ;
+            int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L () - 1) % flip_data_local.L() ;
             flip_data_local.start_index_in_nodes_position(0) = position_new;
 
         }
@@ -1445,7 +1445,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart1() {
             flip_data_local.end_conformation(0) = flip_data_local.save_end_conformation(0);
             flip_data_local.sequence_on_lattice(flip_data_local.end_conformation(0)) = flip_data_local.oldspin(0);
 
-            long position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
+            int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
 
             flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
         }
@@ -1461,7 +1461,7 @@ void XY_SAW_LongInteraction::FlipMove_AddStart1() {
 KOKKOS_INLINE_FUNCTION
 void XY_SAW_LongInteraction::Reconnect(short direction) {
 
-    long c = 0; //
+    int c = 0; //
     coord_t step_coord = lattice->map_of_contacts_int[lattice->ndim2() * end_conformation + direction];
 
     // test self avoidance condition
@@ -1471,18 +1471,18 @@ void XY_SAW_LongInteraction::Reconnect(short direction) {
         return;
     }
 
-    long new_end = next_monomers[step_coord];
+    int new_end = next_monomers[step_coord];
     next_monomers[step_coord] = end_conformation;
     directions[step_coord] = lattice->inverse_steps[direction];
     c = end_conformation;
-    long int new_c;
+    int new_c;
     while (c != new_end) {
         new_c = previous_monomers[c];
         next_monomers[c] = previous_monomers[c];
         directions[c] = lattice->inverse_steps[directions[new_c]];
         c = new_c;
     }
-    long int temp_prev_next = next_monomers[new_end];
+    int temp_prev_next = next_monomers[new_end];
     previous_monomers[end_conformation] = step_coord;
     c = end_conformation;
     while (c != new_end) {
@@ -1516,10 +1516,10 @@ void XY_SAW_LongInteraction::gyration() {
     Vector3 R;
     Kokkos::parallel_reduce("compute_center", L_local,
       KOKKOS_LAMBDA(const int i, Vector3& local_sum) {
-        long pos = flip_data_local.lattice_nodes_positions(i);
-        long x = pos % flip_data_local.lattice_side_device();
-        long y = (pos % (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device())) /flip_data_local.lattice_side_device();
-        long z = pos / (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device());
+        int pos = flip_data_local.lattice_nodes_positions(i);
+        int x = pos % flip_data_local.lattice_side_device();
+        int y = (pos % (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device())) /flip_data_local.lattice_side_device();
+        int z = pos / (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device());
         local_sum.x += x;
         local_sum.y += y;
         local_sum.z += z;
@@ -1532,10 +1532,10 @@ void XY_SAW_LongInteraction::gyration() {
     GyrationTensor tensor;
     Kokkos::parallel_reduce("compute_gyration_tensor", L_local,
       KOKKOS_LAMBDA (const int i, GyrationTensor& local_tensor) {
-        long pos = flip_data_local.lattice_nodes_positions(i);
-        long x = pos % flip_data_local.lattice_side_device();
-        long y = (pos % (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device())) /flip_data_local.lattice_side_device();
-        long z = pos / (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device());
+        int pos = flip_data_local.lattice_nodes_positions(i);
+        int x = pos % flip_data_local.lattice_side_device();
+        int y = (pos % (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device())) /flip_data_local.lattice_side_device();
+        int z = pos / (flip_data_local.lattice_side_device() * flip_data_local.lattice_side_device());
         float dx = x - R.x;
         float dy = y - R.y;
         float dz = z - R.z;
@@ -1624,27 +1624,27 @@ void XY_SAW_LongInteraction::defect(std::fstream &out_, long long n_steps){
            // Sum angular differences between consecutive spins.
            for (int j = start + 1; j < start + ws; j++) {
              
-            long shift = flip_data_local.start_index_in_nodes_position(0);
+            int shift = flip_data_local.start_index_in_nodes_position(0);
 
           //  flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + j) % flip_data_local.L();
 
 
-            long pos_i_index = (flip_data_local.start_index_in_nodes_position(0) + j - 1) % flip_data_local.L();
-            long pos_j_index = (flip_data_local.start_index_in_nodes_position(0) + j) % flip_data_local.L();
+            int pos_i_index = (flip_data_local.start_index_in_nodes_position(0) + j - 1) % flip_data_local.L();
+            int pos_j_index = (flip_data_local.start_index_in_nodes_position(0) + j) % flip_data_local.L();
             
-            long pos_i = flip_data_local.lattice_nodes_positions (pos_i_index) ;
-            long pos_j = flip_data_local.lattice_nodes_positions (pos_j_index) ;
+            int pos_i = flip_data_local.lattice_nodes_positions (pos_i_index) ;
+            int pos_j = flip_data_local.lattice_nodes_positions (pos_j_index) ;
 
             winding += angleDiff(flip_data_local.sequence_on_lattice(pos_j), 
             flip_data_local.sequence_on_lattice(pos_i));
            
             }
            // "Close" the window by adding the difference between the last and first spin.
-           //long start = flip_data_local.lattice_nodes_positions (flip_data_local.start_index_in_nodes_position(0));
-           long start_index = (flip_data_local.start_index_in_nodes_position(0) + start) % flip_data_local.L();
-           long start_ws_index = (flip_data_local.start_index_in_nodes_position(0) + start + ws - 1) % flip_data_local.L();
-           long pos_start = flip_data_local.lattice_nodes_positions (start_index);
-           long pos_start_ws = flip_data_local.lattice_nodes_positions (start_ws_index);;
+           //int start = flip_data_local.lattice_nodes_positions (flip_data_local.start_index_in_nodes_position(0));
+           int start_index = (flip_data_local.start_index_in_nodes_position(0) + start) % flip_data_local.L();
+           int start_ws_index = (flip_data_local.start_index_in_nodes_position(0) + start + ws - 1) % flip_data_local.L();
+           int pos_start = flip_data_local.lattice_nodes_positions (start_index);
+           int pos_start_ws = flip_data_local.lattice_nodes_positions (start_ws_index);;
            winding += angleDiff(flip_data_local.sequence_on_lattice(pos_start), 
            flip_data_local.sequence_on_lattice(pos_start_ws));
             
@@ -1694,7 +1694,7 @@ void XY_SAW_LongInteraction::updateData() {
 
     float sum_sin_1 = 0.0;
     float sum_cos_1 = 0.0;
-    long int current = start_conformation;
+    long long current = start_conformation;
 
     Kokkos::deep_copy(h_sequence_on_lattice_h, flip_data.sequence_on_lattice);
     Kokkos::deep_copy(h_lattice_nodes_positions_h, flip_data.lattice_nodes_positions);
@@ -1745,10 +1745,10 @@ void XY_SAW_LongInteraction::out_dir_data(std::fstream &out, long long n_steps) 
     out << n_steps << " " <<  ind_start(0) << " " << E << " ";
     auto ls =  lattice->lattice_size();
     for (int i = 0; i < L; i++) {
-        long pos = h_lattice_nodes_positions_h[i];
-        long x = pos % ls;
-        long y = (pos % (ls * ls )) / ls;
-        long z = pos / ( ls * ls );
+        int pos = h_lattice_nodes_positions_h[i];
+        int x = pos % ls;
+        int y = (pos % (ls * ls )) / ls;
+        int z = pos / ( ls * ls );
         out << x << " " << y << " " << z << " "; 
     }
     out  << std::endl;    

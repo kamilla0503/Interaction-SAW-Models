@@ -8,15 +8,15 @@
 
 
 #ifndef  MC_STEPS
-#define MC_STEPS 1000000000000 //99000000 //10000000000
+#define MC_STEPS 10000000000000 //99000000 //10000000000
 #endif
 
 #define URD_SEED 121
 #define UID_SEED 123
 
-MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length, double J, std::string LogFile_,
-                                             double Probability_Local_Update,
-                                             double Probability_Reconnect) {
+MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(int length, float J, std::string LogFile_,
+                                             float Probability_Local_Update,
+                                             float Probability_Reconnect) {
     p_for_local_update = Probability_Local_Update;
     p_for_reconnect = p_for_local_update + Probability_Reconnect;
     model = new XY_SAW_LongInteraction(length,J);
@@ -25,7 +25,7 @@ MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(long length, double J, std::string 
 
 
 //KOKKOS_INLINE_FUNCTION
-void MC_Interacting_SAW_XY::run_simulation(double J) {
+void MC_Interacting_SAW_XY::run_simulation(float J) {
 
     //model->set_J(J);
 
@@ -63,7 +63,7 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
     // Define several window sizes (number of consecutive spins to examine)
    std::vector<int> windowSizes = {10, 15, 20, 25, 30};
    // Define several threshold values (in winding number units).
-   std::vector<double> thresholds = {0.7, 0.8, 0.9, 1.0, 1.1};
+   std::vector<float> thresholds = {0.7, 0.8, 0.9, 1.0, 1.1};
    for (auto w : windowSizes) {
     for (auto t : thresholds) {
         defect_DataStream << w << "_" << t << " ";
@@ -71,18 +71,18 @@ void MC_Interacting_SAW_XY::run_simulation(double J) {
    }
    defect_DataStream << "step" << std::endl;
    
-    double mc_step_type = 0;
+    float mc_step_type = 0;
     short step = 0;
-    double flipMoveType = 0;
-    double spinvalue = 0;
+    float flipMoveType = 0;
+    float spinvalue = 0;
 
-    std::uniform_real_distribution<double> distribution_urd(0.0,1.0);
+    std::uniform_real_distribution<float> distribution_urd(0.0,1.0);
     std::mt19937 generator_urd;
 
-    std::uniform_int_distribution<long> distribution_uid_steps(0, model->ndim2() - 1);
+    std::uniform_int_distribution<int> distribution_uid_steps(0, model->ndim2() - 1);
     std::mt19937 generators_steps;
 
-    std::uniform_real_distribution<double> distribution_theta(0, 2.0*PI);
+    std::uniform_real_distribution<float> distribution_theta(0, 2.0*PI);
     std::mt19937 generators_theta;
 
 #ifdef SEED

@@ -7,22 +7,22 @@
 #include "Lattice.h"
 #include<iostream>
 
-Lattice_2D::Lattice_2D(long max_seq_size) : Lattice(max_seq_size) {
+Lattice_2D::Lattice_2D(int max_seq_size) : Lattice(max_seq_size) {
     number_of_nodes = lattice_side*lattice_side;
     create_lattice();
 }
 
-Lattice_3D::Lattice_3D(long max_seq_size) : Lattice(max_seq_size) {
+Lattice_3D::Lattice_3D(int max_seq_size) : Lattice(max_seq_size) {
     number_of_nodes = lattice_side*lattice_side*lattice_side;
     create_lattice();
 }
 
 void Lattice_2D::create_lattice() {
     /*
-    long int x, y;
+    int int x, y;
     ldiv_t n;
     map_of_contacts_int.resize(lattice_side*lattice_side*ndim2());
-    for (long i =0; i<number_of_nodes ; i++){
+    for (int i =0; i<number_of_nodes ; i++){
         map_of_contacts_int[ndim2()*i] = i+1;
         map_of_contacts_int[ndim2()*i+1] = i-1;
         map_of_contacts_int[ndim2()*i+2] = i+lattice_side;
@@ -50,7 +50,7 @@ void Lattice_2D::create_lattice() {
 #ifdef CHEKMAP2D
     std::fstream myStream;
     myStream.open("For_Debug_MapOfContacts.out",std::fstream::out);
-    for (long i =0; i<number_of_nodes ; i++){
+    for (int i =0; i<number_of_nodes ; i++){
         myStream << i ;
         for (int j = 0; j < ndim2(); j++) {
             myStream << " " << map_of_contacts_int[i*ndim2()+j];
@@ -63,10 +63,10 @@ void Lattice_2D::create_lattice() {
 
 void Lattice_3D::create_lattice() {
     coord_t x, y,z;
-    ldiv_t n;
+    div_t n;
     map_of_contacts_int_h.resize(lattice_side*lattice_side*lattice_side*ndim2());
     coord_t l;
-    for (long i =0; i<number_of_nodes ; i++){
+    for (int i =0; i<number_of_nodes ; i++){
         map_of_contacts_int_h[ndim2() * i] = i + 1;
         map_of_contacts_int_h[ndim2() * i + 1] = i - 1;
         map_of_contacts_int_h[ndim2() * i + 2] = i + lattice_side;
@@ -107,7 +107,7 @@ void Lattice_3D::create_lattice() {
 #ifdef CHEKMAP3D
     std::fstream myStream;
     myStream.open("For_Debug_MapOfContacts_3D.out",std::fstream::out);
-    for (long i =0; i<number_of_nodes ; i++){
+    for (int i =0; i<number_of_nodes ; i++){
         myStream << i ;
         for (int j = 0; j < ndim2(); j++) {
             myStream << " " << map_of_contacts_int_h[i*ndim2()+j];
@@ -115,16 +115,16 @@ void Lattice_3D::create_lattice() {
         myStream << std::endl;
     }
 #endif
-    map_of_contacts_int = Kokkos::View<long*, Kokkos::CudaSpace>("map_of_contacts_int",
+    map_of_contacts_int = Kokkos::View<int*, Kokkos::CudaSpace>("map_of_contacts_int",
                                               lattice_side*lattice_side*lattice_side*ndim2());
     inverse_steps = Kokkos::View<int*, Kokkos::CudaSpace>("inverse_steps", 6 );
     h_map_of_contacts_int_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),map_of_contacts_int);
     h_inverse_steps_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),inverse_steps);
-    for (long i = 0; i < lattice_side*lattice_side*lattice_side*ndim2(); ++i) {
-        h_map_of_contacts_int_h(i) = map_of_contacts_int_h[i];  // Assuming 'raw_host_data' is a long* array
+    for (int i = 0; i < lattice_side*lattice_side*lattice_side*ndim2(); ++i) {
+        h_map_of_contacts_int_h(i) = map_of_contacts_int_h[i];  // Assuming 'raw_host_data' is a int* array
     }
-    for (long i = 0; i < 6; ++i) {
-        h_inverse_steps_h(i) = inverse_steps_h[i];  // Assuming 'raw_host_data' is a long* array
+    for (int i = 0; i < 6; ++i) {
+        h_inverse_steps_h(i) = inverse_steps_h[i];  // Assuming 'raw_host_data' is a int* array
     }
     Kokkos::deep_copy(map_of_contacts_int, h_map_of_contacts_int_h);
     Kokkos::deep_copy(inverse_steps, h_inverse_steps_h);
@@ -132,10 +132,10 @@ void Lattice_3D::create_lattice() {
 }
 
 float Lattice_2D::radius(const coord_t& start, const coord_t& end) {
-    long start_x = start % lattice_side;
-    long start_y = start / lattice_side;
-    long end_x = end % lattice_side;
-    long end_y = end / lattice_side;
+    int start_x = start % lattice_side;
+    int start_y = start / lattice_side;
+    int end_x = end % lattice_side;
+    int end_y = end / lattice_side;
 
     //torus distance;
     float xdiff = abs(end_x - start_x);
@@ -153,12 +153,12 @@ float Lattice_2D::radius(const coord_t& start, const coord_t& end) {
 
 KOKKOS_INLINE_FUNCTION
 float Lattice_3D::radius(const coord_t& start, const coord_t& end) {
-    long start_x = start % lattice_side;
-    long start_y = (start % (lattice_side * lattice_side)) /lattice_side;
-    long start_z = start / (lattice_side * lattice_side);
-    long end_x = end % lattice_side;
-    long end_y = (end % (lattice_side * lattice_side)) /lattice_side;
-    long end_z = end / (lattice_side * lattice_side);
+    int start_x = start % lattice_side;
+    int start_y = (start % (lattice_side * lattice_side)) /lattice_side;
+    int start_z = start / (lattice_side * lattice_side);
+    int end_x = end % lattice_side;
+    int end_y = (end % (lattice_side * lattice_side)) /lattice_side;
+    int end_z = end / (lattice_side * lattice_side);
 
     //torus distance;
     float xdiff = abs(end_x - start_x);

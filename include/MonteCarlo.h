@@ -15,22 +15,22 @@ class Monte_Carlo {
 public:
     //Monte_Carlo () {};
 protected:
-    virtual void run_simulation(double J) = 0;
+    virtual void run_simulation(float J) = 0;
 };
 
 class MC_Interacting_SAW_XY : public Monte_Carlo{
 public:
     MC_Interacting_SAW_XY() {};
-    MC_Interacting_SAW_XY(  long length, double J, std::string LogFile = "",
-                            double Probability_Local_Update = 1.00,
-                            double Probability_Reconnect = 0.05);
-    void run_simulation(double J);
+    MC_Interacting_SAW_XY(  int length, float J, std::string LogFile = "",
+                            float Probability_Local_Update = 1.00,
+                            float Probability_Reconnect = 0.05);
+    void run_simulation(float J);
 protected:
 
     std::string LogFile;
 
-    double p_for_local_update;
-    double p_for_reconnect;
+    float p_for_local_update;
+    float p_for_reconnect;
 
     XY_SAW_LongInteraction *model = nullptr;
 
