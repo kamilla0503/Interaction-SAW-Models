@@ -1,0 +1,212 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 087e2ab..15bb3f4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -74,20 +74,20 @@ set_property(TARGET finite_element PROPERTY CXX_STANDARD 14)
+ set_property(TARGET finite_element PROPERTY CUDA_STANDARD 14)
+ 
+ # Example: replicating your -O3 -DREGIME_3D -DSTARTHALF -use_fast_math
+-#target_compile_options(finite_element PRIVATE
+-#        $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math> #-maxrregcount=64>
+-#        $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+-#)
+-
+-#target_compile_options(finite_element PRIVATE -use_fast_math)
+ target_compile_options(finite_element PRIVATE
+-        -O3
+-        -use_fast_math            # fast FP32 SFU
+-       # -gencode arch=compute_80,code=sm_80   # match your GPU
+-        --expt-extended-lambda    # safer with CUDA ≥11
+-        -DREGIME_3D -DSTARTHALF
++       $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math> #-maxrregcount=64>
++       $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+ )
+ 
++#target_compile_options(finite_element PRIVATE -use_fast_math)
++# target_compile_options(finite_element PRIVATE
++#         -O3
++#         -use_fast_math            # fast FP32 SFU
++#        # -gencode arch=compute_80,code=sm_80   # match your GPU
++#         --expt-extended-lambda    # safer with CUDA ≥11
++#         -DREGIME_3D -DSTARTHALF
++# )
++
+ # ------------------------------------------------------------------------------
+ # That’s it! You now have a single build that compiles Kokkos and your simulation.
+ # ------------------------------------------------------------------------------
+diff --git a/Model.cpp b/Model.cpp
+index 27ebddc..16703d0 100644
+--- a/Model.cpp
++++ b/Model.cpp
+@@ -97,6 +97,11 @@ void XY_SAW_LongInteraction::StartConfiguration() {
+     
+     lattice_nodes_positions = Kokkos::View<int *, Kokkos::CudaSpace>("lattice_nodes_positions", L);
+     sequence_on_lattice = Kokkos::View<float *, Kokkos::CudaSpace>("sequence_on_lattice", Nnodes);
++    
++    flip_data.s_x = Kokkos::View<float *, Kokkos::CudaSpace>("s_x", L) ;
++    flip_data.s_y = Kokkos::View<float *, Kokkos::CudaSpace>("s_y", L) ;
++    
++    
+     //Kokkos::View<float*>::HostMirror
+     h_sequence_on_lattice_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),sequence_on_lattice);
+     h_lattice_nodes_positions_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),lattice_nodes_positions);
+@@ -402,8 +407,6 @@ void XY_SAW_LongInteraction::StartConfiguration() {
+   }
+   Kokkos::deep_copy(flip_data.x_coords, x_coords_h);
+ 
+-
+-
+   flip_data.y_coords = Kokkos::View<int *, Kokkos::CudaSpace>("y_coords", Nnodes);
+   auto y_coords_h = Kokkos::create_mirror_view(flip_data.y_coords);
+   for (coord_t i = 0; i < Nnodes; i++) {
+@@ -418,6 +421,21 @@ void XY_SAW_LongInteraction::StartConfiguration() {
+   }
+   Kokkos::deep_copy(flip_data.z_coords, z_coords_h);
+ 
++  auto h_s_x =  Kokkos::create_mirror_view(flip_data.s_x);
++  auto h_s_y =  Kokkos::create_mirror_view(flip_data.s_y);
++
++  for (coord_t i = 0; i < L; i++) {
++    h_s_x[i] =  std::cos(sequence_on_lattice_h[lattice_nodes_positions_h[i]]);
++    h_s_y[i] =  std::sin(sequence_on_lattice_h[lattice_nodes_positions_h[i]]);
++  }
++
++  Kokkos::deep_copy(flip_data.s_x, h_s_x);
++  Kokkos::deep_copy(flip_data.s_y, h_s_y);
++
++  flip_data.new_cos = Kokkos::View<float, Kokkos::CudaSpace>("new_cos");
++  flip_data.new_sin = Kokkos::View<float, Kokkos::CudaSpace>("new_sin");
++
++  flip_data.position_new = Kokkos::View<int, Kokkos::CudaSpace>("position_new");
+ 
+ }
+ 
+@@ -659,11 +677,16 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
+                     float theta_i  = flip_data.sequence_on_lattice(pos_i);
+                     float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(), flip_data);
+                     r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+-                    H_total += Kokkos::cos(theta_i - theta_j) / r_val;
+-
++                    //H_total += Kokkos::cos(theta_i - theta_j) / r_val;
++                    H_total += (flip_data.s_x[i]*flip_data.s_x[flip_data.position_new()]+  flip_data.s_y[i]*flip_data.s_y[flip_data.position_new()] ) / r_val;
+                     r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device(), flip_data);
+                     r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+-                    H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
++                    //H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
++                    H_total -= (flip_data.s_x[i]*flip_data.new_cos()  +  flip_data.s_y[i]*flip_data.new_sin()  ) / r_val;
++                    //H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
++
++                    //Any case check ???? 
++
+ 
+                 //  }
+             },
+@@ -725,9 +748,15 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
+         flip_data_local.previous_monomers(new_point) = flip_data_local.end_conformation(0);
+         flip_data_local.end_conformation(0) = new_point;
+ 
+-        int position_new = flip_data_local.start_index_in_nodes_position(0) ;
++        flip_data_local.position_new()  = flip_data_local.start_index_in_nodes_position(0) ;
+ 
+-        flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
++        flip_data_local.lattice_nodes_positions(flip_data_local.position_new()) = flip_data_local.end_conformation(0);
++    
++        //recalculate cos and sin here 
++        //flip_data_local.s_x(position_new) = Kokkos::cos(flip_data_local.spinValue());
++        //flip_data_local.s_y(position_new) = Kokkos::sin(flip_data_local.spinValue()) ;
++        flip_data_local.new_cos() = Kokkos::cos(flip_data_local.spinValue());
++        flip_data_local.new_sin() = Kokkos::sin(flip_data_local.spinValue()) ;
+     });
+ }
+ 
+@@ -773,10 +802,15 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
+         flip_data_local.next_monomers(new_point) = flip_data_local.start_conformation(0);
+         flip_data_local.start_conformation(0) = new_point;
+ 
+-        int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
++        flip_data_local.position_new() = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
+         //if (position_new == -1 ) position_new = flip_data_local.L - 1;
+-        flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.start_conformation(0);
++        flip_data_local.lattice_nodes_positions(flip_data_local.position_new()) = flip_data_local.start_conformation(0);
++        //recalculate cos and sin here 
++        //flip_data_local.s_x(position_new) = Kokkos::cos(flip_data_local.spinValue());
++        //flip_data_local.s_y(position_new) = Kokkos::sin(flip_data_local.spinValue());
+ 
++        flip_data_local.new_cos() = Kokkos::cos(flip_data_local.spinValue());
++        flip_data_local.new_sin() = Kokkos::sin(flip_data_local.spinValue()) ;
+     });
+ }
+ 
+@@ -807,7 +841,8 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
+             // new start is the new added value
+             int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L () - 1) % flip_data_local.L() ;
+             flip_data_local.start_index_in_nodes_position(0) = position_new;
+-
++            flip_data_local.s_x(position_new) = Kokkos::cos(flip_data_local.spinValue());
++            flip_data_local.s_y(position_new) = Kokkos::sin(flip_data_local.spinValue()) ;
+         }
+         else {
+             //reject the new state
+@@ -827,6 +862,11 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
+             int position_new = (flip_data_local.start_index_in_nodes_position(0) + flip_data_local.L() - 1) % flip_data_local.L() ;
+ 
+             flip_data_local.lattice_nodes_positions(position_new) = flip_data_local.end_conformation(0);
++        
++
++//            flip_data_local.s_x(position_new) = Kokkos::cos(flip_data_local.oldspin(0));
++//            flip_data_local.s_y(position_new) = Kokkos::sin(flip_data_local.oldspin(0)) ;
++
+         }
+         flip_data_local.newE() = 0;
+ 
+@@ -862,6 +902,11 @@ float p1 = exp( -(flip_data_local.J() * (  flip_data_local.d_E_1()       )) );
+             flip_data_local.sequence_on_lattice(flip_data_local.save_start_conformation(0)) = NO_XY_SPIN;
+             flip_data_local.directions(flip_data_local.save_start_conformation(0)) = NO_SAW_NODE;
+             flip_data_local.directions(flip_data_local.previous_monomers(flip_data_local.end_conformation(0))) = flip_data_local.direction();
++            // flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L();
++
++            flip_data_local.s_x(flip_data_local.start_index_in_nodes_position(0)) = Kokkos::cos(flip_data_local.spinValue());
++            flip_data_local.s_y(flip_data_local.start_index_in_nodes_position(0)) = Kokkos::sin(flip_data_local.spinValue()) ;
++
+             flip_data_local.start_index_in_nodes_position(0) = (flip_data_local.start_index_in_nodes_position(0) + 1) % flip_data_local.L();
+ 
+         } else {
+@@ -880,6 +925,10 @@ float p1 = exp( -(flip_data_local.J() * (  flip_data_local.d_E_1()       )) );
+ 
+             flip_data_local.lattice_nodes_positions(flip_data_local.start_index_in_nodes_position(0)) = flip_data_local.start_conformation(0);
+ 
++           // flip_data_local.s_x(flip_data_local.start_index_in_nodes_position(0)) = Kokkos::cos(flip_data_local.oldspin(0));
++           // flip_data_local.s_y(flip_data_local.start_index_in_nodes_position(0)) = Kokkos::sin(flip_data_local.oldspin(0)) ;
++
++
+         }
+         flip_data_local.newE()= 0;
+     });
+diff --git a/include/Model.h b/include/Model.h
+index 92c16fe..9b0136b 100644
+--- a/include/Model.h
++++ b/include/Model.h
+@@ -96,6 +96,14 @@ struct FlipMoveData {
+ 
+     Kokkos::View<float, Kokkos::CudaSpace> d_E_1; 
+     Kokkos::View<float, Kokkos::CudaSpace> d_E_2; 
++
++    Kokkos::View<float *, Kokkos::CudaSpace> s_x;
++    Kokkos::View<float *, Kokkos::CudaSpace> s_y;
++
++    Kokkos::View<float, Kokkos::CudaSpace> new_cos;
++    Kokkos::View<float, Kokkos::CudaSpace> new_sin;
++
++    Kokkos::View<int, Kokkos::CudaSpace> position_new;
+ };
+ 
+ 
+@@ -128,8 +136,6 @@ public:
+     Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool;
+ 
+ 
+-
+-
+ };
+ 
+ // Abstract Class for geometry related work
