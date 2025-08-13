@@ -1,0 +1,158 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 087e2ab..15bb3f4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -74,20 +74,20 @@ set_property(TARGET finite_element PROPERTY CXX_STANDARD 14)
+ set_property(TARGET finite_element PROPERTY CUDA_STANDARD 14)
+ 
+ # Example: replicating your -O3 -DREGIME_3D -DSTARTHALF -use_fast_math
+-#target_compile_options(finite_element PRIVATE
+-#        $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math> #-maxrregcount=64>
+-#        $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+-#)
+-
+-#target_compile_options(finite_element PRIVATE -use_fast_math)
+ target_compile_options(finite_element PRIVATE
+-        -O3
+-        -use_fast_math            # fast FP32 SFU
+-       # -gencode arch=compute_80,code=sm_80   # match your GPU
+-        --expt-extended-lambda    # safer with CUDA ≥11
+-        -DREGIME_3D -DSTARTHALF
++       $<$<COMPILE_LANGUAGE:CXX>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math> #-maxrregcount=64>
++       $<$<COMPILE_LANGUAGE:CUDA>:-O3 -DREGIME_3D -DSTARTHALF -use_fast_math>
+ )
+ 
++#target_compile_options(finite_element PRIVATE -use_fast_math)
++# target_compile_options(finite_element PRIVATE
++#         -O3
++#         -use_fast_math            # fast FP32 SFU
++#        # -gencode arch=compute_80,code=sm_80   # match your GPU
++#         --expt-extended-lambda    # safer with CUDA ≥11
++#         -DREGIME_3D -DSTARTHALF
++# )
++
+ # ------------------------------------------------------------------------------
+ # That’s it! You now have a single build that compiles Kokkos and your simulation.
+ # ------------------------------------------------------------------------------
+diff --git a/Model.cpp b/Model.cpp
+index 27ebddc..4ea1ae5 100644
+--- a/Model.cpp
++++ b/Model.cpp
+@@ -638,41 +638,86 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
+ 
+ //Try O(N)
+ //This is for old spin 
+-KOKKOS_INLINE_FUNCTION
+-void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+-                        const FlipMoveData &flip_data)
+-{
+-    coord_t pos_j  = flip_data.oldIndex();
+-    float theta_j = flip_data.oldspin(0);
+-    coord_t pos_k  = flip_data.newIndex();
+-    float theta_k = flip_data.sequence_on_lattice(pos_k);
+-    Kokkos::parallel_reduce(
+-            Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
+-            [&](const int i, float &H_total) {
+-                 //   if (flip_data.accept_move()) {
+-                //if (ind ! = )
+-                //}
+-                coord_t pos_i = flip_data.lattice_nodes_positions(i);
+-                if ((pos_i ==  flip_data.oldIndex()) || (pos_i == flip_data.newIndex()) ) return; 
+-                //{
+-                   // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
+-                    float theta_i  = flip_data.sequence_on_lattice(pos_i);
+-                    float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(), flip_data);
+-                    r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+-                    H_total += Kokkos::cos(theta_i - theta_j) / r_val;
++// KOKKOS_INLINE_FUNCTION
++// void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
++//                         const FlipMoveData &flip_data)
++// {
++//     coord_t pos_j  = flip_data.oldIndex();
++//     float theta_j = flip_data.oldspin(0);
++//     coord_t pos_k  = flip_data.newIndex();
++//     float theta_k = flip_data.sequence_on_lattice(pos_k);
++//     Kokkos::parallel_reduce(
++//             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
++//             [&](const int i, float &H_total) {
++//                  //   if (flip_data.accept_move()) {
++//                 //if (ind ! = )
++//                 //}
++//                 coord_t pos_i = flip_data.lattice_nodes_positions(i);
++//                 if ((pos_i ==  flip_data.oldIndex()) || (pos_i == flip_data.newIndex()) ) return; 
++//                 //{
++//                    // coord_t pos_i   = flip_data.lattice_nodes_positions(i);
++//                     float theta_i  = flip_data.sequence_on_lattice(pos_i);
++//                     float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(), flip_data);
++//                     r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
++//                     H_total += Kokkos::cos(theta_i - theta_j) / r_val;
++
++//                     r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device(), flip_data);
++//                     r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
++//                     H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
++
++//                 //  }
++//             },
++//            flip_data.d_E_1()
++//     );
++//    // team_member.team_barrier();
++
++// }
+ 
+-                    r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device(), flip_data);
+-                    r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+-                    H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
+ 
+-                //  }
+-            },
+-           flip_data.d_E_1()
+-    );
+-   // team_member.team_barrier();
+ 
+-}
+ 
++void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
++                          const FlipMoveData &flip_data)
++{
++    // Endpoints (old/new) trigs once per team, reused for all i
++    const coord_t pos_j = flip_data.oldIndex();
++    const float   theta_j = flip_data.oldspin(0);
++    const coord_t pos_k = flip_data.newIndex();
++    const float   theta_k = flip_data.sequence_on_lattice(pos_k);
++
++    float cos_j, sin_j, cos_k, sin_k;
++#if defined(__CUDA_ARCH__)
++    sincosf(theta_j, &sin_j, &cos_j);
++    sincosf(theta_k, &sin_k, &cos_k);
++#else
++    sin_j = std::sin(theta_j); cos_j = std::cos(theta_j);
++    sin_k = std::sin(theta_k); cos_k = std::cos(theta_k);
++#endif
++
++    Kokkos::parallel_reduce(
++        Kokkos::TeamThreadRange(team_member, flip_data.L()),
++        [&](const int i, float &H_total) {
++            const coord_t pos_i = flip_data.lattice_nodes_positions(i);
++            if (pos_i == pos_j || pos_i == pos_k) return;
++
++            const float theta_i = flip_data.sequence_on_lattice(pos_i);
++            float sin_i, cos_i;
++#if defined(__CUDA_ARCH__)
++            sincosf(theta_i, &sin_i, &cos_i);
++#else
++            sin_i = std::sin(theta_i); cos_i = std::cos(theta_i);
++#endif
++            // Dot products avoid two expensive cos(theta_i - •) calls
++            float r_ij = radius(pos_i, pos_j, flip_data.lattice_side_device(), flip_data);
++            r_ij = Kokkos::sqrt(r_ij) * r_ij;
++            H_total += (cos_i * cos_j + sin_i * sin_j) / r_ij;
++
++            float r_ik = radius(pos_i, pos_k, flip_data.lattice_side_device(), flip_data);
++            r_ik = Kokkos::sqrt(r_ik) * r_ik;
++            H_total -= (cos_i * cos_k + sin_i * sin_k) / r_ik;
++        },
++        flip_data.d_E_1());
++}
+ 
+ 
+ KOKKOS_INLINE_FUNCTION
