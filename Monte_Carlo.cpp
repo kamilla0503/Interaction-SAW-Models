@@ -97,7 +97,7 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
 
     long long n_steps_out = 20*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_equlibrium = 400*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_update = 20*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_update = 50*model->number_of_spins()*model->number_of_spins(); //was 20 
 
     // n_steps_to_update = 10;
     // n_steps_out = 1; 

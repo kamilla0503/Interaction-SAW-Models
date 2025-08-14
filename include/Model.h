@@ -24,7 +24,7 @@
 #define NO_XY_SPIN -5
 #endif
 
-#define N_CHAINS 10 
+#define N_CHAINS 32
 
 //const int N_CHAINS = 10; 
 

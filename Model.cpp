@@ -904,7 +904,7 @@ void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::mem
         // test self avoidance condition
         if (flip_data_local.sequence_on_lattice(chain, step_coord) == NO_XY_SPIN ||
             flip_data_local.next_monomers(chain, step_coord) == NO_SAW_NODE ||
-            step_coord == flip_data_local.previous_monomers(chain, flip_data_local.end_conformation(c))) {
+            step_coord == flip_data_local.previous_monomers(chain, flip_data_local.end_conformation(chain))) {
             return;
         }
 
@@ -995,15 +995,17 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             // Evaluate and accept
             if (flip_data_local.accept_move(c)) {
                 hierarchicalDeltaE_1(team, flip_data_local, c);  // writes d.d_E_1(c)
+            }
                 team.team_barrier();
-
+            if (flip_data_local.accept_move(c)) {
                 if (flip_data_local.flipMoveType(c) < 0.5f) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team, flip_data_local, c, pool);
                 } else {
                     hierarchicalOneKernel_AddStart_FirstPart(team, flip_data_local, c, pool);
                 }
-                team.team_barrier();
+               
             }
+            team.team_barrier();
  
         }
 
