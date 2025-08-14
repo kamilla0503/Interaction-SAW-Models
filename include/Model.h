@@ -24,6 +24,10 @@
 #define NO_XY_SPIN -5
 #endif
 
+#define N_CHAINS 10 
+
+//const int N_CHAINS = 10; 
+
 const float PI = std::atan(1.0)*4;
 
 struct FlipMoveData {
@@ -33,11 +37,11 @@ struct FlipMoveData {
     int ndim2;
 
     // Device-accessible data from Model
-    Kokkos::View<float *, Kokkos::CudaSpace> sequence_on_lattice;
-    Kokkos::View<coord_t *, Kokkos::CudaSpace> next_monomers;
-    Kokkos::View<coord_t *, Kokkos::CudaSpace> previous_monomers;
-    Kokkos::View<short *, Kokkos::CudaSpace> directions;
-    Kokkos::View<coord_t *, Kokkos::CudaSpace> lattice_nodes_positions;
+    Kokkos::View<float **, Kokkos::CudaSpace> sequence_on_lattice;
+    Kokkos::View<coord_t **, Kokkos::CudaSpace> next_monomers;
+    Kokkos::View<coord_t **, Kokkos::CudaSpace> previous_monomers;
+    Kokkos::View<short **, Kokkos::CudaSpace> directions;
+    Kokkos::View<coord_t **, Kokkos::CudaSpace> lattice_nodes_positions;
 
     Kokkos::View<coord_t *, Kokkos::CudaSpace> x_coords;
     Kokkos::View<coord_t *, Kokkos::CudaSpace> y_coords;
@@ -50,7 +54,7 @@ struct FlipMoveData {
     //float E;
 
     Kokkos::View<float*, Kokkos::CudaSpace> E;
-    Kokkos::View<float, Kokkos::CudaSpace> newE;
+    Kokkos::View<float*, Kokkos::CudaSpace> newE;
 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> start_conformation;
     Kokkos::View<coord_t*, Kokkos::CudaSpace> end_conformation;
@@ -66,15 +70,15 @@ struct FlipMoveData {
     Kokkos::Random_XorShift64_Pool <Kokkos::Cuda> rand_pool;
 
     Kokkos::View<float*, Kokkos::CudaSpace> oldspin;
-    Kokkos::View<int, Kokkos::CudaSpace> oldIndex; // not index --- it is really coord 
-    Kokkos::View<int, Kokkos::CudaSpace> newIndex; // not index --- it is really coord 
+    Kokkos::View<int*, Kokkos::CudaSpace> oldIndex; // not index --- it is really coord 
+    Kokkos::View<int*, Kokkos::CudaSpace> newIndex; // not index --- it is really coord 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> save_start_conformation;
     Kokkos::View<coord_t*, Kokkos::CudaSpace> save_end_conformation;
 
     Kokkos::View<coord_t*, Kokkos::CudaSpace> start_index_in_nodes_position;
 
-    Kokkos::View<int, Kokkos::CudaSpace> direction;
-    Kokkos::View<float, Kokkos::CudaSpace> spinValue;
+    Kokkos::View<int*, Kokkos::CudaSpace> direction;
+    Kokkos::View<float*, Kokkos::CudaSpace> spinValue;
 
     Kokkos::View<float, Kokkos::CudaSpace> PI;
     //PI = std::atan(1.0)*4;
@@ -84,9 +88,9 @@ struct FlipMoveData {
 
     Kokkos::View<int, Kokkos::CudaSpace> N_pairs;
 
-    Kokkos::View<bool, Kokkos::CudaSpace> accept_move; 
+    Kokkos::View<bool*, Kokkos::CudaSpace> accept_move; 
 
-    Kokkos::View<float, Kokkos::CudaSpace> flipMoveType;
+    Kokkos::View<float*, Kokkos::CudaSpace> flipMoveType;
 
     Kokkos::View<float**> localField;  // shape: (N,2)
     Kokkos::View<float*>  fieldNorm;   // shape: (N)
@@ -94,8 +98,10 @@ struct FlipMoveData {
     Kokkos::View<int, Kokkos::CudaSpace> spin_relax  ;
     Kokkos::View<int*, Kokkos::CudaSpace> chosenIndices_relax  ;
 
-    Kokkos::View<float, Kokkos::CudaSpace> d_E_1; 
-    Kokkos::View<float, Kokkos::CudaSpace> d_E_2; 
+    Kokkos::View<float*, Kokkos::CudaSpace> d_E_1; 
+    Kokkos::View<float*, Kokkos::CudaSpace> d_E_2; 
+
+    //int n_chains = 10;
 };
 
 
@@ -162,29 +168,29 @@ public:
 
 //protected:
     std::valarray<SpinType> sequence_on_lattice_h;
-    typename Kokkos::View<SpinType*, Kokkos::HostSpace>::HostMirror h_sequence_on_lattice_h;
+    typename Kokkos::View<SpinType**, Kokkos::HostSpace>::HostMirror h_sequence_on_lattice_h;
     std::valarray<int> next_monomers_h;
-    Kokkos::View<int*, Kokkos::CudaSpace> next_monomers;
-    Kokkos::View<int*, Kokkos::CudaSpace>  previous_monomers;
+    Kokkos::View<int**, Kokkos::CudaSpace> next_monomers;
+    Kokkos::View<int**, Kokkos::CudaSpace>  previous_monomers;
     std::valarray<int> previous_monomers_h;
     int end_conformation = 0;
     int start_conformation = 0;
     std::valarray<short> directions_h; // n-1 edges of SAW on the lattice; //directions enumerated from o to dim2()
-    Kokkos::View<short*, Kokkos::CudaSpace>  directions;
+    Kokkos::View<short**, Kokkos::CudaSpace>  directions;
 
     mc_stats::ScalarObservable<float> e2e_distance_2;
     mc_stats::ScalarObservable<float> gyration_2_trace;
     mc_stats::ScalarObservable<float> gyration_2_direct;
 
     int* lattice_nodes_positions_h;
-    Kokkos::View<int*, Kokkos::HostSpace>::HostMirror h_lattice_nodes_positions_h;
+    Kokkos::View<int**, Kokkos::HostSpace>::HostMirror h_lattice_nodes_positions_h;
 
-    Kokkos::View<int*, Kokkos::HostSpace>::HostMirror h_next_monomers_h;
-    Kokkos::View<int*, Kokkos::HostSpace>::HostMirror h_previous_monomers_h;
-    Kokkos::View<short*, Kokkos::HostSpace>::HostMirror h_directions_h;
+    Kokkos::View<int**, Kokkos::HostSpace>::HostMirror h_next_monomers_h;
+    Kokkos::View<int**, Kokkos::HostSpace>::HostMirror h_previous_monomers_h;
+    Kokkos::View<short**, Kokkos::HostSpace>::HostMirror h_directions_h;
 
-    Kokkos::View<int*, Kokkos::CudaSpace> lattice_nodes_positions;
-    Kokkos::View<SpinType*, Kokkos::CudaSpace> sequence_on_lattice;
+    Kokkos::View<int**, Kokkos::CudaSpace> lattice_nodes_positions;
+    Kokkos::View<SpinType**, Kokkos::CudaSpace> sequence_on_lattice;
 
     //static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> rand_pool_host;
 
