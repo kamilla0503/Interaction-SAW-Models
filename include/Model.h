@@ -168,7 +168,7 @@ public:
 
 //protected:
     std::valarray<SpinType> sequence_on_lattice_h;
-    typename Kokkos::View<SpinType**, Kokkos::HostSpace>::HostMirror h_sequence_on_lattice_h;
+    typename Kokkos::View<SpinType**, Kokkos::CudaSpace>::HostMirror h_sequence_on_lattice_h;
     std::valarray<int> next_monomers_h;
     Kokkos::View<int**, Kokkos::CudaSpace> next_monomers;
     Kokkos::View<int**, Kokkos::CudaSpace>  previous_monomers;
@@ -183,11 +183,11 @@ public:
     mc_stats::ScalarObservable<float> gyration_2_direct;
 
     int* lattice_nodes_positions_h;
-    Kokkos::View<int**, Kokkos::HostSpace>::HostMirror h_lattice_nodes_positions_h;
+    Kokkos::View<int**, Kokkos::CudaSpace>::HostMirror h_lattice_nodes_positions_h;
 
-    Kokkos::View<int**, Kokkos::HostSpace>::HostMirror h_next_monomers_h;
-    Kokkos::View<int**, Kokkos::HostSpace>::HostMirror h_previous_monomers_h;
-    Kokkos::View<short**, Kokkos::HostSpace>::HostMirror h_directions_h;
+    Kokkos::View<int**, Kokkos::CudaSpace>::HostMirror h_next_monomers_h;
+    Kokkos::View<int**, Kokkos::CudaSpace>::HostMirror h_previous_monomers_h;
+    Kokkos::View<short**, Kokkos::CudaSpace>::HostMirror h_directions_h;
 
     Kokkos::View<int**, Kokkos::CudaSpace> lattice_nodes_positions;
     Kokkos::View<SpinType**, Kokkos::CudaSpace> sequence_on_lattice;
