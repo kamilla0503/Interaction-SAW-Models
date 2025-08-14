@@ -119,7 +119,7 @@ public:
     void set_J (float J_) {J = J_;}
 //protected:
     //Model-specific Energy function; returns float as J is expected to be float also
-    KOKKOS_FUNCTION virtual void Energy () = 0;
+    //KOKKOS_FUNCTION virtual void Energy () = 0;
     //KOKKOS_FUNCTION virtual float Energy_Add_Start () = 0;
     //KOKKOS_FUNCTION virtual float Energy_Add_End () = 0;
 
@@ -232,7 +232,7 @@ public:
 //protected:
     std::valarray<bool> used_coords;
 
-    KOKKOS_FUNCTION void Energy ();
+   // KOKKOS_FUNCTION void Energy ();
     //KOKKOS_FUNCTION float Energy_Add_Start () ;
     //KOKKOS_FUNCTION float Energy_Add_End () ;
 
