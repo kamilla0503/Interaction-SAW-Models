@@ -802,7 +802,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         pool.free_state(rand_gen);
         if (q_ifaccept < p_metropolis) {
             //flip_data_local.E(0) = flip_data_local.newE();
-            flip_data_local.sequence_on_lattice(c, flip_data_local.save_end_conformation(0)) = NO_XY_SPIN;
+            flip_data_local.sequence_on_lattice(c, flip_data_local.save_end_conformation(c)) = NO_XY_SPIN;
             flip_data_local.directions(c, flip_data_local.end_conformation(c)) = NO_SAW_NODE;
             flip_data_local.directions(c, flip_data_local.start_conformation(c)) = flip_data_local.inverse_steps(flip_data_local.direction(c));
             // new start is the new added value

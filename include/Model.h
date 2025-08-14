@@ -145,16 +145,16 @@ public:
     SAW_model() {};
     SAW_model(int length);
 
-    KOKKOS_INLINE_FUNCTION virtual void Reconnect(short direction) = 0; //Only Geometry changes --- the same for all SAW Models
+ //   KOKKOS_INLINE_FUNCTION virtual void Reconnect(short direction) = 0; //Only Geometry changes --- the same for all SAW Models
 
 
 
     //KOKKOS_INLINE_FUNCTION
-    virtual void FlipMove_AddEnd () = 0; //depends on spin variables
-    virtual void FlipMove_AddStart () = 0;
+    //virtual void FlipMove_AddEnd () = 0; //depends on spin variables
+    //virtual void FlipMove_AddStart () = 0;
     virtual void runMCMCOnDevice(long long MC_STEPS) = 0;
-    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd1 () = 0; //depends on spin variables
-    KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart1 () = 0; //depends on spin variables
+    //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd1 () = 0; //depends on spin variables
+    //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart1 () = 0; //depends on spin variables
 
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd (int direction, SpinType spinvalue) = 0; //depends on spin variables
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart (int direction, SpinType spinvalue) = 0; //depends on spin variables
@@ -203,16 +203,16 @@ public:
     XY_SAW_LongInteraction() {};
     XY_SAW_LongInteraction(int length, float J);
 
-    KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
+    //KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
 
 
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd1 () override;
+    //KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd1 () override;
     //KOKKOS_INLINE_FUNCTION
-    void FlipMove_AddEnd () override;
-    void FlipMove_AddStart () override;
+    //void FlipMove_AddEnd () override;
+    //void FlipMove_AddStart () override;
     void runMCMCOnDevice(long long n_steps) override;
-    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
+    //KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (int direction, float spinValue) override;
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddStart(int direction, float spinValue) override;
@@ -223,7 +223,7 @@ public:
 
 
     void gyration(); 
-    void defect(std::fstream &out, long long n_steps);
+   // void defect(std::fstream &out, long long n_steps);
     void out_MC_data(std::fstream& out, long long n_steps);
     void updateData();
     void out_angle_data(std::fstream& out, long long n_steps);
