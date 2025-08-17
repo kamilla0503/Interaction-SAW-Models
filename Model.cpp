@@ -375,7 +375,7 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     Kokkos::deep_copy(flip_data.N_pairs,  N_pairs_host);
 
 
-    flip_data.accept_move = Kokkos::View<bool*, Kokkos::CudaSpace>("accept_move", N_CHAINS); 
+    flip_data.accept_move = Kokkos::View<int*, Kokkos::CudaSpace>("accept_move", N_CHAINS); 
     //auto accept_move_host = Kokkos::create_mirror_view(flip_data.accept_move);
     //accept_move_host() = pairs_number;
     //Kokkos::deep_copy(flip_data.accept_move,   accept_move_host);
@@ -687,7 +687,7 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
 KOKKOS_INLINE_FUNCTION
 void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                const  FlipMoveData &flip_data_local, int c, 
-                                Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
+                               const Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>& pool)
 {
     // We'll store a bool `accept_move`. If it's false, we skip
     //bool accept_move = true;
@@ -741,7 +741,7 @@ void hierarchicalFlipMoveAddEnd(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_t
 KOKKOS_INLINE_FUNCTION
 void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                   const FlipMoveData &flip_data_local, int c,
-                                  Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
+                                  const Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>& pool)
 {
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         // Example random usage
@@ -789,7 +789,7 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                                              const  FlipMoveData &flip_data_local, int c,
-                                              Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
+                                             const Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> & pool)
 {
     if (!flip_data_local.accept_move(c) ) {
         return;
@@ -838,7 +838,7 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data_local, int c,
-                           Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool)
+                        const Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> & pool)
 {
     if (!flip_data_local.accept_move(c)) {
         return;
@@ -890,7 +890,7 @@ float p1 = exp( -(flip_data_local.J() * (  flip_data_local.d_E_1(c)       )) );
 KOKKOS_INLINE_FUNCTION
 void hierarchicalOneKernel_Reconnect(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
                         const FlipMoveData &flip_data_local, int chain,
-                           Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> pool) 
+                        const  Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>& pool) 
 {
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
         auto rand_gen =  pool.get_state(); //flip_data_local.rand_pool.get_state();
@@ -992,12 +992,13 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000)
             }
             team.team_barrier();
 
+            const int accepted = flip_data_local.accept_move(c);  // uniform read by all threads
             // Evaluate and accept
-            if (flip_data_local.accept_move(c)) {
+            if (accepted) {
                 hierarchicalDeltaE_1(team, flip_data_local, c);  // writes d.d_E_1(c)
             }
                 team.team_barrier();
-            if (flip_data_local.accept_move(c)) {
+            if (accepted) {
                 if (flip_data_local.flipMoveType(c) < 0.5f) {
                     hierarchicalOneKernel_AddEnd_FirstPart(team, flip_data_local, c, pool);
                 } else {
