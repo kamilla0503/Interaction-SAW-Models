@@ -496,39 +496,7 @@ std::mt19937 generator(URD_SEED + 1);
 #else
 std::mt19937 generator(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
-
-
-//My favourite and only working version for hierarchicalEnergy
-//Love it
-// KOKKOS_INLINE_FUNCTION
-// void hierarchicalEnergy1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
-//                         const FlipMoveData &flip_data)
-// {
-//     Kokkos::parallel_reduce(
-//             Kokkos::TeamThreadRange(team_member,  flip_data.L() ),
-//             [&](const int i, float &H_total) {
-//                 float energy_i = 0.0;
-//                 coord_t pos_i   = flip_data.lattice_nodes_positions(i);
-//                 float theta_i  = flip_data.sequence_on_lattice(pos_i);
-//                 const int num_j = flip_data.L() - (i + 1);
-//                 Kokkos::parallel_reduce(
-//                         Kokkos::ThreadVectorRange(team_member, num_j),
-//                         [=](const int jj, float &innerSum) {
-//                             const int j = i + jj + 1;
-//                             coord_t pos_j  = flip_data.lattice_nodes_positions(j);
-//                             float theta_j = flip_data.sequence_on_lattice(pos_j);
-//                             float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(),flip_data);
-//                             // Compute r_val^1.5 as before.
-//                             r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
-//                             innerSum += Kokkos::cos(theta_i - theta_j) / r_val;
-//                         },
-//                         energy_i
-//                 );
-//                     H_total -= energy_i;
-//             },
-//             flip_data.newE()
-//     );
-// }
+ 
 
 //Try new loop
 KOKKOS_INLINE_FUNCTION
