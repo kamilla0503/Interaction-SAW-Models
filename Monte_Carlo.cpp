@@ -109,7 +109,7 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
     std:: cout << "Start MC" << std:: endl;
 
     for (long long i = 0; i < MC_STEPS + 20; i+=iters) {
-        model->runMCMCOnDevice(n_steps_to_update);
+        model->runMCMCOnDevice(n_steps_to_update, (i/iters)+1);
         if (i < n_steps_to_equlibrium) continue;
         if (i%(n_steps_to_update)==0) 
         model->updateData();

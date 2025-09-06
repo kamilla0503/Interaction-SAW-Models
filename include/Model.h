@@ -88,7 +88,7 @@ struct FlipMoveData {
 
     Kokkos::View<int, Kokkos::CudaSpace> N_pairs;
 
-    Kokkos::View<bool*, Kokkos::CudaSpace> accept_move; 
+    Kokkos::View<int*, Kokkos::CudaSpace> accept_move; 
 
     Kokkos::View<float*, Kokkos::CudaSpace> flipMoveType;
 
@@ -152,7 +152,7 @@ public:
     //KOKKOS_INLINE_FUNCTION
     //virtual void FlipMove_AddEnd () = 0; //depends on spin variables
     //virtual void FlipMove_AddStart () = 0;
-    virtual void runMCMCOnDevice(long long MC_STEPS) = 0;
+    virtual void runMCMCOnDevice(long long MC_STEPS, long long epoch) = 0;
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd1 () = 0; //depends on spin variables
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart1 () = 0; //depends on spin variables
 
@@ -211,7 +211,7 @@ public:
     //KOKKOS_INLINE_FUNCTION
     //void FlipMove_AddEnd () override;
     //void FlipMove_AddStart () override;
-    void runMCMCOnDevice(long long n_steps) override;
+    void runMCMCOnDevice(long long n_steps, long long epoch) override;
     //KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (int direction, float spinValue) override;
