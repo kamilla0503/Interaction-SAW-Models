@@ -101,7 +101,8 @@ struct FlipMoveData {
     Kokkos::View<float*, Kokkos::CudaSpace> d_E_1; 
     Kokkos::View<float*, Kokkos::CudaSpace> d_E_2; 
 
-    //int n_chains = 10;
+    Kokkos::View<float*, Kokkos::CudaSpace> J_chain;   // length = N_CHAINS
+ 
 };
 
 
@@ -153,6 +154,8 @@ public:
     //virtual void FlipMove_AddEnd () = 0; //depends on spin variables
     //virtual void FlipMove_AddStart () = 0;
     virtual void runMCMCOnDevice(long long MC_STEPS, long long epoch) = 0;
+    virtual void swap() = 0;
+
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd1 () = 0; //depends on spin variables
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart1 () = 0; //depends on spin variables
 
@@ -201,7 +204,7 @@ public:
 class XY_SAW_LongInteraction : public  SAW_model<float> {
 public:
     XY_SAW_LongInteraction() {};
-    XY_SAW_LongInteraction(int length, float J);
+    XY_SAW_LongInteraction(int length, float J, float Jmin = 0.2412f, float Jmax = 0.3062f);
 
     //KOKKOS_INLINE_FUNCTION void Reconnect(short direction); //Only Geometry changes --- the same for all SAW Models
 
@@ -212,6 +215,7 @@ public:
     //void FlipMove_AddEnd () override;
     //void FlipMove_AddStart () override;
     void runMCMCOnDevice(long long n_steps, long long epoch) override;
+    void swap() override; 
     //KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (int direction, float spinValue) override;
@@ -219,7 +223,7 @@ public:
    // KOKKOS_INLINE_FUNCTION void ClusterStep (float flipdirection);
 
     void SequenceOnLatticeInitialization();
-    void StartConfiguration();
+    void StartConfiguration(float Jmin, float Jmax );
 
 
     void gyration(); 

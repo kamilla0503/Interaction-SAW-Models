@@ -23,7 +23,8 @@ public:
     MC_Interacting_SAW_XY() {};
     MC_Interacting_SAW_XY(  int length, float J, std::string LogFile = "",
                             float Probability_Local_Update = 1.00,
-                            float Probability_Reconnect = 0.05);
+                            float Probability_Reconnect = 0.05,
+                            float Jmin = 0.2412f, float Jmax = 0.3062f);
     void run_simulation(float J);
 protected:
 

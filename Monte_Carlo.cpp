@@ -16,10 +16,11 @@
 
 MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(int length, float J, std::string LogFile_,
                                              float Probability_Local_Update,
-                                             float Probability_Reconnect) {
+                                             float Probability_Reconnect,
+                                             float Jmin, float Jmax) {
     p_for_local_update = Probability_Local_Update;
     p_for_reconnect = p_for_local_update + Probability_Reconnect;
-    model = new XY_SAW_LongInteraction(length,J);
+    model = new XY_SAW_LongInteraction(length,J, Jmin, Jmax);
     LogFile = LogFile_;
 }
 
@@ -27,27 +28,16 @@ MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(int length, float J, std::string Lo
 //KOKKOS_INLINE_FUNCTION
 void MC_Interacting_SAW_XY::run_simulation(float J) {
 
-    //model->set_J(J);
+    // std::fstream MCDataStream;
+    // std::string filename = LogFile + "/XY_MC" + std::to_string(model->number_of_spins()) +
+    //        "_" + std::to_string(J) + ".out";
+    // MCDataStream.open(filename,std::fstream::out);
 
-    std::fstream MCDataStream;
-    std::string filename = LogFile + "/XY_MC" + std::to_string(model->number_of_spins()) +
-           "_" + std::to_string(J) + ".out";
-    MCDataStream.open(filename,std::fstream::out);
-
-    MCDataStream << "L J MC_steps R2 R2_std E E_std E2 E2_std E4 E4_std ";
-    MCDataStream << "Sin1 Sin1_std Cos1 Cos1_std Mag2 Mag2_std Mag4 Mag4_std Mag1 Mag1_std ";
-    MCDataStream << "eig1 eig1_std eig2 eig2_std eig3 eig3_std ";
-    MCDataStream << "R_g_2_trace R_g_2_trace_std R_g_2_direct R_g_2_direct_std asphericity asphericity_std";
-    MCDataStream << std::endl;
-
-
-
-    std::fstream defect_DataStream;
-    std::string filename_defect = LogFile + "/defects_" + std::to_string(model->number_of_spins()) +
-    "_" + std::to_string(J) + ".out";
-    defect_DataStream.open(filename_defect,std::fstream::out);
-
-
+    // MCDataStream << "L J MC_steps R2 R2_std E E_std E2 E2_std E4 E4_std ";
+    // MCDataStream << "Sin1 Sin1_std Cos1 Cos1_std Mag2 Mag2_std Mag4 Mag4_std Mag1 Mag1_std ";
+    // MCDataStream << "eig1 eig1_std eig2 eig2_std eig3 eig3_std ";
+    // MCDataStream << "R_g_2_trace R_g_2_trace_std R_g_2_direct R_g_2_direct_std asphericity asphericity_std";
+    // MCDataStream << std::endl;
 
     std::fstream angles_DataStream;
     std::string filename_angles = LogFile + "/angles_" + std::to_string(model->number_of_spins()) +
@@ -60,17 +50,6 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
     "_" + std::to_string(J) + ".out";
     dirs_DataStream.open(filename_dirs,std::fstream::out);
 
-    // Define several window sizes (number of consecutive spins to examine)
-   std::vector<int> windowSizes = {10, 15, 20, 25, 30};
-   // Define several threshold values (in winding number units).
-   std::vector<float> thresholds = {0.7, 0.8, 0.9, 1.0, 1.1};
-   for (auto w : windowSizes) {
-    for (auto t : thresholds) {
-        defect_DataStream << w << "_" << t << " ";
-    }
-   }
-   defect_DataStream << "step" << std::endl;
-   
     float mc_step_type = 0;
     short step = 0;
     float flipMoveType = 0;
@@ -95,9 +74,9 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-    long long n_steps_out = 20*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_equlibrium = 400*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_update = 50*model->number_of_spins()*model->number_of_spins(); //was 20 
+    long long n_steps_out = 40*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_equlibrium = 100*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_update = 20*model->number_of_spins()*model->number_of_spins(); //was 20 
 
     // n_steps_to_update = 10;
     // n_steps_out = 1; 
@@ -111,16 +90,17 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
     for (long long i = 0; i < MC_STEPS + 20; i+=iters) {
         model->runMCMCOnDevice(n_steps_to_update, (i/iters)+1);
         if (i < n_steps_to_equlibrium) continue;
-        if (i%(n_steps_to_update)==0) 
-        model->updateData();
+       // if (i%(n_steps_to_update)==0) 
+       // model->updateData();
 
         if (i%(n_steps_out)==0) {
-            model->out_MC_data(MCDataStream, i);
-            //model->defect(defect_DataStream, i);
+            model->updateData();
             model->out_angle_data(angles_DataStream, i);
             model->out_dir_data(dirs_DataStream, i);
         }
+
+        model->swap();
     }
 
-    MCDataStream.close();
+    //MCDataStream.close();
 }

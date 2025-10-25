@@ -29,6 +29,10 @@
 #define R_POWER 3
 #endif
 
+
+#define INIT_COORDS_FILE "init_coords.txt"
+#define INIT_ANGLES_FILE "init_angles.txt"
+
 //R_power = 3
 //FIx later to avoid misunderstanding
 #define exponent 1.5
@@ -48,7 +52,12 @@ void SAW_model<SpinType>::LatticeInitialization() {
     //lattice_nodes_positions_h.resize(number_of_spins(),NO_SAW_NODE);
 }
 
-XY_SAW_LongInteraction::XY_SAW_LongInteraction(int length, float J_) : SAW_model<float>(length) {
+KOKKOS_INLINE_FUNCTION
+void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &team_member,
+                        const FlipMoveData &flip_data, int c);
+
+XY_SAW_LongInteraction::XY_SAW_LongInteraction(int length, float J_,
+    float Jmin , float Jmax) : SAW_model<float>(length) {
 #ifdef REGIME_2D
     lattice = new Lattice_2D(2 * L + OUT_Length);
 #else
@@ -58,7 +67,7 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(int length, float J_) : SAW_model
         J = J_;
         LatticeInitialization();
         SequenceOnLatticeInitialization();
-        StartConfiguration();
+        StartConfiguration(Jmin, Jmax);
     }
     //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
     //Kokkos::fence();
@@ -87,7 +96,7 @@ Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>& getGlobalPool()
     return g_pool;
 }*/
 
-void XY_SAW_LongInteraction::StartConfiguration() {
+void XY_SAW_LongInteraction::StartConfiguration(float Jmin = 0.2412f, float Jmax = 0.3062f) {
 
     //initializePool(12345);
     //Kokkos::View<float*> sequence_on_lattice("sequence_on_lattice", this->lattice->NumberOfNodes());
@@ -193,6 +202,110 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     myStream << std::endl;
     myStream.close();
 #endif
+
+
+#ifdef INIT_ANGLES_FILE
+    const std::string angles_path = INIT_ANGLES_FILE;
+    std::ifstream ftheta(angles_path);
+    if (!ftheta) {
+        throw std::runtime_error("StartConfiguration: cannot open angles file: " + angles_path);
+    }
+    std::vector<float> thetas(L);
+    for (int k = 0; k < L; ++k) {
+        if (!(ftheta >> thetas[k])) {
+            throw std::runtime_error("StartConfiguration: angles file has fewer than L values.");
+        }
+    }
+#endif
+#ifdef INIT_COORDS_FILE
+    const std::string coords_path = INIT_COORDS_FILE;
+    std::ifstream fcoords(coords_path);
+    if (!fcoords) {
+        throw std::runtime_error("StartConfiguration: cannot open coords file: " + coords_path);
+    }
+    std::vector<int> xs(L), ys(L), zs(L);
+    for (int k = 0; k < L; ++k) {
+        if (!(fcoords >> xs[k] >> ys[k] >> zs[k])) {
+            throw std::runtime_error("StartConfiguration: coords file has fewer than 3*L integers.");
+        }
+    }
+    auto nd2 = lattice->ndim2();
+    auto &neighbors = lattice->map_of_contacts_int_h;   // host neighbor table (size NumberOfNodes * nd2)
+    int ls = lattice_side_h;
+    auto Nnodes_check = ls * ls * ls;
+    if (Nnodes_check != Nnodes) {
+        throw std::runtime_error("StartConfiguration: lattice side mismatch.");
+    }
+
+    // Build SAW, fill all host data structures
+    start_conformation = NO_SAW_NODE;
+    end_conformation   = NO_SAW_NODE;
+
+    // Helper to map xyz->linear index, with bounds check
+    auto idx3 = [ls](int x, int y, int z) -> int {
+        if (x < 0 || x >= ls || y < 0 || y >= ls || z < 0 || z >= ls) return -1;
+        return x + y*ls + z*ls*ls;
+    };
+    // 1) Fill lattice_nodes_positions_h[] and sequence_on_lattice_h[pos]
+    for (int k = 0; k < L; ++k) {
+        int pos = idx3(xs[k], ys[k], zs[k]);
+        if (pos < 0) {
+            throw std::runtime_error("StartConfiguration: coordinate out of bounds at k=" + std::to_string(k));
+        }
+        if (used_coords[pos]) {
+            throw std::runtime_error("StartConfiguration: self-avoid violated (duplicate node) at k=" + std::to_string(k));
+        }
+        used_coords[pos] = true;
+
+        lattice_nodes_positions_h[k] = pos;
+        sequence_on_lattice_h[pos]   = thetas[k];
+    }
+    // 2) Set start/end, previous/next links, and directions
+    start_conformation = lattice_nodes_positions_h[0];
+    end_conformation   = lattice_nodes_positions_h[L - 1];
+
+    // End nodes have no outgoing direction
+    directions_h[start_conformation] = NO_SAW_NODE;
+    directions_h[end_conformation]   = NO_SAW_NODE;
+    for (int k = 0; k < L; ++k) {
+        int pos = lattice_nodes_positions_h[k];
+
+        // previous / next
+        if (k == 0) {
+            previous_monomers_h[pos] = NO_SAW_NODE;
+            next_monomers_h[pos]     = lattice_nodes_positions_h[k + 1];
+        } else if (k == L - 1) {
+            previous_monomers_h[pos] = lattice_nodes_positions_h[k - 1];
+            next_monomers_h[pos]     = NO_SAW_NODE;
+        } else {
+            previous_monomers_h[pos] = lattice_nodes_positions_h[k - 1];
+            next_monomers_h[pos]     = lattice_nodes_positions_h[k + 1];
+        }
+
+        // direction from pos to its next (for internal nodes)
+        if (k < L - 1) {
+            int nxt = lattice_nodes_positions_h[k + 1];
+
+            // find which neighbor slot points to nxt
+            int dir_found = NO_SAW_NODE;
+            for (int s = 0; s < nd2; ++s) {
+                int nb = neighbors[nd2 * pos + s];
+                if (nb == nxt) {
+                    dir_found = s;
+                    break;
+                }
+            }
+            if (dir_found == NO_SAW_NODE) {
+                throw std::runtime_error(
+                    "StartConfiguration: nodes k and k+1 are not neighbors on the lattice. k=" + std::to_string(k));
+            }
+            directions_h[pos] = static_cast<short>(dir_found);
+        }
+    }
+#endif
+
+
+
     for (int i = 0; i < L; ++i) {
         for (int chain = 0; chain < N_CHAINS; chain++)
         h_lattice_nodes_positions_h(chain, i) = lattice_nodes_positions_h[i];  // Assuming 'raw_host_data' is a int* array
@@ -223,29 +336,14 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     lattice_side_host(0) = lattice_side_h;
     Kokkos::deep_copy(lattice_side, lattice_side_host);
     Kokkos::fence();
-      //auto lattice_nodes_positions_check = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), lattice_nodes_positions);
+    
     std::cout << "Model creation before energy" << std::endl;
 
     flip_data.E = Kokkos::View<float*, Kokkos::CudaSpace>("E", N_CHAINS);
     flip_data.newE = Kokkos::View<float*, Kokkos::CudaSpace>("newE", N_CHAINS);
-    // auto E_host = Kokkos::create_mirror_view(flip_data.E);
-    // auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
-    // //Energy();
-    // Kokkos::deep_copy(E, flip_data.newE);
-    // Kokkos::deep_copy(newE_host, flip_data.newE); // synchronizes and copies
-    // E = newE_host();
-    // Kokkos::deep_copy(flip_data.E, E);
-
-    //auto newE_host = Kokkos::create_mirror_view(flip_data.newE);
-
-    //E_host(0) = E;
-    //newE_host(0) =
-    //Kokkos::deep_copy(flip_data.E, E_host);
-    //E = Energy();
 
     std::cout << "Model creation after energy" << std::endl;
-    //printf("Energy after all = %f \n", E);
-
+ 
     flip_data.spinValue = Kokkos::View<float*, Kokkos::CudaSpace>("spinValue", N_CHAINS);
     flip_data.direction = Kokkos::View<int*, Kokkos::CudaSpace>("direction", N_CHAINS);
 
@@ -287,28 +385,11 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     flip_data.directions = directions;
    // printf("Finish directions = %f \n", E);
     flip_data.lattice_nodes_positions = lattice_nodes_positions;
-  //  printf("Finish nodes positions = %f \n", E);
-
-// Scalars
-   // flip_data.J = J;
-  //  printf("Finish J = %f \n", flip_data.J);
-    //flip_data.E = E;
-    //printf("Finish E= %f \n", E);
-
-    //flip_data.start_conformation = start_conformation;
-    //flip_data.end_conformation = end_conformation;
-    //flip_data.L = L;
-    //flip_data.lattice_side_device = lattice->lattice_side;
-// Random pool
-    //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(); //(17 /* seed or execution space */);
+    
     rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>();
     rand_pool.init(12345,256);
     flip_data.rand_pool = rand_pool;
 
-    //std::cout << "Start Configuration Pool states = " << rand_pool.get_num_states() << std::endl;
-
-    //rand_pool_host = Kokkos::Random_XorShift64_Pool<Kokkos::Cuda>(17 /* seed or execution space */);
-    // Allocate views with size 1
     flip_data.start_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("start_conformation", N_CHAINS);
     flip_data.end_conformation = Kokkos::View<coord_t*, Kokkos::CudaSpace>("end_conformation", N_CHAINS);
 
@@ -379,32 +460,9 @@ void XY_SAW_LongInteraction::StartConfiguration() {
     N_pairs_host() = pairs_number;
     Kokkos::deep_copy(flip_data.N_pairs,  N_pairs_host);
 
-
     flip_data.accept_move = Kokkos::View<int*, Kokkos::CudaSpace>("accept_move", N_CHAINS); 
-    //auto accept_move_host = Kokkos::create_mirror_view(flip_data.accept_move);
-    //accept_move_host() = pairs_number;
-    //Kokkos::deep_copy(flip_data.accept_move,   accept_move_host);
 
     flip_data.flipMoveType = Kokkos::View<float*, Kokkos::CudaSpace>("flipMoveType", N_CHAINS);
-
-
-
-   // Kokkos::deep_copy(flip_data.start_index_in_nodes_position, 0);
-
-
-
-  //  flip_data.positions = Kokkos::View<float**>("positions", N, 3);
-  //  flip_data.spins     = Kokkos::View<float**>("spins",     N, 2);
-//   flip_data.localField = Kokkos::View<float**>("localField", L, 2);
-//   flip_data.fieldNorm = Kokkos::View<float*>("fieldNorm",  L);
-
-
-
-//   int relax_spins =  L ; // L / 10;
-//   flip_data.spin_relax = Kokkos::View<int, Kokkos::CudaSpace>("spin_relax");
-//   flip_data.chosenIndices_relax = Kokkos::View<int*, Kokkos::CudaSpace>("chosenIndices_relax", relax_spins);
-//   Kokkos::deep_copy(flip_data.spin_relax, relax_spins);
-
 
   flip_data.J = Kokkos::View<float, Kokkos::CudaSpace>("J");
   Kokkos::deep_copy(  flip_data.J, J);
@@ -436,6 +494,31 @@ void XY_SAW_LongInteraction::StartConfiguration() {
   }
   Kokkos::deep_copy(flip_data.z_coords, z_coords_h);
 
+  // after flip_data.rand_pool = rand_pool;
+    flip_data.J_chain = Kokkos::View<float*, Kokkos::CudaSpace>("J_chain", N_CHAINS);
+    auto J_host = Kokkos::create_mirror_view(flip_data.J_chain);
+
+    // Example ladder; replace with your preferred values
+    //float Jmin = 0.2412f, Jmax = 0.3062f;
+  Jmin = 0.255; 
+  Jmax = 0.28;
+  std::cout << "Jmin " << Jmin << " " << "Jmax " << Jmax << std::endl;
+
+    for (int c = 0; c < N_CHAINS; ++c) {
+    J_host(c) = Jmin + (Jmax - Jmin) * (float(c) / (N_CHAINS - 1));
+    }
+    Kokkos::deep_copy(flip_data.J_chain, J_host);
+
+    auto flip_data_local = flip_data;
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    team_policy policy(N_CHAINS, 500, 1);
+    Kokkos::parallel_for("MCMC_Start",  policy,
+        KOKKOS_LAMBDA(const team_policy::member_type &team) 
+      {
+          const int c = team.league_rank();  
+          hierarchicalEnergy(team, flip_data_local, c);               // writes d.newE(c)
+          flip_data_local.E(c) = flip_data_local.newE(c);
+      });
 
 }
 
@@ -638,7 +721,6 @@ void hierarchicalFlipMoveAddStart(const Kokkos::TeamPolicy<Kokkos::Cuda>::member
             return;
         }
         flip_data_local.accept_move(c) = 1;
-        //coord_t flip_data_local.save_end_conformation(0);
         auto rand_gen1 = pool.get_state();
         flip_data_local.spinValue(c) = rand_gen1.drand(0, 2.0*flip_data_local.PI());
         pool.free_state(rand_gen1);
@@ -676,19 +758,19 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
         return;
     }
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
-        float p1 = exp(-(flip_data_local.J() * (  flip_data_local.d_E_1(c)   )));
+        float p1 = exp(-(flip_data_local.J_chain(c) * (  flip_data_local.d_E_1(c)   )));
         float p_metropolis = Kokkos::min(1.0f, p1);
-       // auto rand_gen = pool.get_state();
-       // float q_ifaccept = rand_gen.drand(0., 1.);
-       // pool.free_state(rand_gen);
         if (q_ifaccept < p_metropolis) {
-            //flip_data_local.E(0) = flip_data_local.newE();
             flip_data_local.sequence_on_lattice(c, flip_data_local.save_end_conformation(c)) = NO_XY_SPIN;
             flip_data_local.directions(c, flip_data_local.end_conformation(c)) = NO_SAW_NODE;
             flip_data_local.directions(c, flip_data_local.start_conformation(c)) = flip_data_local.inverse_steps(flip_data_local.direction(c));
             // new start is the new added value
             int position_new = (flip_data_local.start_index_in_nodes_position(c) + flip_data_local.L () - 1) % flip_data_local.L() ;
             flip_data_local.start_index_in_nodes_position(c) = position_new;
+
+            flip_data_local.E(c) += flip_data_local.d_E_1(c);
+
+           // if (c==2) printf("newE = %f; d_E = %f\n",  flip_data_local.E(c),  flip_data_local.d_E_1(c));
 
         }
         else {
@@ -710,8 +792,6 @@ void hierarchicalOneKernel_AddStart_FirstPart(const Kokkos::TeamPolicy<Kokkos::C
 
             flip_data_local.lattice_nodes_positions(c, position_new) = flip_data_local.end_conformation(c);
         }
-        //flip_data_local.newE() = 0;
-
 
     });
 }
@@ -727,15 +807,9 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
     }
     Kokkos::single(Kokkos::PerTeam(team_member), [&]() {
  
-
-    float p1 = exp( -(flip_data_local.J() * (  flip_data_local.d_E_1(c)       )) );
+        float p1 = exp( -(flip_data_local.J_chain(c) * (  flip_data_local.d_E_1(c) )) );
       
-
         float p_metropolis = (p1 < 1.0) ? p1 : 1.0;
-
-        //auto rand_gen = pool.get_state();
-        //float q_ifaccept = rand_gen.drand(0., 1.);
-        //pool.free_state(rand_gen);
 
         if (q_ifaccept < p_metropolis) {
 
@@ -744,6 +818,9 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
             flip_data_local.directions(c, flip_data_local.previous_monomers(c, flip_data_local.end_conformation(c))) = flip_data_local.direction(c);
             flip_data_local.start_index_in_nodes_position(c) = (flip_data_local.start_index_in_nodes_position(c) + 1) % flip_data_local.L();
 
+            flip_data_local.E(c) += flip_data_local.d_E_1(c);
+
+            //if (c==2) printf("newE = %f; d_E = %f\n",  flip_data_local.E(c),  flip_data_local.d_E_1(c));
         } else {
             // reject => revert
             coord_t del = flip_data_local.end_conformation(c);
@@ -761,7 +838,6 @@ void hierarchicalOneKernel_AddEnd_FirstPart(const Kokkos::TeamPolicy<Kokkos::Cud
             flip_data_local.lattice_nodes_positions(c, flip_data_local.start_index_in_nodes_position(c)) = flip_data_local.start_conformation(c);
 
         }
-        //flip_data_local.newE()= 0;
     });
 }
 
@@ -846,11 +922,62 @@ double rand_chain_step(uint64_t seed, int chain, long long step, int stream) {
   return u01(splitmix64(key));
 }
 
+struct ExchangeParams { int parity; long long exch_id; };
+
+void attempt_exchanges(const FlipMoveData &flip_data, ExchangeParams p)
+{
+    const int n = N_CHAINS;
+    const int start = p.parity ? 1 : 0; // 0: (0,1)(2,3)... 1: (1,2)(3,4)...
+    const int num_pairs = (n - 1 - start + 1) / 2; // integer division
+
+    Kokkos::parallel_for("PT_exchange_pairs", Kokkos::RangePolicy<Kokkos::Cuda>(0, num_pairs),
+    KOKKOS_LAMBDA(const int k) {
+    const int i = start + 2*k; // left index
+    const int j = i + 1; // right index
+
+    const float Ei = flip_data.E(i);   // energy WITHOUT J
+    const float Ej = flip_data.E(j);
+    const float Ji = flip_data.J_chain(i);
+    const float Jj = flip_data.J_chain(j);
+
+    //const float expo = (Jj - Ji) * (Ej - Ei);
+    //const float acc  = expo < 0.f ? 1.f : expf(expo); //just check no minus sign
+
+    const float expo = (Ji - Jj) * (Ei - Ej);
+    float acc = (expo >= 0.f) ? 1.f : expf(expo);
+
+    const double u = rand_chain_step(77777ull, i, p.exch_id, /*stream*/ 7);
+    if (u < acc) {
+    // swap betas assigned to chains i and j
+        float tmp = flip_data.J_chain(i);
+        flip_data.J_chain(i) = flip_data.J_chain(j);
+        flip_data.J_chain(j) = tmp;
+    }
+    });
+}
+
+void XY_SAW_LongInteraction::swap() {
+    static int exch_id = 0;
+    
+    auto flip_data_local = flip_data;
+    using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
+    team_policy policy(N_CHAINS, 500, 1);
+
+
+    ExchangeParams p0{0, exch_id++};
+    attempt_exchanges(flip_data, p0);
+    Kokkos::fence();
+    ExchangeParams p1{1, exch_id++};
+    attempt_exchanges(flip_data, p1);
+    Kokkos::fence();
+
+}
 
  // In your XY_SAW_LongInteraction class or wherever:
 void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000, long long epoch = 1000)
 {
     static int epoch2 = 2;
+    static int exch_id = 0;
     // (A) Create (or re-use) a random pool only once
     static bool pool_initialized = false;
     static Kokkos::Random_XorShift64_Pool<Kokkos::Cuda> my_pool(12345);
@@ -875,11 +1002,8 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000, long long
     Kokkos::parallel_for("MCMC_on_device",  policy,
       KOKKOS_LAMBDA(const team_policy::member_type &team) 
     {
-
         const int c = team.league_rank();   // chain id
-
-
-        for (long long step = 0; step < n_iters ; ++step)
+        for (long long step = 1; step < n_iters + 1 ; ++step)
         {
             // Only one thread per team chooses the move type
             Kokkos::single(Kokkos::PerTeam(team), [&](){
@@ -915,15 +1039,10 @@ void XY_SAW_LongInteraction::runMCMCOnDevice(long long MC_STEPS=10000, long long
  
         }
 
-        // Final bookkeeping per chain
-        hierarchicalEnergy(team, flip_data_local, c);               // writes d.newE(c)
         team.team_barrier();
         hierarchicalOneKernel_Reconnect(team, flip_data_local, c, pool);
         team.team_barrier();
-        flip_data_local.E(c) = flip_data_local.newE(c);
-
     }); // end parallel_for
-
     epoch2 += 1;
 }
 
@@ -982,16 +1101,20 @@ void XY_SAW_LongInteraction::updateData() {
 
 
     gyration();
-    //defect();
+
 }
 
 
 void XY_SAW_LongInteraction::out_angle_data(std::fstream &out, long long n_steps) {
 // Called after update; sequence is already got on host 
 
+    auto Jchains_host = Kokkos::create_mirror_view(flip_data.J_chain);
+    Kokkos::deep_copy(Jchains_host, flip_data.J_chain);
+    auto E_host = Kokkos::create_mirror_view(flip_data.E);
+    Kokkos::deep_copy(E_host, flip_data.E);
 
     for (int c =0 ; c < N_CHAINS; c++) {
-        out << n_steps << " ";
+        out << n_steps << " " << Jchains_host(c) << " " << E_host(c) << " ";
 
         for (int e = 0; e < L; e++) {
             out <<  h_sequence_on_lattice_h(c, h_lattice_nodes_positions_h(c, e)) << " " ;
@@ -1008,11 +1131,11 @@ void XY_SAW_LongInteraction::out_dir_data(std::fstream &out, long long n_steps) 
     Kokkos::deep_copy(ind_start, flip_data.start_index_in_nodes_position);
     auto E_host = Kokkos::create_mirror_view(flip_data.E);
     Kokkos::deep_copy(E_host, flip_data.E);
-    //E = E_host(0);
-
+    auto Jchains_host = Kokkos::create_mirror_view(flip_data.J_chain);
+    Kokkos::deep_copy(Jchains_host, flip_data.J_chain);
 
     for (int c = 0; c < N_CHAINS; c++ ) { 
-        out << n_steps << " " <<  ind_start(c) << " " << E_host(c) << " ";
+        out << n_steps << " " << Jchains_host(c) << " " <<  ind_start(c) << " " << E_host(c) << " ";
         auto ls =  lattice->lattice_size();
         for (int i = 0; i < L; i++) {
             int pos = h_lattice_nodes_positions_h(c, i);
