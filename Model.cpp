@@ -30,8 +30,8 @@
 #endif
 
 
-#define INIT_COORDS_FILE "init_coords.txt"
-#define INIT_ANGLES_FILE "init_angles.txt"
+// #define INIT_COORDS_FILE "init_coords.txt"
+// #define INIT_ANGLES_FILE "init_angles.txt"
 
 //R_power = 3
 //FIx later to avoid misunderstanding
@@ -922,6 +922,23 @@ double rand_chain_step(uint64_t seed, int chain, long long step, int stream) {
   return u01(splitmix64(key));
 }
 
+KOKKOS_INLINE_FUNCTION
+uint64_t mix64(uint64_t x){
+  x += 0x9e3779b97f4a7c15ull;
+  x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+  x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+  return x ^ (x >> 31);
+}
+
+KOKKOS_INLINE_FUNCTION
+double swap_uniform(int left_i, int parity, uint64_t attempt){
+  // Make sure parity matters and the counter flips lots of bits
+  uint64_t pair_id = (static_cast<uint64_t>(left_i) << 1) | static_cast<uint64_t>(parity);
+  uint64_t s = mix64( mix64(pair_id) ^ mix64(attempt) ^ 0xD00DCAFEDEADBEEFull );
+  // map to (0,1) using 53 bits of mantissa
+  return ((s >> 11) * (1.0/9007199254740992.0));
+}
+
 struct ExchangeParams { int parity; long long exch_id; };
 
 void attempt_exchanges(const FlipMoveData &flip_data, ExchangeParams p)
@@ -946,7 +963,7 @@ void attempt_exchanges(const FlipMoveData &flip_data, ExchangeParams p)
     const float expo = (Ji - Jj) * (Ei - Ej);
     float acc = (expo >= 0.f) ? 1.f : expf(expo);
 
-    const double u = rand_chain_step(77777ull, i, p.exch_id, /*stream*/ 7);
+    const double u = swap_uniform(i, p.parity, p.exch_id);  //rand_chain_step(77777ull, i, p.exch_id, /*stream*/ 7);
     if (u < acc) {
     // swap betas assigned to chains i and j
         float tmp = flip_data.J_chain(i);
