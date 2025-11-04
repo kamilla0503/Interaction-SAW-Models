@@ -20,6 +20,7 @@ MC_Interacting_SAW_XY::MC_Interacting_SAW_XY(int length, float J, std::string Lo
                                              float Jmin, float Jmax) {
     p_for_local_update = Probability_Local_Update;
     p_for_reconnect = p_for_local_update + Probability_Reconnect;
+    std::cout << "model = new Jmin " << Jmin << " " << "Jmax " << Jmax << std::endl;
     model = new XY_SAW_LongInteraction(length,J, Jmin, Jmax);
     LogFile = LogFile_;
 }
@@ -74,15 +75,10 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-    long long n_steps_to_update = 20*model->number_of_spins(); //*model->number_of_spins(); //was 20 
-    long long n_steps_out = n_steps_to_update * n_steps_to_update * 10; //40*model->number_of_spins()*model->number_of_spins();
-    long long n_steps_to_equlibrium = 200*model->number_of_spins()*model->number_of_spins();
-    
-
-    // n_steps_to_update = 10;
-    // n_steps_out = 1; 
-    // n_steps_to_equlibrium = 1; 
- 
+    long long n_steps_to_update = 10*model->number_of_spins() * model->number_of_spins(); //*model->number_of_spins(); //was 20 
+    long long n_steps_out = n_steps_to_update * 10; //40*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_equlibrium = 700*model->number_of_spins()*model->number_of_spins();
+     
     long long iters = n_steps_to_update;
 
     auto flip_data_copy = model->flip_data; // Capture data by value
@@ -90,11 +86,9 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
 
     for (long long i = 0; i < MC_STEPS + 20; i+=iters) {
         model->runMCMCOnDevice(n_steps_to_update, (i/iters)+1);
-        if (i < n_steps_to_equlibrium) continue;
-       // if (i%(n_steps_to_update)==0) 
-       // model->updateData();
-
+         
         if (i%(n_steps_out)==0) {
+            if (i < n_steps_to_equlibrium) continue;
             model->updateData();
             model->out_angle_data(angles_DataStream, i);
             model->out_dir_data(dirs_DataStream, i);

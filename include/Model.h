@@ -155,6 +155,7 @@ public:
     //virtual void FlipMove_AddStart () = 0;
     virtual void runMCMCOnDevice(long long MC_STEPS, long long epoch) = 0;
     virtual void swap() = 0;
+    virtual void swap1() = 0;
 
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddEnd1 () = 0; //depends on spin variables
     //KOKKOS_INLINE_FUNCTION virtual void FlipMove_AddStart1 () = 0; //depends on spin variables
@@ -216,6 +217,7 @@ public:
     //void FlipMove_AddStart () override;
     void runMCMCOnDevice(long long n_steps, long long epoch) override;
     void swap() override; 
+    void swap1() override; 
     //KOKKOS_INLINE_FUNCTION void FlipMove_AddStart1() override;
 
 //    KOKKOS_INLINE_FUNCTION void FlipMove_AddEnd (int direction, float spinValue) override;
@@ -337,6 +339,29 @@ float angleDiff(float a, float b) {
   while(diff > M_PI)  diff -= 2.0 * M_PI;
   while(diff < -M_PI) diff += 2.0 * M_PI;
   return diff;
+}
+
+
+// --- swap_stats.hpp ---
+struct SwapStats {
+  Kokkos::View<unsigned long long*> attempts; // per pair
+  Kokkos::View<unsigned long long*> accepts;  // per pair
+  Kokkos::View<float*>              u_min;    // per pair
+  Kokkos::View<float*>              u_max;    // per pair
+};
+
+inline SwapStats make_swap_stats(int n_chains) {
+  SwapStats s;
+  const int P = n_chains - 1;                 // number of neighbor pairs
+  s.attempts = Kokkos::View<unsigned long long*>("ex_attempts", P);
+  s.accepts  = Kokkos::View<unsigned long long*>("ex_accepts",  P);
+  s.u_min    = Kokkos::View<float*>("ex_u_min", P);
+  s.u_max    = Kokkos::View<float*>("ex_u_max", P);
+  Kokkos::deep_copy(s.attempts, 0ull);
+  Kokkos::deep_copy(s.accepts,  0ull);
+  Kokkos::deep_copy(s.u_min,    1.0f);
+  Kokkos::deep_copy(s.u_max,    0.0f);
+  return s;
 }
 
 

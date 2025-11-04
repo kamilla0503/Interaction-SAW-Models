@@ -67,6 +67,8 @@ XY_SAW_LongInteraction::XY_SAW_LongInteraction(int length, float J_,
         J = J_;
         LatticeInitialization();
         SequenceOnLatticeInitialization();
+        std::cout << "Jmin " << Jmin << " " << "Jmax " << Jmax << std::endl;
+
         StartConfiguration(Jmin, Jmax);
     }
     //rand_pool = Kokkos::Random_XorShift64_Pool<Kokkos::DefaultExecutionSpace>(/*seed=*/12345);
@@ -500,8 +502,8 @@ void XY_SAW_LongInteraction::StartConfiguration(float Jmin = 0.2412f, float Jmax
 
     // Example ladder; replace with your preferred values
     //float Jmin = 0.2412f, Jmax = 0.3062f;
-  Jmin = 0.255; 
-  Jmax = 0.28;
+//   Jmin = 0.255; 
+//   Jmax = 0.28;
   std::cout << "Jmin " << Jmin << " " << "Jmax " << Jmax << std::endl;
 
     for (int c = 0; c < N_CHAINS; ++c) {
@@ -519,6 +521,28 @@ void XY_SAW_LongInteraction::StartConfiguration(float Jmin = 0.2412f, float Jmax
           hierarchicalEnergy(team, flip_data_local, c);               // writes d.newE(c)
           flip_data_local.E(c) = flip_data_local.newE(c);
       });
+
+
+
+        // exactly L occupied nodes
+    int occ = 0;
+    for (int p = 0; p < Nnodes; ++p) if (sequence_on_lattice_h[p] != NO_XY_SPIN) ++occ;
+    if (occ != L) throw std::runtime_error("Init: occupied count != L");
+
+    // ends have no outgoing direction
+    if (directions_h[start_conformation] != NO_SAW_NODE)
+        throw std::runtime_error("Init: start direction should be NO_SAW_NODE");
+    if (directions_h[end_conformation] != NO_SAW_NODE)
+        throw std::runtime_error("Init: end direction should be NO_SAW_NODE");
+
+    // SAW consecutivity
+    for (int k = 0; k < L-1; ++k) {
+        int a = lattice_nodes_positions_h[k];
+        int b = lattice_nodes_positions_h[k+1];
+        if (next_monomers_h[a] != b || previous_monomers_h[b] != a)
+            throw std::runtime_error("Init: broken next/prev at k=" + std::to_string(k));
+    }
+
 
 }
 
@@ -941,12 +965,12 @@ double swap_uniform(int left_i, int parity, uint64_t attempt){
 
 struct ExchangeParams { int parity; long long exch_id; };
 
-void attempt_exchanges(const FlipMoveData &flip_data, ExchangeParams p)
+void attempt_exchanges(const FlipMoveData &flip_data, ExchangeParams p, SwapStats stats_)
 {
     const int n = N_CHAINS;
     const int start = p.parity ? 1 : 0; // 0: (0,1)(2,3)... 1: (1,2)(3,4)...
     const int num_pairs = (n - 1 - start + 1) / 2; // integer division
-
+    auto stats = stats_;
     Kokkos::parallel_for("PT_exchange_pairs", Kokkos::RangePolicy<Kokkos::Cuda>(0, num_pairs),
     KOKKOS_LAMBDA(const int k) {
     const int i = start + 2*k; // left index
@@ -957,24 +981,53 @@ void attempt_exchanges(const FlipMoveData &flip_data, ExchangeParams p)
     const float Ji = flip_data.J_chain(i);
     const float Jj = flip_data.J_chain(j);
 
-    //const float expo = (Jj - Ji) * (Ej - Ei);
-    //const float acc  = expo < 0.f ? 1.f : expf(expo); //just check no minus sign
-
     const float expo = (Ji - Jj) * (Ei - Ej);
     float acc = (expo >= 0.f) ? 1.f : expf(expo);
 
-    const double u = swap_uniform(i, p.parity, p.exch_id);  //rand_chain_step(77777ull, i, p.exch_id, /*stream*/ 7);
-    if (u < acc) {
+    // weights for the two assignments: (Ji on i, Jj on j) vs swapped
+    const double w_keep  = -Ji*Ei - Jj*Ej;
+    const double w_swap  = -Ji*Ej - Jj*Ei;
+
+    // P(swap) = 1 / (1 + exp(w_keep - w_swap)) = 1 / (1 + exp(expo))
+    //double p_swap = 1.0 / (1.0 + exp((Ji - Jj)*(Ei - Ej)));
+
+    double p_swap;
+    // if (expo >= 0.0) {
+    //     const double e = exp(-expo);     // stable when expo large +
+    //     p_swap = e / (1.0 + e);
+    // } else {
+    //     p_swap = 1.0 / (1.0 + exp(expo)); // stable when expo large -
+    // }
+
+    p_swap = 1 / (1 + exp(w_keep - w_swap)); 
+    
+
+    double u = swap_uniform(i, p.parity, p.exch_id);  //rand_chain_step(77777ull, i, p.exch_id, /*stream*/ 7);
+    
+    // stats index = left neighbor of the pair
+    stats.attempts(i) += 1ull;
+    const float uf = static_cast<float>(u);
+    // branchy min/max is fine; only one team touches k in this kernel
+    stats.u_min(i) = uf < stats.u_min(i) ? uf : stats.u_min(i);
+    stats.u_max(i) = uf > stats.u_max(i) ? uf : stats.u_max(i);
+
+    if (u < p_swap) {
     // swap betas assigned to chains i and j
         float tmp = flip_data.J_chain(i);
         flip_data.J_chain(i) = flip_data.J_chain(j);
         flip_data.J_chain(j) = tmp;
+        stats.accepts(i) += 1ull;
     }
     });
 }
 
-void XY_SAW_LongInteraction::swap() {
+void XY_SAW_LongInteraction::swap1() {
     static int exch_id = 0;
+    
+    static bool inited = false;
+    static SwapStats stats;               // one per process forever
+    if (!inited) { stats = make_swap_stats(N_CHAINS); inited = true; }
+
     
     auto flip_data_local = flip_data;
     using team_policy = Kokkos::TeamPolicy<Kokkos::Cuda>;
@@ -982,12 +1035,120 @@ void XY_SAW_LongInteraction::swap() {
 
 
     ExchangeParams p0{0, exch_id++};
-    attempt_exchanges(flip_data, p0);
+    attempt_exchanges(flip_data, p0, stats);
     Kokkos::fence();
     ExchangeParams p1{1, exch_id++};
-    attempt_exchanges(flip_data, p1);
+    attempt_exchanges(flip_data, p1, stats);
     Kokkos::fence();
 
+    static int calls = 0;
+    constexpr int PRINT_EVERY = 1000;   // adjust as you like
+    if (++calls % PRINT_EVERY == 0) {
+        auto A  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), stats.attempts);
+        auto B  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), stats.accepts);
+        auto U0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), stats.u_min);
+        auto U1 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), stats.u_max);
+    
+        std::printf("pair  attempts  accepts  acc%%    u_min     u_max\n");
+        for (int k = 0; k < N_CHAINS - 1; ++k) {
+          const double accp = A(k) ? 100.0 * double(B(k)) / double(A(k)) : 0.0;
+          std::printf("%3d  %9llu  %7llu  %5.1f   %.6f  %.6f\n",
+                      k,
+                      (unsigned long long)A(k),
+                      (unsigned long long)B(k),
+                      accp, U0(k), U1(k));
+        }
+    
+        // reset window
+        Kokkos::deep_copy(stats.attempts, 0ull);
+        Kokkos::deep_copy(stats.accepts,  0ull);
+        Kokkos::deep_copy(stats.u_min,    1.0f);
+        Kokkos::deep_copy(stats.u_max,    0.0f);
+      }
+
+}
+
+
+
+// New: attempt exchanges over an explicit list of (i,j) chain index pairs
+void attempt_exchanges_on_pairs(
+    const FlipMoveData &flip_data,
+    Kokkos::View<int*, Kokkos::CudaSpace> pair_i,
+    Kokkos::View<int*, Kokkos::CudaSpace> pair_j,
+    long long exch_id)
+{
+    const int num_pairs = pair_i.extent_int(0);
+    Kokkos::parallel_for("PT_exchange_pairs_sorted",
+                Kokkos::RangePolicy<Kokkos::Cuda>(0, num_pairs),
+                KOKKOS_LAMBDA(const int k) {
+    const int i = pair_i(k);
+    const int j = pair_j(k);
+
+    const float Ei = flip_data.E(i);   // energy WITHOUT J
+    const float Ej = flip_data.E(j);
+    const float Ji = flip_data.J_chain(i);
+    const float Jj = flip_data.J_chain(j);
+
+    const float expo = (Ji - Jj) * (Ei - Ej);
+    const float acc  = expo >= 0.f ? 1.f : expf(expo);
+
+    // deterministic per-(i,exch_id) RNG, same as your previous
+    const double u = rand_chain_step(77777ull, i, exch_id, /*stream*/ 7);
+    if (u < acc) {
+        float tmp = flip_data.J_chain(i);
+        flip_data.J_chain(i) = flip_data.J_chain(j);
+        flip_data.J_chain(j) = tmp;
+    }
+});
+}
+
+
+void XY_SAW_LongInteraction::swap()
+{
+    static long long exch_id = 0;
+
+    // 1) Mirror J to host and build the sorted order (by current J values)
+    auto J_host = Kokkos::create_mirror_view(flip_data.J_chain);
+    Kokkos::deep_copy(J_host, flip_data.J_chain);
+
+    std::vector<int> ord(N_CHAINS);
+    std::iota(ord.begin(), ord.end(), 0);
+    std::sort(ord.begin(), ord.end(),
+              [&](int a, int b){ return J_host(a) < J_host(b); });
+
+    // Helper to build pairs for a given parity in J-order and launch kernel
+    auto build_pairs_and_exchange = [&](int parity) {
+    const int n = N_CHAINS;
+    const int first = parity ? 1 : 0;             // even or odd in J-rank
+    const int num_pairs = (n - first) / 2;        // floor
+    if (num_pairs <= 0) return;
+
+        // Host buffers of chain indices to be paired
+    std::vector<int> h_i(num_pairs), h_j(num_pairs);
+    for (int k = 0; k < num_pairs; ++k) {
+    const int ia = ord[first + 2*k];
+    const int ib = ord[first + 2*k + 1];
+        h_i[k] = ia;
+        h_j[k] = ib;
+    }
+
+    // Copy to device
+    Kokkos::View<int*, Kokkos::CudaSpace> d_i("pair_i", num_pairs);
+    Kokkos::View<int*, Kokkos::CudaSpace> d_j("pair_j", num_pairs);
+    auto hdi = Kokkos::create_mirror_view(d_i);
+    auto hdj = Kokkos::create_mirror_view(d_j);
+    for (int k = 0; k < num_pairs; ++k) { hdi(k) = h_i[k]; hdj(k) = h_j[k]; }
+        Kokkos::deep_copy(d_i, hdi);
+        Kokkos::deep_copy(d_j, hdj);
+
+        // Exchange over these J-adjacent pairs
+        attempt_exchanges_on_pairs(flip_data, d_i, d_j, exch_id++);
+        Kokkos::fence();
+    };
+
+    // 2) Do even-then-odd in J-order
+    build_pairs_and_exchange(0);
+    build_pairs_and_exchange(1);
 }
 
  // In your XY_SAW_LongInteraction class or wherever:
