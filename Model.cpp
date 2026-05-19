@@ -33,7 +33,8 @@
 // #define INIT_COORDS_FILE "init_coords.txt"
 // #define INIT_ANGLES_FILE "init_angles.txt"
 
-//R_power = 3
+ 
+// exponent = R_power / 2 
 //FIx later to avoid misunderstanding
 #define exponent 1.5
 
@@ -626,7 +627,7 @@ void hierarchicalEnergy(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &tea
                     coord_t pos_j  = flip_data.lattice_nodes_positions(c, j);
                     float theta_j = flip_data.sequence_on_lattice(c, pos_j);
                     float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(),flip_data);
-                    r_val = Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    r_val = Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_j) / r_val;
                 //}
             },
@@ -656,11 +657,11 @@ void hierarchicalDeltaE_1(const Kokkos::TeamPolicy<Kokkos::Cuda>::member_type &t
 
                     float theta_i  = flip_data.sequence_on_lattice(c, pos_i);
                     float r_val   = radius(pos_i, pos_j, flip_data.lattice_side_device(), flip_data);
-                    r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    r_val = Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent); //Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total += Kokkos::cos(theta_i - theta_j) / r_val;
 
                     r_val   = radius(pos_i, pos_k , flip_data.lattice_side_device(), flip_data);
-                    r_val = Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
+                    r_val = Kokkos::pow(r_val, exponent);  //Kokkos::sqrt(r_val) * r_val; //Kokkos::pow(r_val, exponent);    // Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val) * Kokkos::sqrt(r_val);
                     H_total -= Kokkos::cos(theta_i - theta_k) / r_val;
 
             },

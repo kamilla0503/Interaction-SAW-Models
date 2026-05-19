@@ -75,8 +75,8 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
     generators_theta.seed(std::chrono::steady_clock::now().time_since_epoch().count());
 #endif
 
-    long long n_steps_to_update = 10*model->number_of_spins() * model->number_of_spins(); //*model->number_of_spins(); //was 20 
-    long long n_steps_out = n_steps_to_update * 10; //40*model->number_of_spins()*model->number_of_spins();
+    long long n_steps_to_update = 10  * model->number_of_spins(); //*model->number_of_spins(); //was 20 
+    long long n_steps_out = model->number_of_spins() * n_steps_to_update * 10; //40*model->number_of_spins()*model->number_of_spins();
     long long n_steps_to_equlibrium = 700*model->number_of_spins()*model->number_of_spins();
      
     long long iters = n_steps_to_update;
@@ -88,10 +88,11 @@ void MC_Interacting_SAW_XY::run_simulation(float J) {
         model->runMCMCOnDevice(n_steps_to_update, (i/iters)+1);
          
         if (i%(n_steps_out)==0) {
-            if (i < n_steps_to_equlibrium) continue;
-            model->updateData();
-            model->out_angle_data(angles_DataStream, i);
-            model->out_dir_data(dirs_DataStream, i);
+            if (i > n_steps_to_equlibrium) {
+                model->updateData();
+                model->out_angle_data(angles_DataStream, i);
+                model->out_dir_data(dirs_DataStream, i);
+            }
         }
 
         model->swap();

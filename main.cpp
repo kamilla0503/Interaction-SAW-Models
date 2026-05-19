@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
       J = -1; 
       std:: cout << L << " " << Jmin << " " << Jmax << std::endl;
 
-      MC_Interacting_SAW_XY mcxysaw(L, J, outFile, Jmin, Jmax);
+      MC_Interacting_SAW_XY mcxysaw(L, J, outFile, 1.00, 0.05, Jmin, Jmax);
       mcxysaw.run_simulation(J);
     }
  
